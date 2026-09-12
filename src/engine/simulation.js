@@ -85,10 +85,19 @@ export function simulateTick(state) {
 
   if (state.dominance >= BALANCE.victoryDominanceThreshold) {
     state.status = 'victory';
-    pushLog(state, 'Le monde a basculé. Victoire.');
+    state.endReason = 'dominance';
+    pushLog(
+      state,
+      `Domination mondiale atteinte (${state.dominance.toFixed(0)}% ≥ ${BALANCE.victoryDominanceThreshold}%). Victoire.`
+    );
   } else if (state.globalContainment >= BALANCE.defeatContainmentThreshold) {
     state.status = 'defeat';
-    pushLog(state, 'Le confinement mondial est total. Défaite.');
+    state.endReason = 'containment';
+    pushLog(state, 'Le confinement mondial a atteint 100 % avant votre domination. Défaite.');
+  } else if (state.day >= BALANCE.maxDays) {
+    state.status = 'defeat';
+    state.endReason = 'timeout';
+    pushLog(state, `Aucun camp n'a percé en ${BALANCE.maxDays} jours. Le monde reprend le contrôle par défaut.`);
   }
 }
 

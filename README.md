@@ -30,7 +30,9 @@ src/
   main.js                boucle principale, gestion des événements, rendu
 public/
   manifest.webmanifest, icons/, sw.js
-.github/workflows/deploy.yml   build + déploiement GitHub Pages
+tests/
+  state.test.js, simulation.test.js, save.test.js   suite node:test
+.github/workflows/deploy.yml   tests + build + déploiement GitHub Pages
 ```
 
 ## Développement local
@@ -39,6 +41,14 @@ public/
 npm install
 npm run dev
 ```
+
+## Tests
+
+```bash
+npm test
+```
+
+Suite basée sur `node:test` (aucune dépendance externe), exécutée avant chaque build en CI. Couvre : initialisation, propagation, économie d'Influence, achats d'améliorations et leurs limites, réactions locales et globales, victoire, défaite, filet de sécurité anti-boucle infinie, sauvegarde/reprise, nouvelle partie sans contamination de l'ancienne, invariants numériques (pas de NaN/valeur négative/hors bornes), et deux simulations Monte-Carlo (les 14 origines en jeu passif, les 14 origines en jeu actif).
 
 ## Build de production
 
@@ -59,8 +69,13 @@ URL stable une fois activé : `https://<owner>.github.io/rupture-v0/`.
 2. L'anomalie se propage le long des routes ouvertes, en fonction de la connectivité et des améliorations achetées (Propagation, Résilience, Discrétion).
 3. Chaque territoire développe une conscience de la crise, un confinement local, et peut fermer ses routes.
 4. Victoire : la domination mondiale (crise moyenne pondérée par population) atteint 75 %.
-5. Défaite : le confinement mondial atteint 100 % avant.
+5. Défaite : le confinement mondial atteint 100 % avant (ou filet de sécurité à 400 jours si aucun des deux seuils n'est atteint).
 6. Sauvegarde locale automatique à chaque action et chaque tick ; reprise possible depuis le menu.
+7. L'écran de fin indique explicitement quel seuil a été franchi (jamais de victoire/défaite sans explication).
+
+## Note d'équilibrage (pré-équilibrage technique, pas définitif)
+
+Sans aucune amélioration achetée, la partie est perdue de façon fiable depuis n'importe quelle origine (vérifié par simulation Monte-Carlo automatisée) : les upgrades ne sont pas optionnels, ils sont nécessaires. Avec une stratégie active (achat systématique dès que possible), la victoire est atteignable depuis au moins 10 des 14 territoires de départ ; les origines les moins connectées (ex. Delthia, Lyrath, Nyxor) restent plus difficiles avec une stratégie naïve — c'est un choix de conception assumé (le point de départ doit compter) plutôt qu'un bug, mais c'est aussi le point précis que la bêta humaine devra confirmer ou contredire.
 
 ## Limites connues de la V0
 

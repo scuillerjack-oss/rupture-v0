@@ -12,30 +12,31 @@ export const BALANCE = {
   influenceGainFactor: 0.09,
   victoryDominanceThreshold: 75,
   defeatContainmentThreshold: 100,
+  maxDays: 400,
   upgrades: {
     propagation: {
       label: 'Propagation',
       description: 'Augmente la vitesse de propagation vers les territoires voisins.',
       maxLevel: 5,
-      baseCost: 20,
-      costGrowth: 1.7,
-      effectPerLevel: 0.5
+      baseCost: 18,
+      costGrowth: 1.6,
+      effectPerLevel: 0.75
     },
     resilience: {
       label: 'Résilience',
       description: "Réduit l'effet freinateur du confinement local sur la crise.",
       maxLevel: 5,
-      baseCost: 22,
-      costGrowth: 1.7,
-      effectPerLevel: 0.3
+      baseCost: 20,
+      costGrowth: 1.6,
+      effectPerLevel: 0.45
     },
     discretion: {
       label: 'Discrétion',
       description: "Ralentit la prise de conscience mondiale et les fermetures de routes.",
       maxLevel: 5,
-      baseCost: 22,
-      costGrowth: 1.7,
-      effectPerLevel: 0.28
+      baseCost: 20,
+      costGrowth: 1.6,
+      effectPerLevel: 0.42
     }
   }
 };

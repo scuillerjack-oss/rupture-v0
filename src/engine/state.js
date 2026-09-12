@@ -30,6 +30,7 @@ export function createInitialState() {
     upgrades: { propagation: 0, resilience: 0, discretion: 0 },
     territories: createTerritoryStates(),
     selectedId: null,
+    endReason: null,
     log: []
   };
 }
