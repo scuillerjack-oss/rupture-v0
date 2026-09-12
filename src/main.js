@@ -1,13 +1,25 @@
 import { createInitialState, beginNewGame, confirmOrigin } from './engine/state.js';
 import { simulateTick, buyUpgrade, selectTerritory, setSpeed } from './engine/simulation.js';
-import { saveState, loadState, clearSave } from './save.js';
-import { renderMenu, renderSelectingOrigin, renderPlaying, renderEnd } from './ui/screens.js';
+import { saveState, loadState, clearSave, hasSeenTutorial, markTutorialSeen } from './save.js';
+import { renderMenu, renderTutorial, renderSelectingOrigin, renderPlaying, renderEnd } from './ui/screens.js';
 
 const app = document.getElementById('app');
 
 let state = loadState() || createInitialState();
+let showTutorial = false;
+let tutorialPendingNewGame = false;
+
+function startNewGame() {
+  clearSave();
+  state = createInitialState();
+  beginNewGame(state);
+}
 
 function render() {
+  if (showTutorial) {
+    app.innerHTML = renderTutorial();
+    return;
+  }
   switch (state.status) {
     case 'selecting-origin':
       app.innerHTML = renderSelectingOrigin(state);
@@ -31,9 +43,24 @@ app.addEventListener('click', (event) => {
 
   switch (action) {
     case 'new-game':
-      clearSave();
-      state = createInitialState();
-      beginNewGame(state);
+      if (!hasSeenTutorial()) {
+        showTutorial = true;
+        tutorialPendingNewGame = true;
+      } else {
+        startNewGame();
+      }
+      break;
+    case 'show-tutorial':
+      showTutorial = true;
+      tutorialPendingNewGame = false;
+      break;
+    case 'tutorial-continue':
+      markTutorialSeen();
+      showTutorial = false;
+      if (tutorialPendingNewGame) {
+        startNewGame();
+        tutorialPendingNewGame = false;
+      }
       break;
     case 'resume-game': {
       const saved = loadState();
@@ -60,8 +87,9 @@ app.addEventListener('click', (event) => {
   render();
 });
 
-const TICK_MS = 700;
+const TICK_MS = 1000;
 setInterval(() => {
+  if (document.hidden) return;
   if (state.status !== 'playing' || state.speed <= 0) return;
   for (let i = 0; i < state.speed; i += 1) {
     simulateTick(state);

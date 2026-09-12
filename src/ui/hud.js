@@ -6,17 +6,30 @@ function speedButton(state, value, label) {
   return `<button class="speed-btn${active}" data-action="set-speed" data-speed="${value}">${label}</button>`;
 }
 
+const NEXT_LEVEL_EFFECT = {
+  propagation: (pct) => `Prochain niveau : +${pct}% de vitesse de propagation vers les voisins.`,
+  resilience: (pct) => `Prochain niveau : +${pct}% de résistance aux mesures de confinement (locales et à la propagation).`,
+  discretion: (pct) => `Prochain niveau : +${pct}% de ralentissement de la prise de conscience mondiale.`
+};
+
 function upgradeRow(state, kind) {
   const cfg = BALANCE.upgrades[kind];
   const level = state.upgrades[kind];
   const maxed = level >= cfg.maxLevel;
   const cost = maxed ? '—' : upgradeCost(kind, level);
   const canAfford = !maxed && state.influence >= upgradeCost(kind, level);
+  const nextLevelText = maxed
+    ? 'Niveau maximum atteint.'
+    : NEXT_LEVEL_EFFECT[kind](Math.round(cfg.effectPerLevel * 100));
   return `
     <div class="upgrade-row">
       <div class="upgrade-info">
-        <strong>${cfg.label}</strong> <span class="upgrade-level">Niv. ${level}/${cfg.maxLevel}</span>
+        <div class="upgrade-title-row">
+          <strong>${cfg.label}</strong>
+          <span class="upgrade-level">Niv. ${level}/${cfg.maxLevel}${maxed ? '' : ` → ${level + 1}`}</span>
+        </div>
         <p>${cfg.description}</p>
+        <p class="upgrade-next">${nextLevelText}</p>
       </div>
       <button class="upgrade-btn" data-action="buy-upgrade" data-kind="${kind}" ${maxed || !canAfford ? 'disabled' : ''}>
         ${maxed ? 'Max' : `${cost} inf.`}

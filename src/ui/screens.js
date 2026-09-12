@@ -1,5 +1,6 @@
 import { renderMap, renderMapLegend } from './map.js';
 import { renderHud } from './hud.js';
+import { BALANCE } from '../engine/balance.js';
 
 export function renderMenu(hasSave) {
   return `
@@ -10,8 +11,36 @@ export function renderMenu(hasSave) {
       <div class="menu-actions">
         <button class="primary-btn" data-action="new-game">Nouvelle partie</button>
         ${hasSave ? '<button class="secondary-btn" data-action="resume-game">Reprendre la partie</button>' : ''}
+        <button class="link-btn" data-action="show-tutorial">Comment jouer ?</button>
       </div>
-      <p class="version-tag">V0 — build bêta</p>
+      <p class="version-tag">V1 — build bêta</p>
+    </div>`;
+}
+
+export function renderTutorial() {
+  return `
+    <div class="screen tutorial-screen">
+      <div class="tutorial-card">
+        <div class="tutorial-block">
+          <h3>QUI JE SUIS</h3>
+          <p>Tu contrôles une Anomalie apparue dans le réseau.</p>
+        </div>
+        <div class="tutorial-block">
+          <h3>MON OBJECTIF</h3>
+          <p>Étends ton influence avant que le monde ne parvienne à te contenir.</p>
+        </div>
+        <div class="tutorial-block">
+          <h3>MA RESSOURCE</h3>
+          <p>Tu gagnes de l'Influence, à investir pour faire évoluer l'Anomalie.</p>
+        </div>
+        <div class="tutorial-block">
+          <h3>MES TROIS ORIENTATIONS</h3>
+          <p><strong>Propagation</strong> → facilite ton expansion.</p>
+          <p><strong>Résilience</strong> → améliore ta résistance au confinement.</p>
+          <p><strong>Discrétion</strong> → retarde la réaction du monde.</p>
+        </div>
+      </div>
+      <button class="primary-btn" data-action="tutorial-continue">JOUER</button>
     </div>`;
 }
 
@@ -61,7 +90,7 @@ export function renderEnd(state) {
       <p>${explanation}</p>
       <div class="end-stats">
         <div>Jours écoulés : ${state.day}</div>
-        <div>Domination atteinte : ${state.dominance.toFixed(0)}% <span class="end-stat-hint">(seuil de victoire : 75%)</span></div>
+        <div>Domination atteinte : ${state.dominance.toFixed(0)}% <span class="end-stat-hint">(seuil de victoire : ${BALANCE.victoryDominanceThreshold}%)</span></div>
         <div>Confinement mondial : ${state.globalContainment.toFixed(0)}% <span class="end-stat-hint">(seuil de défaite : 100%)</span></div>
       </div>
       <button class="primary-btn" data-action="new-game">Recommencer</button>

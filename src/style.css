@@ -88,6 +88,43 @@ button {
   margin-top: 24px;
 }
 
+.link-btn {
+  background: transparent;
+  color: #7f8b99;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  padding: 8px;
+}
+
+.tutorial-screen {
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 16px;
+  padding-top: max(env(safe-area-inset-top), 24px);
+}
+
+.tutorial-card {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+}
+
+.tutorial-block h3 {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: #e06b2d;
+}
+
+.tutorial-block p {
+  margin: 0 0 2px;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
 .origin-screen {
   gap: 12px;
 }
@@ -304,8 +341,21 @@ button {
   padding: 8px 10px;
 }
 
+.upgrade-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .upgrade-info strong {
   font-size: 0.85rem;
+}
+
+.upgrade-next {
+  margin: 4px 0 0;
+  font-size: 0.66rem;
+  color: #c9a227;
 }
 
 .upgrade-level {

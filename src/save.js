@@ -32,3 +32,21 @@ export function clearSave() {
     console.warn('Suppression de sauvegarde impossible', e);
   }
 }
+
+const TUTORIAL_KEY = 'rupture-v0-tutorial-seen';
+
+export function hasSeenTutorial() {
+  try {
+    return localStorage.getItem(TUTORIAL_KEY) === '1';
+  } catch (e) {
+    return false;
+  }
+}
+
+export function markTutorialSeen() {
+  try {
+    localStorage.setItem(TUTORIAL_KEY, '1');
+  } catch (e) {
+    console.warn('Impossible de mémoriser que le tutoriel a été vu', e);
+  }
+}
