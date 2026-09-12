@@ -1,0 +1,2136 @@
+{
+  "generatedAt": "2026-09-12T14:30:38.621Z",
+  "totalRuns": 112,
+  "summary": [
+    {
+      "strategy": "passive",
+      "runs": 14,
+      "victoires": 0,
+      "defaites": 14,
+      "tauxVictoire": "0%",
+      "dureeJoursMin": 722,
+      "dureeJoursMax": 765,
+      "dureeJoursMoyenne": 746,
+      "influenceGagneeMoyenne": 272,
+      "influenceDepenseeMoyenne": 0,
+      "partiesBloqueesOuNonTerminees": 0,
+      "etatsIncoherents": 0
+    },
+    {
+      "strategy": "propagation-dominante",
+      "runs": 14,
+      "victoires": 13,
+      "defaites": 1,
+      "tauxVictoire": "93%",
+      "dureeJoursMin": 649,
+      "dureeJoursMax": 735,
+      "dureeJoursMoyenne": 699,
+      "influenceGagneeMoyenne": 281,
+      "influenceDepenseeMoyenne": 227,
+      "partiesBloqueesOuNonTerminees": 0,
+      "etatsIncoherents": 0
+    },
+    {
+      "strategy": "resilience-dominante",
+      "runs": 14,
+      "victoires": 0,
+      "defaites": 14,
+      "tauxVictoire": "0%",
+      "dureeJoursMin": 720,
+      "dureeJoursMax": 762,
+      "dureeJoursMoyenne": 744,
+      "influenceGagneeMoyenne": 276,
+      "influenceDepenseeMoyenne": 204,
+      "partiesBloqueesOuNonTerminees": 0,
+      "etatsIncoherents": 0
+    },
+    {
+      "strategy": "discretion-dominante",
+      "runs": 14,
+      "victoires": 13,
+      "defaites": 1,
+      "tauxVictoire": "93%",
+      "dureeJoursMin": 747,
+      "dureeJoursMax": 824,
+      "dureeJoursMoyenne": 790,
+      "influenceGagneeMoyenne": 384,
+      "influenceDepenseeMoyenne": 367,
+      "partiesBloqueesOuNonTerminees": 0,
+      "etatsIncoherents": 0
+    },
+    {
+      "strategy": "equilibree",
+      "runs": 14,
+      "victoires": 14,
+      "defaites": 0,
+      "tauxVictoire": "100%",
+      "dureeJoursMin": 670,
+      "dureeJoursMax": 755,
+      "dureeJoursMoyenne": 718,
+      "influenceGagneeMoyenne": 302,
+      "influenceDepenseeMoyenne": 277,
+      "partiesBloqueesOuNonTerminees": 0,
+      "etatsIncoherents": 0
+    },
+    {
+      "strategy": "agressive",
+      "runs": 14,
+      "victoires": 14,
+      "defaites": 0,
+      "tauxVictoire": "100%",
+      "dureeJoursMin": 670,
+      "dureeJoursMax": 755,
+      "dureeJoursMoyenne": 718,
+      "influenceGagneeMoyenne": 302,
+      "influenceDepenseeMoyenne": 277,
+      "partiesBloqueesOuNonTerminees": 0,
+      "etatsIncoherents": 0
+    },
+    {
+      "strategy": "prudente",
+      "runs": 14,
+      "victoires": 14,
+      "defaites": 0,
+      "tauxVictoire": "100%",
+      "dureeJoursMin": 680,
+      "dureeJoursMax": 766,
+      "dureeJoursMoyenne": 729,
+      "influenceGagneeMoyenne": 306,
+      "influenceDepenseeMoyenne": 233,
+      "partiesBloqueesOuNonTerminees": 0,
+      "etatsIncoherents": 0
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "runs": 14,
+      "victoires": 13,
+      "defaites": 1,
+      "tauxVictoire": "93%",
+      "dureeJoursMin": 692,
+      "dureeJoursMax": 779,
+      "dureeJoursMoyenne": 733,
+      "influenceGagneeMoyenne": 315,
+      "influenceDepenseeMoyenne": 252,
+      "partiesBloqueesOuNonTerminees": 0,
+      "etatsIncoherents": 0
+    }
+  ],
+  "results": [
+    {
+      "strategy": "passive",
+      "origin": "arca",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 760,
+      "dominance": 66.77,
+      "globalContainment": 100,
+      "influenceRemaining": 265.28,
+      "influenceEarned": 265.28,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "boreal",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 742,
+      "dominance": 68.51,
+      "globalContainment": 100,
+      "influenceRemaining": 296.42,
+      "influenceEarned": 296.42,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "cindra",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 749,
+      "dominance": 66.28,
+      "globalContainment": 100,
+      "influenceRemaining": 265.81,
+      "influenceEarned": 265.81,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "delthia",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 760,
+      "dominance": 64.91,
+      "globalContainment": 100,
+      "influenceRemaining": 243.22,
+      "influenceEarned": 243.22,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "esser",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 741,
+      "dominance": 69.58,
+      "globalContainment": 100,
+      "influenceRemaining": 284.15,
+      "influenceEarned": 284.15,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "fenwick",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 722,
+      "dominance": 72.77,
+      "globalContainment": 100,
+      "influenceRemaining": 328.1,
+      "influenceEarned": 328.1,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "gora",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 731,
+      "dominance": 69.67,
+      "globalContainment": 100,
+      "influenceRemaining": 289.07,
+      "influenceEarned": 289.07,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "halvern",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 755,
+      "dominance": 66.21,
+      "globalContainment": 100,
+      "influenceRemaining": 239.39,
+      "influenceEarned": 239.39,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "ismer",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 743,
+      "dominance": 66.54,
+      "globalContainment": 100,
+      "influenceRemaining": 257.78,
+      "influenceEarned": 257.78,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "jotun",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 724,
+      "dominance": 70.82,
+      "globalContainment": 100,
+      "influenceRemaining": 310.96,
+      "influenceEarned": 310.96,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "kelsor",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 737,
+      "dominance": 69.03,
+      "globalContainment": 100,
+      "influenceRemaining": 281.11,
+      "influenceEarned": 281.11,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "lyrath",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 765,
+      "dominance": 62.47,
+      "globalContainment": 100,
+      "influenceRemaining": 231.19,
+      "influenceEarned": 231.19,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "meridia",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 748,
+      "dominance": 66.05,
+      "globalContainment": 100,
+      "influenceRemaining": 272.85,
+      "influenceEarned": 272.85,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "passive",
+      "origin": "nyxor",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 760,
+      "dominance": 64.3,
+      "globalContainment": 100,
+      "influenceRemaining": 247.31,
+      "influenceEarned": 247.31,
+      "influenceSpent": 0,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "arca",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 720,
+      "dominance": 90.29,
+      "globalContainment": 91.3,
+      "influenceRemaining": 7.6,
+      "influenceEarned": 292.6,
+      "influenceSpent": 285,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "boreal",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 693,
+      "dominance": 90.25,
+      "globalContainment": 82.47,
+      "influenceRemaining": 4.47,
+      "influenceEarned": 309.47,
+      "influenceSpent": 305,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 1,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "cindra",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 712,
+      "dominance": 90.16,
+      "globalContainment": 94.99,
+      "influenceRemaining": 14.89,
+      "influenceEarned": 299.89,
+      "influenceSpent": 285,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "delthia",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 727,
+      "dominance": 90.04,
+      "globalContainment": 93.78,
+      "influenceRemaining": 104.17,
+      "influenceEarned": 271.17,
+      "influenceSpent": 167,
+      "upgrades": {
+        "propagation": 4,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "esser",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 687,
+      "dominance": 90.06,
+      "globalContainment": 73.31,
+      "influenceRemaining": 111.45,
+      "influenceEarned": 278.45,
+      "influenceSpent": 167,
+      "upgrades": {
+        "propagation": 4,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "fenwick",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 649,
+      "dominance": 90.1,
+      "globalContainment": 58.28,
+      "influenceRemaining": 3.23,
+      "influenceEarned": 288.23,
+      "influenceSpent": 285,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "gora",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 678,
+      "dominance": 90.06,
+      "globalContainment": 75.7,
+      "influenceRemaining": 4.95,
+      "influenceEarned": 289.95,
+      "influenceSpent": 285,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "halvern",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 715,
+      "dominance": 90.59,
+      "globalContainment": 81.02,
+      "influenceRemaining": 74.4,
+      "influenceEarned": 241.4,
+      "influenceSpent": 167,
+      "upgrades": {
+        "propagation": 4,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "ismer",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 700,
+      "dominance": 90.48,
+      "globalContainment": 82.59,
+      "influenceRemaining": 100.86,
+      "influenceEarned": 267.86,
+      "influenceSpent": 167,
+      "upgrades": {
+        "propagation": 4,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "jotun",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 659,
+      "dominance": 90.37,
+      "globalContainment": 64.19,
+      "influenceRemaining": 1.72,
+      "influenceEarned": 286.72,
+      "influenceSpent": 285,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "kelsor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 682,
+      "dominance": 90.12,
+      "globalContainment": 72.35,
+      "influenceRemaining": 105.51,
+      "influenceEarned": 272.51,
+      "influenceSpent": 167,
+      "upgrades": {
+        "propagation": 4,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "lyrath",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 735,
+      "dominance": 89.58,
+      "globalContainment": 100,
+      "influenceRemaining": 101.95,
+      "influenceEarned": 268.95,
+      "influenceSpent": 167,
+      "upgrades": {
+        "propagation": 4,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "meridia",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 704,
+      "dominance": 90.07,
+      "globalContainment": 87.26,
+      "influenceRemaining": 7.55,
+      "influenceEarned": 292.55,
+      "influenceSpent": 285,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "propagation-dominante",
+      "origin": "nyxor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 723,
+      "dominance": 90.29,
+      "globalContainment": 92.44,
+      "influenceRemaining": 108.61,
+      "influenceEarned": 275.61,
+      "influenceSpent": 167,
+      "upgrades": {
+        "propagation": 4,
+        "resilience": 0,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "arca",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 758,
+      "dominance": 69.15,
+      "globalContainment": 100,
+      "influenceRemaining": 82.57,
+      "influenceEarned": 267.57,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "boreal",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 740,
+      "dominance": 72.59,
+      "globalContainment": 100,
+      "influenceRemaining": 116.88,
+      "influenceEarned": 301.88,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "cindra",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 747,
+      "dominance": 68.33,
+      "globalContainment": 100,
+      "influenceRemaining": 82.84,
+      "influenceEarned": 267.84,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "delthia",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 758,
+      "dominance": 67.72,
+      "globalContainment": 100,
+      "influenceRemaining": 60.55,
+      "influenceEarned": 245.55,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "esser",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 739,
+      "dominance": 72.21,
+      "globalContainment": 100,
+      "influenceRemaining": 102.16,
+      "influenceEarned": 287.16,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "fenwick",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 720,
+      "dominance": 75.58,
+      "globalContainment": 100,
+      "influenceRemaining": 15.7,
+      "influenceEarned": 331.7,
+      "influenceSpent": 316,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 5,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "gora",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 729,
+      "dominance": 72.71,
+      "globalContainment": 100,
+      "influenceRemaining": 108.54,
+      "influenceEarned": 293.54,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "halvern",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 753,
+      "dominance": 69,
+      "globalContainment": 100,
+      "influenceRemaining": 55.48,
+      "influenceEarned": 240.48,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "ismer",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 741,
+      "dominance": 69.16,
+      "globalContainment": 100,
+      "influenceRemaining": 75.23,
+      "influenceEarned": 260.23,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "jotun",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 723,
+      "dominance": 74.41,
+      "globalContainment": 100,
+      "influenceRemaining": 0.63,
+      "influenceEarned": 316.63,
+      "influenceSpent": 316,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 5,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "kelsor",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 735,
+      "dominance": 72.49,
+      "globalContainment": 100,
+      "influenceRemaining": 98.71,
+      "influenceEarned": 283.71,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "lyrath",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 762,
+      "dominance": 64.55,
+      "globalContainment": 100,
+      "influenceRemaining": 47.82,
+      "influenceEarned": 232.82,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "meridia",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 746,
+      "dominance": 68.96,
+      "globalContainment": 100,
+      "influenceRemaining": 91.82,
+      "influenceEarned": 276.82,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "resilience-dominante",
+      "origin": "nyxor",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 758,
+      "dominance": 68.5,
+      "globalContainment": 100,
+      "influenceRemaining": 66.51,
+      "influenceEarned": 251.51,
+      "influenceSpent": 185,
+      "upgrades": {
+        "propagation": 0,
+        "resilience": 4,
+        "discretion": 0
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "arca",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 811,
+      "dominance": 90.39,
+      "globalContainment": 85.05,
+      "influenceRemaining": 6.43,
+      "influenceEarned": 389.43,
+      "influenceSpent": 383,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "boreal",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 782,
+      "dominance": 90.26,
+      "globalContainment": 70.97,
+      "influenceRemaining": 18.02,
+      "influenceEarned": 401.02,
+      "influenceSpent": 383,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "cindra",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 802,
+      "dominance": 90.25,
+      "globalContainment": 87.62,
+      "influenceRemaining": 9.51,
+      "influenceEarned": 392.51,
+      "influenceSpent": 383,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "delthia",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 815,
+      "dominance": 90.23,
+      "globalContainment": 94.72,
+      "influenceRemaining": 21.86,
+      "influenceEarned": 375.86,
+      "influenceSpent": 354,
+      "upgrades": {
+        "propagation": 1,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "esser",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 780,
+      "dominance": 90.19,
+      "globalContainment": 71.37,
+      "influenceRemaining": 28.8,
+      "influenceEarned": 382.8,
+      "influenceSpent": 354,
+      "upgrades": {
+        "propagation": 1,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "fenwick",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 747,
+      "dominance": 90.53,
+      "globalContainment": 56.48,
+      "influenceRemaining": 13.84,
+      "influenceEarned": 396.84,
+      "influenceSpent": 383,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "gora",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 771,
+      "dominance": 90.08,
+      "globalContainment": 72.18,
+      "influenceRemaining": 8.43,
+      "influenceEarned": 391.43,
+      "influenceSpent": 383,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "halvern",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 802,
+      "dominance": 90.21,
+      "globalContainment": 88.27,
+      "influenceRemaining": 18.76,
+      "influenceEarned": 352.76,
+      "influenceSpent": 334,
+      "upgrades": {
+        "propagation": 1,
+        "resilience": 0,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "ismer",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 790,
+      "dominance": 90.07,
+      "globalContainment": 82.69,
+      "influenceRemaining": 18.02,
+      "influenceEarned": 372.02,
+      "influenceSpent": 354,
+      "upgrades": {
+        "propagation": 1,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "jotun",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 755,
+      "dominance": 90.19,
+      "globalContainment": 61.48,
+      "influenceRemaining": 9.59,
+      "influenceEarned": 392.59,
+      "influenceSpent": 383,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "kelsor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 777,
+      "dominance": 90.06,
+      "globalContainment": 73.25,
+      "influenceRemaining": 27.35,
+      "influenceEarned": 381.35,
+      "influenceSpent": 354,
+      "upgrades": {
+        "propagation": 1,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "lyrath",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 824,
+      "dominance": 89.88,
+      "globalContainment": 100,
+      "influenceRemaining": 16.28,
+      "influenceEarned": 370.28,
+      "influenceSpent": 354,
+      "upgrades": {
+        "propagation": 1,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "meridia",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 796,
+      "dominance": 90.07,
+      "globalContainment": 80.93,
+      "influenceRemaining": 9.12,
+      "influenceEarned": 392.12,
+      "influenceSpent": 383,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "discretion-dominante",
+      "origin": "nyxor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 814,
+      "dominance": 90.08,
+      "globalContainment": 91.29,
+      "influenceRemaining": 24.75,
+      "influenceEarned": 378.75,
+      "influenceSpent": 354,
+      "upgrades": {
+        "propagation": 1,
+        "resilience": 1,
+        "discretion": 5
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "arca",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 739,
+      "dominance": 90.32,
+      "globalContainment": 70.92,
+      "influenceRemaining": 11.91,
+      "influenceEarned": 310.91,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "boreal",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 712,
+      "dominance": 90.27,
+      "globalContainment": 60.57,
+      "influenceRemaining": 31.23,
+      "influenceEarned": 330.23,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "cindra",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 733,
+      "dominance": 90.27,
+      "globalContainment": 76.35,
+      "influenceRemaining": 24.62,
+      "influenceEarned": 323.62,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "delthia",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 745,
+      "dominance": 90.27,
+      "globalContainment": 79.87,
+      "influenceRemaining": 45.42,
+      "influenceEarned": 293.42,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "esser",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 707,
+      "dominance": 90.21,
+      "globalContainment": 58.7,
+      "influenceRemaining": 1.08,
+      "influenceEarned": 300.08,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "fenwick",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 670,
+      "dominance": 90.08,
+      "globalContainment": 43.97,
+      "influenceRemaining": 10.08,
+      "influenceEarned": 309.08,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "gora",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 698,
+      "dominance": 90.32,
+      "globalContainment": 59.97,
+      "influenceRemaining": 12.76,
+      "influenceEarned": 311.76,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "halvern",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 731,
+      "dominance": 90.24,
+      "globalContainment": 71.59,
+      "influenceRemaining": 11.6,
+      "influenceEarned": 259.6,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "ismer",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 718,
+      "dominance": 90.14,
+      "globalContainment": 68.79,
+      "influenceRemaining": 39.09,
+      "influenceEarned": 287.09,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "jotun",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 679,
+      "dominance": 90.34,
+      "globalContainment": 49.05,
+      "influenceRemaining": 7.65,
+      "influenceEarned": 306.65,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "kelsor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 702,
+      "dominance": 90.07,
+      "globalContainment": 59.31,
+      "influenceRemaining": 46.53,
+      "influenceEarned": 294.53,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "lyrath",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 755,
+      "dominance": 90.15,
+      "globalContainment": 86.86,
+      "influenceRemaining": 44.88,
+      "influenceEarned": 292.88,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "meridia",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 725,
+      "dominance": 90.3,
+      "globalContainment": 68.97,
+      "influenceRemaining": 18.06,
+      "influenceEarned": 317.06,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "equilibree",
+      "origin": "nyxor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 742,
+      "dominance": 90.12,
+      "globalContainment": 76.28,
+      "influenceRemaining": 49.73,
+      "influenceEarned": 297.73,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "arca",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 739,
+      "dominance": 90.32,
+      "globalContainment": 70.83,
+      "influenceRemaining": 12.36,
+      "influenceEarned": 311.36,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "boreal",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 712,
+      "dominance": 90.27,
+      "globalContainment": 60.57,
+      "influenceRemaining": 31.23,
+      "influenceEarned": 330.23,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "cindra",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 733,
+      "dominance": 90.27,
+      "globalContainment": 76.3,
+      "influenceRemaining": 24.53,
+      "influenceEarned": 323.53,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "delthia",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 745,
+      "dominance": 90.21,
+      "globalContainment": 79.42,
+      "influenceRemaining": 44.14,
+      "influenceEarned": 292.14,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "esser",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 707,
+      "dominance": 90.21,
+      "globalContainment": 58.71,
+      "influenceRemaining": 1.16,
+      "influenceEarned": 300.16,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "fenwick",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 670,
+      "dominance": 90.08,
+      "globalContainment": 43.97,
+      "influenceRemaining": 10.08,
+      "influenceEarned": 309.08,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "gora",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 698,
+      "dominance": 90.32,
+      "globalContainment": 60,
+      "influenceRemaining": 12.87,
+      "influenceEarned": 311.87,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "halvern",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 731,
+      "dominance": 90.24,
+      "globalContainment": 71.59,
+      "influenceRemaining": 11.6,
+      "influenceEarned": 259.6,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "ismer",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 718,
+      "dominance": 90.14,
+      "globalContainment": 68.9,
+      "influenceRemaining": 39.36,
+      "influenceEarned": 287.36,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "jotun",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 679,
+      "dominance": 90.34,
+      "globalContainment": 49.06,
+      "influenceRemaining": 7.71,
+      "influenceEarned": 306.71,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "kelsor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 702,
+      "dominance": 90.07,
+      "globalContainment": 59.31,
+      "influenceRemaining": 46.53,
+      "influenceEarned": 294.53,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "lyrath",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 755,
+      "dominance": 90.15,
+      "globalContainment": 86.94,
+      "influenceRemaining": 45.4,
+      "influenceEarned": 293.4,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "meridia",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 725,
+      "dominance": 90.3,
+      "globalContainment": 68.97,
+      "influenceRemaining": 18.05,
+      "influenceEarned": 317.05,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "agressive",
+      "origin": "nyxor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 742,
+      "dominance": 90.12,
+      "globalContainment": 76.27,
+      "influenceRemaining": 49.68,
+      "influenceEarned": 297.68,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "arca",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 749,
+      "dominance": 90.16,
+      "globalContainment": 82.64,
+      "influenceRemaining": 64.76,
+      "influenceEarned": 312.76,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "boreal",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 720,
+      "dominance": 90.02,
+      "globalContainment": 70.19,
+      "influenceRemaining": 82.33,
+      "influenceEarned": 330.33,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "cindra",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 743,
+      "dominance": 90.26,
+      "globalContainment": 88.31,
+      "influenceRemaining": 76.57,
+      "influenceEarned": 324.57,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "delthia",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 756,
+      "dominance": 90.25,
+      "globalContainment": 92.29,
+      "influenceRemaining": 99.38,
+      "influenceEarned": 296.38,
+      "influenceSpent": 197,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 2,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "esser",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 717,
+      "dominance": 90.11,
+      "globalContainment": 69.28,
+      "influenceRemaining": 56.18,
+      "influenceEarned": 304.18,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "fenwick",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 680,
+      "dominance": 90.39,
+      "globalContainment": 53.24,
+      "influenceRemaining": 67.72,
+      "influenceEarned": 315.72,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "gora",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 708,
+      "dominance": 90.4,
+      "globalContainment": 70.8,
+      "influenceRemaining": 68.18,
+      "influenceEarned": 316.18,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "halvern",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 742,
+      "dominance": 90.41,
+      "globalContainment": 83.59,
+      "influenceRemaining": 69.82,
+      "influenceEarned": 266.82,
+      "influenceSpent": 197,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 2,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "ismer",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 729,
+      "dominance": 90.35,
+      "globalContainment": 81.06,
+      "influenceRemaining": 95.73,
+      "influenceEarned": 292.73,
+      "influenceSpent": 197,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 2,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "jotun",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 689,
+      "dominance": 90.48,
+      "globalContainment": 58.74,
+      "influenceRemaining": 64.56,
+      "influenceEarned": 312.56,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "kelsor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 713,
+      "dominance": 90.32,
+      "globalContainment": 70.58,
+      "influenceRemaining": 52.74,
+      "influenceEarned": 300.74,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "lyrath",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 766,
+      "dominance": 90.12,
+      "globalContainment": 100,
+      "influenceRemaining": 99.27,
+      "influenceEarned": 296.27,
+      "influenceSpent": 197,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 2,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "meridia",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 735,
+      "dominance": 90.43,
+      "globalContainment": 81,
+      "influenceRemaining": 72.54,
+      "influenceEarned": 320.54,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "prudente",
+      "origin": "nyxor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 753,
+      "dominance": 90.16,
+      "globalContainment": 89.51,
+      "influenceRemaining": 53.06,
+      "influenceEarned": 301.06,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "arca",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 743,
+      "dominance": 90.03,
+      "globalContainment": 76.44,
+      "influenceRemaining": 63.71,
+      "influenceEarned": 311.71,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "boreal",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 723,
+      "dominance": 90.17,
+      "globalContainment": 71.01,
+      "influenceRemaining": 10.32,
+      "influenceEarned": 340.32,
+      "influenceSpent": 330,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 4,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "cindra",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 733,
+      "dominance": 90.15,
+      "globalContainment": 86.86,
+      "influenceRemaining": 65.96,
+      "influenceEarned": 313.96,
+      "influenceSpent": 248,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "delthia",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 760,
+      "dominance": 90,
+      "globalContainment": 68.88,
+      "influenceRemaining": 119.7,
+      "influenceEarned": 284.7,
+      "influenceSpent": 165,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 1,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "esser",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 725,
+      "dominance": 90.06,
+      "globalContainment": 55.93,
+      "influenceRemaining": 58.79,
+      "influenceEarned": 311.79,
+      "influenceSpent": 253,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "fenwick",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 708,
+      "dominance": 90.31,
+      "globalContainment": 84.44,
+      "influenceRemaining": 147.71,
+      "influenceEarned": 371.71,
+      "influenceSpent": 224,
+      "upgrades": {
+        "propagation": 1,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "gora",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 711,
+      "dominance": 90.07,
+      "globalContainment": 57.64,
+      "influenceRemaining": 78.1,
+      "influenceEarned": 331.1,
+      "influenceSpent": 253,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "halvern",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 735,
+      "dominance": 90.21,
+      "globalContainment": 78.18,
+      "influenceRemaining": 18.51,
+      "influenceEarned": 271.51,
+      "influenceSpent": 253,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "ismer",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 725,
+      "dominance": 90.33,
+      "globalContainment": 90.59,
+      "influenceRemaining": 53.01,
+      "influenceEarned": 306.01,
+      "influenceSpent": 253,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "jotun",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 692,
+      "dominance": 90.37,
+      "globalContainment": 46.66,
+      "influenceRemaining": 20.69,
+      "influenceEarned": 319.69,
+      "influenceSpent": 299,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "kelsor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 715,
+      "dominance": 90.1,
+      "globalContainment": 44.47,
+      "influenceRemaining": 96.96,
+      "influenceEarned": 293.96,
+      "influenceSpent": 197,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 2,
+        "discretion": 2
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "lyrath",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 779,
+      "dominance": 90.11,
+      "globalContainment": 94.06,
+      "influenceRemaining": 53.5,
+      "influenceEarned": 306.5,
+      "influenceSpent": 253,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "meridia",
+      "status": "defeat",
+      "endReason": "containment",
+      "days": 734,
+      "dominance": 89.02,
+      "globalContainment": 100,
+      "influenceRemaining": 30.38,
+      "influenceEarned": 328.38,
+      "influenceSpent": 298,
+      "upgrades": {
+        "propagation": 3,
+        "resilience": 4,
+        "discretion": 1
+      },
+      "hitTickCap": false
+    },
+    {
+      "strategy": "semi-aleatoire",
+      "origin": "nyxor",
+      "status": "victory",
+      "endReason": "dominance",
+      "days": 777,
+      "dominance": 90.07,
+      "globalContainment": 69.47,
+      "influenceRemaining": 63.85,
+      "influenceEarned": 316.85,
+      "influenceSpent": 253,
+      "upgrades": {
+        "propagation": 2,
+        "resilience": 3,
+        "discretion": 3
+      },
+      "hitTickCap": false
+    }
+  ]
+}
