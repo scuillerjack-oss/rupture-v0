@@ -99,13 +99,23 @@ function runOne(strategyName, originId) {
   let totalEarned = 0;
   let totalSpent = 0;
   let ticks = 0;
+  let firstPurchaseDay = null;
+  let secondPurchaseDay = null;
+  let purchaseCount = 0;
   for (; ticks < MAX_TICKS && state.status === 'playing'; ticks++) {
     const beforeTick = state.influence;
     simulateTick(state);
     const afterTick = state.influence;
     totalEarned += Math.max(0, afterTick - beforeTick);
 
+    const upgradesBefore = state.upgrades.propagation + state.upgrades.resilience + state.upgrades.discretion;
     decide(state);
+    const upgradesAfter = state.upgrades.propagation + state.upgrades.resilience + state.upgrades.discretion;
+    if (upgradesAfter > upgradesBefore) {
+      purchaseCount += upgradesAfter - upgradesBefore;
+      if (firstPurchaseDay === null) firstPurchaseDay = state.day;
+      else if (secondPurchaseDay === null) secondPurchaseDay = state.day;
+    }
     const afterDecide = state.influence;
     totalSpent += Math.max(0, afterTick - afterDecide);
   }
@@ -116,6 +126,9 @@ function runOne(strategyName, originId) {
     status: state.status,
     endReason: state.endReason,
     days: state.day,
+    firstPurchaseDay,
+    secondPurchaseDay,
+    purchaseCount,
     dominance: Number(state.dominance.toFixed(2)),
     globalContainment: Number(state.globalContainment.toFixed(2)),
     influenceRemaining: Number(state.influence.toFixed(2)),
@@ -156,10 +169,15 @@ for (const [strategy, rows] of Object.entries(byStrategy)) {
   );
   const earned = rows.map((r) => r.influenceEarned);
   const spent = rows.map((r) => r.influenceSpent);
+  const firstDays = rows.map((r) => r.firstPurchaseDay).filter((d) => d !== null);
+  const secondDays = rows.map((r) => r.secondPurchaseDay).filter((d) => d !== null);
+  const avg = (arr) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null);
   summary.push({
     strategy,
     runs: rows.length,
     victoires: wins,
+    premierAchatJourMoyen: avg(firstDays),
+    deuxiemeAchatJourMoyen: avg(secondDays),
     defaites: rows.length - wins,
     tauxVictoire: `${Math.round((wins / rows.length) * 100)}%`,
     dureeJoursMin: Math.min(...days),

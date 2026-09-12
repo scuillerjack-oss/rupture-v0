@@ -240,6 +240,28 @@ test('Monte-Carlo: a sustained aggressive upgrade strategy wins from every origi
   assert.equal(wins, TERRITORIES.length, 'a sustained diversified strategy should win from every origin');
 });
 
+// Regression test added after the first human smartphone beta: at day 287 the
+// player had only ~20 Influence (barely enough for a first purchase), because
+// the tension curve that paces the mid/late game also starves the very start
+// of any real income. A tapering early trickle now covers that gap. Lock in
+// the fix here, on several origins (the player is free to choose any origin -
+// the fix must not be tuned around a single one).
+test('REGRESSION (post-beta1): the first affordable upgrade purchase arrives within a reasonable early window, from any origin', () => {
+  const cost = upgradeCost('propagation', 0);
+  for (const originId of ['jotun', 'fenwick', 'arca', 'lyrath', 'nyxor', 'halvern']) {
+    const state = freshGame(originId);
+    let firstAffordableDay = null;
+    for (let i = 0; i < 200 && firstAffordableDay === null; i++) {
+      simulateTick(state);
+      if (state.influence >= cost) firstAffordableDay = state.day;
+    }
+    assert.ok(
+      firstAffordableDay !== null && firstAffordableDay <= 60,
+      `origin=${originId}: first affordable purchase should land well before day 60, got ${firstAffordableDay}`
+    );
+  }
+});
+
 test('speed (×1/×2/×4) is purely cosmetic: batching ticks (as ×2/×4 do) yields the exact same state as ticking one by one', () => {
   // ×2/×4 only change how many simulateTick() calls happen per render frame in
   // main.js; they must not change the simulation's own logic. We neutralize the

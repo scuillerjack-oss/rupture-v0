@@ -87,7 +87,13 @@ export function simulateTick(state) {
     0,
     100
   );
-  state.influence += influenceGain * BALANCE.influenceGainFactor;
+  // Crisis-driven income alone is scaled by tension, which starts extremely low so the
+  // opening feels calm - but that also starves the player of any real choice for a very
+  // long stretch. A separate, tapering trickle covers exactly that gap: it matters early
+  // (when tension is near its minimum) and fades itself out as the real crisis-driven
+  // economy takes over (tension rising toward 1), so it never inflates the mid/late game.
+  const earlyTrickle = BALANCE.earlyInfluenceTrickle * clamp(1 - tension, 0, 1);
+  state.influence += influenceGain * BALANCE.influenceGainFactor + earlyTrickle;
   state.day += 1;
 
   if (state.dominance >= BALANCE.victoryDominanceThreshold) {

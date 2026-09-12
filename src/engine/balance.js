@@ -10,6 +10,7 @@ export const BALANCE = {
   routeCloseCheckChance: 0.05,
   globalContainmentGainFactor: 0.135,
   influenceGainFactor: 0.035,
+  earlyInfluenceTrickle: 0.62,
   victoryDominanceThreshold: 90,
   defeatContainmentThreshold: 100,
   maxDays: 2200,
