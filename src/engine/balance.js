@@ -9,10 +9,16 @@ export const BALANCE = {
   routeCloseAwarenessThreshold: 40,
   routeCloseCheckChance: 0.05,
   globalContainmentGainFactor: 0.135,
-  influenceGainFactor: 0.09,
-  victoryDominanceThreshold: 75,
+  influenceGainFactor: 0.035,
+  victoryDominanceThreshold: 90,
   defeatContainmentThreshold: 100,
-  maxDays: 400,
+  maxDays: 2200,
+  tension: {
+    min: 0.005,
+    max: 1.2,
+    rampDays: 1800,
+    power: 2.1
+  },
   upgrades: {
     propagation: {
       label: 'Propagation',
@@ -24,7 +30,7 @@ export const BALANCE = {
     },
     resilience: {
       label: 'Résilience',
-      description: "Réduit l'effet freinateur du confinement local sur la crise.",
+      description: "Permet à l'Anomalie de mieux résister aux mesures de confinement, localement et lors de sa propagation.",
       maxLevel: 5,
       baseCost: 20,
       costGrowth: 1.6,
@@ -44,4 +50,10 @@ export const BALANCE = {
 export function upgradeCost(kind, currentLevel) {
   const cfg = BALANCE.upgrades[kind];
   return Math.round(cfg.baseCost * Math.pow(cfg.costGrowth, currentLevel));
+}
+
+export function tensionAt(day) {
+  const { min, max, rampDays, power } = BALANCE.tension;
+  const progress = Math.max(0, Math.min(1, day / rampDays));
+  return min + (max - min) * Math.pow(progress, power);
 }

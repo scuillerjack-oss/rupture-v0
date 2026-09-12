@@ -1,6 +1,6 @@
 import { TERRITORIES } from './territories.js';
 import { adjacency, pushLog } from './state.js';
-import { BALANCE, upgradeCost } from './balance.js';
+import { BALANCE, upgradeCost, tensionAt } from './balance.js';
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
@@ -12,6 +12,7 @@ export function simulateTick(state) {
   const snapshot = {};
   for (const t of TERRITORIES) snapshot[t.id] = state.territories[t.id].crisis;
 
+  const tension = tensionAt(state.day);
   const propagationEffect = state.upgrades.propagation * BALANCE.upgrades.propagation.effectPerLevel;
   const resilienceEffect = clamp(state.upgrades.resilience * BALANCE.upgrades.resilience.effectPerLevel, 0, 0.8);
   const discretionEffect = clamp(state.upgrades.discretion * BALANCE.upgrades.discretion.effectPerLevel, 0, 0.8);
@@ -23,34 +24,40 @@ export function simulateTick(state) {
     let growth = 0;
     if (currentCrisis > 0) {
       const containmentFactor = 1 - (ts.containment / BALANCE.containmentDamping) * (1 - resilienceEffect);
-      growth = BALANCE.baseGrowthPerTick * Math.max(containmentFactor, 0.15);
+      growth = BALANCE.baseGrowthPerTick * Math.max(containmentFactor, 0.15) * tension;
     }
 
     let spreadIn = 0;
     for (const neighborId of adjacency.get(t.id)) {
-      if (ts.closedRoutes.includes(neighborId)) continue;
       const neighborCrisis = snapshot[neighborId];
-      if (neighborCrisis >= BALANCE.spreadThreshold) {
-        const spreadRate = BALANCE.baseSpreadPerTick * (1 + propagationEffect);
-        spreadIn += spreadRate * (neighborCrisis / 100);
-      }
+      if (neighborCrisis < BALANCE.spreadThreshold) continue;
+      const spreadRate = BALANCE.baseSpreadPerTick * (1 + propagationEffect) * tension;
+      const isClosed = ts.closedRoutes.includes(neighborId);
+      // A closed route mostly blocks the anomaly, but enough Résilience lets it
+      // partially force its way through anyway (resisting the containment measure
+      // itself, not just its local effects).
+      const routeFactor = isClosed ? resilienceEffect * 0.6 : 1;
+      spreadIn += spreadRate * (neighborCrisis / 100) * routeFactor;
     }
-    const incomingDamping = Math.max(1 - ts.containment / BALANCE.incomingSpreadContainmentDamping, 0.2);
+    const incomingDamping = Math.max(
+      1 - (ts.containment / BALANCE.incomingSpreadContainmentDamping) * (1 - resilienceEffect),
+      0.2
+    );
     spreadIn *= incomingDamping;
 
     const newCrisis = clamp(currentCrisis + growth + spreadIn, 0, 100);
 
     ts.awareness = clamp(
-      ts.awareness + (newCrisis - ts.awareness) * BALANCE.awarenessCatchupRate * (1 - discretionEffect),
+      ts.awareness + (newCrisis - ts.awareness) * BALANCE.awarenessCatchupRate * (1 - discretionEffect) * tension,
       0,
       100
     );
-    ts.containment = clamp(ts.containment + (ts.awareness * 0.6 - ts.containment) * 0.05, 0, 100);
+    ts.containment = clamp(ts.containment + (ts.awareness * 0.6 - ts.containment) * 0.05 * tension, 0, 100);
 
     if (ts.awareness > BALANCE.routeCloseAwarenessThreshold) {
       for (const neighborId of adjacency.get(t.id)) {
         if (ts.closedRoutes.includes(neighborId)) continue;
-        const chance = BALANCE.routeCloseCheckChance * (1 - discretionEffect);
+        const chance = BALANCE.routeCloseCheckChance * (1 - discretionEffect) * tension;
         if (Math.random() < chance) {
           ts.closedRoutes.push(neighborId);
           pushLog(state, `${t.name} ferme sa frontière avec un territoire voisin.`);
@@ -76,7 +83,7 @@ export function simulateTick(state) {
 
   state.dominance = clamp(weightedCrisis / totalPopulation, 0, 100);
   state.globalContainment = clamp(
-    state.globalContainment + (awarenessSum / TERRITORIES.length) * BALANCE.globalContainmentGainFactor,
+    state.globalContainment + (awarenessSum / TERRITORIES.length) * BALANCE.globalContainmentGainFactor * tension,
     0,
     100
   );
