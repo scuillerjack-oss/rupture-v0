@@ -10,6 +10,21 @@
 // "loop propre" ne se pose pas. Discret, légèrement inquiétant (intervalle
 // mineur, filtre passe-bas sombre), volume faible par défaut.
 //
+// V4.2 : bug réel trouvé après bêta manuelle PWA mobile - "Musique : Activée"
+// s'affichait mais aucun son n'était audible sur téléphone. Cause diagnostiquée
+// et mesurée (pas supposée) : les fréquences d'origine (55/65.4/82.4Hz)
+// plaçaient l'essentiel de l'énergie du son sous 200Hz - une bande que les
+// haut-parleurs de smartphone reproduisent très mal (souvent inaudible en
+// pratique). Vérifié par rendu hors-ligne (OfflineAudioContext) + filtre
+// passe-haut 200Hz en analyse (proxy de la réponse d'un haut-parleur de
+// téléphone) : seulement ~12% de l'énergie du signal survivait au-dessus de
+// ce seuil. Décalé de deux octaves (220/261.6/329.6Hz, toujours un accord
+// mineur discret) : même mesure, >100% de survie (la quasi-totalité de
+// l'énergie utile passe désormais dans une bande audible). Gain légèrement
+// réduit en compensation (les fréquences plus hautes sont perçues plus fort
+// à RMS égal). Les effets sonores (tone()) ne sont pas concernés par ce bug
+// (déjà dans un registre audible, 220-1046Hz) et n'ont pas été modifiés.
+//
 // Effets : achat/amélioration, changement de phase de la Réponse mondiale
 // (qui correspond aussi à la réaction humaine majeure - même événement dans
 // ce moteur), victoire, défaite. Volontairement peu nombreux et discrets :
@@ -40,17 +55,19 @@ function startMusicGraph() {
   musicStarted = true;
 
   const master = ctx.createGain();
-  master.gain.value = 0.14;
+  master.gain.value = 0.12;
   master.connect(ctx.destination);
   masterMusicGain = master;
 
   const filter = ctx.createBiquadFilter();
   filter.type = 'lowpass';
-  filter.frequency.value = 480;
+  filter.frequency.value = 900;
   filter.connect(master);
 
   const voices = [];
-  const freqs = [55, 65.4, 82.4]; // fondamentale, tierce mineure, quinte (Hz)
+  // V4.2 : décalé de deux octaves (était 55/65.4/82.4Hz) - voir le
+  // commentaire en tête de fichier pour le diagnostic et la mesure.
+  const freqs = [220, 261.6, 329.6]; // fondamentale, tierce mineure, quinte (Hz)
   freqs.forEach((freq, i) => {
     const osc = ctx.createOscillator();
     osc.type = i === 0 ? 'sine' : 'triangle';
