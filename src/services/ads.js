@@ -25,6 +25,7 @@
 //    Capacitor AdMob à brancher ici le moment venu, sans toucher au reste du
 //    jeu (seul ce fichier serait réécrit).
 import { RUNTIME_CONFIG } from '../config/runtime.js';
+import { logSecurityEvent } from '../save.js';
 
 export function createAdsService(config = RUNTIME_CONFIG) {
   // Jeton anti-rejeu minimal : même si aucune publicité du modèle actuel ne
@@ -47,7 +48,13 @@ export function createAdsService(config = RUNTIME_CONFIG) {
   }
 
   function consumeAdToken(token) {
-    if (!pendingTokens.has(token)) return false; // absent ou déjà consommé : rejet, pas une simple ignorance silencieuse
+    if (!pendingTokens.has(token)) {
+      // Jeton inconnu ou déjà consommé : tentative de rejeu potentielle -
+      // journalisée pour diagnostic (jamais utilisée pour bloquer quoi que
+      // ce soit côté client, voir save.js:logSecurityEvent).
+      logSecurityEvent('ad-token-replay-or-unknown', { token });
+      return false;
+    }
     pendingTokens.delete(token);
     return true;
   }

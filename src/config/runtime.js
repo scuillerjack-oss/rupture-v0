@@ -3,10 +3,18 @@
 // l'environnement directement : tout le reste lit une valeur déjà résolue
 // depuis ce module (voir docs/ARCHITECTURE.md, section "Configuration").
 //
-// 'commercial' ne correspond à aucun build réel pour l'instant : c'est un
-// espace réservé documenté pour la future version Google Play, où certaines
-// de ces valeurs différeraient (voir docs/TRAJECTOIRE_COMMERCIALE.md).
-export const BUILD_ENV = 'beta'; // 'dev' | 'beta' | 'commercial'
+// 'commercial' ne correspond à aucun build PUBLIÉ pour l'instant (aucun
+// projet Android/iOS packagé, aucun compte store créé - voir
+// docs/TRAJECTOIRE_COMMERCIALE.md) mais est désormais réellement
+// CONSTRUISIBLE ET TESTABLE en local via VITE_BUILD_ENV=commercial (voir
+// docs/SECRETS_ET_PRODUCTION.md, section "Séparation dev/test/production") :
+// `VITE_BUILD_ENV=commercial npm run build` produit un build qui applique
+// réellement premiumOnlySpeeds - sans quoi cette restriction ne serait
+// jamais vérifiable avant la publication elle-même. L'URL PWA bêta
+// permanente continue d'être construite sans cette variable, donc reste en
+// 'beta' (x1/x2/x4 libres) - ce correctif ne la modifie pas.
+const ENV_FROM_BUILD = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_BUILD_ENV : undefined;
+export const BUILD_ENV = ENV_FROM_BUILD === 'commercial' || ENV_FROM_BUILD === 'dev' ? ENV_FROM_BUILD : 'beta'; // 'dev' | 'beta' | 'commercial'
 
 const ALL_SPEEDS = [0, 1, 2, 4];
 
