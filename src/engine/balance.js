@@ -41,6 +41,27 @@ export const BALANCE = {
   // intacte en jours absolus - donc en croissance en proportion du temps
   // total. Combiné à earlyInfluenceTrickle (voir plus bas) pour rétablir un
   // budget d'Influence suffisant sur la durée réduite.
+  //
+  // V4.1 (§4) : hypothèse testée puis REJETÉE d'allonger encore vers
+  // ~550-700j en retouchant `power` ou earlyInfluenceTrickle. Mesuré par
+  // simulation (18 origines x 3 stratégies) : power 1.3->1.4 seul suffit à
+  // faire gagner equilibree-naive (stratégie délibérément mauvaise) à 89%
+  // (16/18) au lieu de 6% ; power 1.5+ fait gagner TOUTES les stratégies à
+  // 100%, naïves comprises - la falaise "tout le monde gagne" déjà identifiée
+  // en V4 se reproduit à l'identique. À l'inverse, earlyInfluenceTrickle
+  // 1.15->1.0 fait tomber reactive-coherente (meilleure stratégie testée) à
+  // 0/18 - budget d'Influence trop court pour boucler la moindre victoire.
+  // Les deux leviers naturels de la durée sont donc chacun une falaise dans
+  // un sens ou l'autre, sans palier intermédiaire stable trouvé au voisinage
+  // de la calibration actuelle : l'économie reste au point de bascule
+  // critique déjà documenté en V4. Conservé tel quel (power=1.3,
+  // earlyInfluenceTrickle=1.15) plutôt que de forcer l'hypothèse au prix de
+  // la hiérarchie de stratégies tout juste rétablie. Durée résultante
+  // (~480-570j pour les stratégies gagnantes en Normal) légèrement sous la
+  // fourchette visée mais couvre déjà les objectifs réels du §4 (fenêtre de
+  // réaction, phase finale tendue) sans les symptômes qui avaient motivé
+  // cette demande (voir la correction Conscience/Réponse ci-dessous, qui
+  // était la vraie cause du ressenti "trop court" rapporté en bêta).
   tension: {
     min: 0.005,
     max: 1.2,
@@ -80,18 +101,48 @@ export const BALANCE = {
   // (resilienceImmunityLevel) neutralise entièrement ce resserrement -
   // seuil volontairement élevé (mais pas le niveau maximum) : un engagement
   // réel et coûteux sur une branche entière, pas un palier anodin.
+  //
+  // V4.1 (bêta manuelle post-V4, §2) : l'ancien responseCurvePower façonnait
+  // la VITESSE à laquelle l'accumulateur interne progresse (voir
+  // simulation.js: state.globalMobilization) - un mécanisme qui reste
+  // nécessaire tel quel pour préserver la pression de suppression locale déjà
+  // calibrée en V3.1/V4 (voir plus bas). Le vrai problème diagnostiqué était
+  // ailleurs : rien ne plafonnait la VALEUR ATTEIGNABLE de la Réponse
+  // affichée au joueur - un accumulateur strictement croissant finit toujours
+  // par atteindre 100 avec assez de temps, même alimenté par une Conscience
+  // qui plafonne loin en dessous de 100% (mesuré : la partie perdue en bêta à
+  // 95% de Progression avait une Réponse à 100% sans que le monde n'ait
+  // jamais pleinement compris la menace). Corrigé en ajoutant un PLAFOND sur
+  // la Réponse affichée (et seule condition de défaite), gouverné par la
+  // Conscience actuelle - le même principe que severity/dangerosityCapAt pour
+  // la gravité par région : la Réponse peut commencer tôt
+  // (responseCapBaseline > 0 dès conscience quasi nulle, l'Humanité n'attend
+  // pas de tout savoir pour réagir) mais ne peut atteindre 100 - et donc
+  // conclure la partie par défaite - que si la Conscience mondiale est
+  // elle-même proche de 100%. voir responseCapAt() et simulation.js.
   humanity: {
     mobilizationThreshold: 15,
     maxSuppressionPerTick: 0.25,
     resilienceImmunityLevel: 8,
-    // V3.1 : lisse la transition "conscience faible -> réponse sérieuse" sans
-    // réduire le danger final. La Réponse mondiale progresse comme
-    // (conscience moyenne / 100) ^ responseCurvePower - à conscience quasi
-    // nulle ou totale (0 ou 100%), rien ne change (0^p=0, 1^p=1) ; entre les
-    // deux, un exposant > 1 ralentit la montée tant que la conscience n'est
-    // pas déjà bien installée, laissant plus de temps pour réagir avant que
-    // la mobilisation ne devienne sérieuse - voir simulation.js.
-    responseCurvePower: 1.6
+    responseCurvePower: 1.6,
+    // responseCapBaseline/fullConscienceLevel/responseCapPower : calibrés par
+    // simulation (234+ runs, plusieurs familles de stratégies), pas choisis a
+    // priori. La Conscience moyenne réelle n'atteint jamais littéralement
+    // 100% en pratique (elle poursuit un plafond de crise par territoire qui
+    // peut lui-même rester suppimé) - un plafond de Réponse qui n'ouvrirait
+    // qu'à Conscience=100% exactement rendrait la défaite par Réponse
+    // totalement inatteignable, quelle que soit la stratégie (mesuré : 0/162
+    // défaites par Réponse sur toute la batterie à fullConscienceLevel=1,
+    // y compris pour les pires stratégies). fullConscienceLevel=0.7 reprend
+    // le même principe que severity.fullSeverityLevel : un seuil élevé mais
+    // réellement atteignable (70% de Conscience, pas 100%) au-delà duquel la
+    // Réponse peut se conclure pleinement. Vérifié : toute défaite par
+    // Réponse mesurée se produit à Conscience >= 70% (jamais en dessous),
+    // corrigeant directement le cas rapporté en bêta (défaite à 95% de
+    // Progression / 100% de Réponse avec une Conscience très incomplète).
+    responseCapBaseline: 25,
+    fullConscienceLevel: 0.7,
+    responseCapPower: 2
   },
   upgrades: {
     propagation: {
@@ -135,6 +186,18 @@ export const BALANCE = {
 // symétrique, seule la vitesse de l'adversaire change. Normal reste la seule
 // référence finement simulée (voir le rapport V3) ; ce choix délibéré évite
 // de multiplier les paramètres pour un jeu qui doit rester compact.
+//
+// V4.1 (§5) : revérifié avec le mécanisme Conscience/Réponse corrigé, sur
+// toute la batterie (docs/v4.1-simulation-results.json). Ce seul levier
+// suffit à produire une hiérarchie réelle et honnête, sans nouveau
+// paramètre : Facile pardonne le jeu naïf (equilibree-naive 94%,
+// furtive-puis-frappe 44%, reactive-coherente 100%) ; Normal reste la
+// référence (equilibree-naive 6%, furtive-puis-frappe 39%,
+// reactive-coherente 78%) ; Difficile punit franchement sans être
+// mathématiquement impossible (equilibree-naive et furtive-puis-frappe à
+// 0%, mais reactive-coherente conserve 44% - une stratégie maîtrisée garde
+// une vraie chance). Aucune des trois difficultés ne produit de résultats
+// quasi identiques aux deux autres.
 export const DIFFICULTIES = {
   easy: {
     label: 'Facile',
@@ -169,6 +232,22 @@ export function dangerosityCapAt(level) {
   const { activeCeiling, fullSeverityLevel } = BALANCE.severity;
   const fraction = Math.max(0, Math.min(1, level / fullSeverityLevel));
   return activeCeiling + (100 - activeCeiling) * fraction;
+}
+
+// Plafond de Réponse mondiale atteignable pour une fraction de Conscience
+// moyenne donnée (0 à 1) : responseCapBaseline dès conscience quasi nulle,
+// jusqu'à 100 dès que la Conscience atteint fullConscienceLevel (90%, pas
+// 100% exactement - voir le commentaire sur fullConscienceLevel : la
+// Conscience moyenne réelle n'approche jamais littéralement 100%).
+// L'exposant (>1) garde le plafond proche de sa base sur une grande partie
+// de la plage - l'essentiel de l'ouverture se produit tard, rendant ce
+// dernier palier perceptible plutôt qu'une simple asymptote lointaine.
+// Exportée pour que le HUD puisse expliquer la mécanique (voir
+// src/ui/hud.js), comme dangerosityCapAt.
+export function responseCapAt(awarenessFraction) {
+  const { responseCapBaseline, responseCapPower, fullConscienceLevel } = BALANCE.humanity;
+  const fraction = Math.max(0, Math.min(1, awarenessFraction / fullConscienceLevel));
+  return responseCapBaseline + (100 - responseCapBaseline) * Math.pow(fraction, responseCapPower);
 }
 
 // Étapes de la Réponse mondiale, dérivées de state.globalContainment plutôt

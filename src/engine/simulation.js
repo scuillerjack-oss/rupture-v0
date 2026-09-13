@@ -1,6 +1,6 @@
 import { TERRITORIES } from './territories.js';
 import { adjacency, pushLog } from './state.js';
-import { BALANCE, upgradeCost, tensionAt, responsePhaseAt, dangerosityCapAt } from './balance.js';
+import { BALANCE, upgradeCost, tensionAt, responsePhaseAt, dangerosityCapAt, responseCapAt } from './balance.js';
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
@@ -19,25 +19,35 @@ export function simulateTick(state) {
   const dangerosityEffect = state.upgrades.dangerosity * BALANCE.upgrades.dangerosity.effectPerLevel;
 
   // L'Humanité ne se contente plus de ralentir la croissance de l'Anomalie :
-  // une fois sa Réponse mondiale sérieusement engagée, elle referme aussi le
-  // plafond de gravité que Dangerosité avait ouvert. `state.globalContainment`
-  // reflète l'état AVANT ce tick (il n'est recalculé qu'après la boucle,
-  // comme en V2) : léger décalage d'un tick, sans effet observable, déjà le
-  // cas pour awareness/containment.
+  // une fois sa mobilisation sérieusement engagée, elle referme aussi le
+  // plafond de gravité que Dangerosité avait ouvert. `state.globalMobilization`
+  // reflète l'état AVANT ce tick (il n'est recalculé qu'après la boucle) :
+  // léger décalage d'un tick, sans effet observable.
+  //
+  // V4.1 (§2) : `globalMobilization` est un accumulateur interne distinct de
+  // `globalContainment` (la Réponse mondiale affichée au joueur et seule
+  // condition de défaite - voir plus bas, désormais plafonnée par la
+  // Conscience). Une première version faisait dépendre CE mécanisme de
+  // suppression locale directement de la Conscience courante plutôt que de
+  // cet accumulateur : la Conscience seule monte trop lentement pour
+  // reproduire la pression de suppression déjà validée en V3.1/V4 - mesuré :
+  // 18/18 victoires pour pratiquement toute stratégie, y compris des
+  // stratégies jusque-là perdantes, quels que soient mobilizationThreshold,
+  // maxSuppressionPerTick ou même l'économie entière retestée jusqu'aux
+  // réglages V3.1 d'origine. Conserver cet accumulateur (formule inchangée
+  // depuis V3.1) préserve intégralement la pression de suppression déjà
+  // calibrée, tandis que le nouveau plafond ci-dessous ne change QUE ce qui
+  // déclenche la défaite - une correction chirurgicale plutôt qu'une
+  // renégociation de tout l'équilibrage.
   //
   // Modélisée comme une réduction du plafond plutôt qu'une érosion
   // proportionnelle de la crise déjà acquise : une érosion proportionnelle
   // ne converge jamais exactement vers un palier (elle s'en approche sans
-  // jamais l'atteindre). Le seuil de mobilisation (15%) est franchi tôt dans
-  // quasiment toute partie sérieuse et ne redescend jamais : une victoire par
-  // Progression resterait donc mathématiquement impossible dès la
-  // mobilisation, quel que soit l'investissement du joueur, si rien ne
-  // pouvait un jour ramener ce resserrement à zéro. Une Résilience investie
-  // jusqu'à humanity.resilienceImmunityLevel neutralise donc entièrement CE
-  // resserrement spécifique. Les autres usages de la Résilience (croissance
-  // locale, amortissement de la propagation entrante) restent plafonnés à
-  // 80% comme avant : cette neutralisation complète est spécifique à la
-  // mobilisation.
+  // jamais l'atteindre). Une Résilience investie jusqu'à
+  // humanity.resilienceImmunityLevel neutralise entièrement CE resserrement
+  // spécifique. Les autres usages de la Résilience (croissance locale,
+  // amortissement de la propagation entrante) restent plafonnés à 80% comme
+  // avant : cette neutralisation complète est spécifique à la mobilisation.
   const resilienceEffectForSuppression = clamp(
     state.upgrades.resilience / BALANCE.humanity.resilienceImmunityLevel,
     0,
@@ -45,7 +55,7 @@ export function simulateTick(state) {
   );
   const mobilizationThreshold = BALANCE.humanity.mobilizationThreshold;
   const mobilizationProgress = clamp(
-    (state.globalContainment - mobilizationThreshold) / (100 - mobilizationThreshold),
+    (state.globalMobilization - mobilizationThreshold) / (100 - mobilizationThreshold),
     0,
     1
   );
@@ -144,16 +154,53 @@ export function simulateTick(state) {
   state.dominance = clamp(weightedCrisis / totalPopulation, 0, 100);
 
   const containmentGainFactor = state.rules?.globalContainmentGainFactor ?? BALANCE.globalContainmentGainFactor;
-  // Lisse la transition "conscience faible -> réponse sérieuse" (voir
-  // BALANCE.humanity.responseCurvePower) sans changer le danger final : à
-  // conscience nulle ou totale, le résultat est inchangé (0^p=0, 1^p=1).
+  // V4.1 (§2) : la Réponse mondiale progresse toujours à une vitesse
+  // proportionnelle à la Conscience moyenne actuelle (awarenessFraction*100),
+  // mais ne peut plus JAMAIS dépasser responseCapAt(awarenessFraction) - le
+  // même principe que le plafond de gravité par région (dangerosityCapAt),
+  // appliqué cette fois à la capacité de l'Humanité à mener sa Réponse à
+  // terme plutôt qu'à seulement la déclencher. Sans ce plafond, un
+  // accumulateur strictement croissant finit toujours par atteindre 100 avec
+  // assez de temps, même alimenté par une Conscience qui plafonne loin en
+  // dessous de 100% - c'est exactement l'incohérence ressentie en bêta V4
+  // (défaite par Réponse à 100% alors que le monde n'avait jamais pleinement
+  // compris la menace).
   const awarenessFraction = clamp(awarenessSum / TERRITORIES.length / 100, 0, 1);
+  // Conscience mondiale : progresse librement, sans plafond. Sert de base au
+  // plafond de la Réponse ci-dessous, et reste affichée telle quelle au
+  // joueur (Vue Monde) comme mesure distincte de la Réponse.
+  state.globalAwareness = awarenessFraction * 100;
+
+  // Accumulateur interne (formule héritée de V3.1/V4, volontairement
+  // inchangée - voir le commentaire en haut de tick) : lisse la transition
+  // "conscience faible -> réaction sérieuse" via responseCurvePower, sans
+  // plafond propre à cette étape (seul le 0-100 final le borne). C'est cet
+  // accumulateur, jamais la Conscience brute, qui alimente la pression de
+  // suppression locale (mobilizationProgress, en haut de tick).
   const shapedAwareness = Math.pow(awarenessFraction, BALANCE.humanity.responseCurvePower) * 100;
-  state.globalContainment = clamp(
-    state.globalContainment + shapedAwareness * containmentGainFactor * tension,
+  state.globalMobilization = clamp(
+    state.globalMobilization + shapedAwareness * containmentGainFactor * tension,
     0,
     100
   );
+
+  // V4.1 (§2) : la Réponse mondiale AFFICHÉE - et seule condition de défaite -
+  // ne peut plus jamais dépasser responseCapAt(awarenessFraction), même si
+  // l'accumulateur interne (ci-dessus) continue de progresser au-delà : le
+  // même principe que le plafond de gravité par région (dangerosityCapAt),
+  // appliqué cette fois à la capacité de l'Humanité à mener sa Réponse à
+  // terme plutôt qu'à seulement la déclencher. Sans ce plafond, un
+  // accumulateur strictement croissant finit toujours par atteindre 100 avec
+  // assez de temps, même alimenté par une Conscience qui plafonne loin en
+  // dessous de 100% - c'est exactement l'incohérence ressentie en bêta V4
+  // (défaite par Réponse à 100% alors que le monde n'avait jamais pleinement
+  // compris la menace). La Réponse affichée ne redescend jamais (voir le
+  // test dédié) : si le plafond baisse sous la valeur déjà acquise (la
+  // Conscience moyenne peut légèrement refluer), la nouvelle croissance est
+  // simplement nulle, jamais un recul de l'acquis.
+  const responseCap = responseCapAt(awarenessFraction);
+  const grown = Math.min(state.globalMobilization, responseCap);
+  state.globalContainment = clamp(Math.max(state.globalContainment, grown), 0, 100);
 
   // Journal : uniquement les transitions de phase de la Réponse mondiale
   // (détection initiale comprise) plutôt qu'un événement par tick ou par

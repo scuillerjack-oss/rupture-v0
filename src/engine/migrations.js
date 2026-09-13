@@ -1,3 +1,5 @@
+import { BALANCE } from './balance.js';
+
 // Registre des migrations de sauvegarde, indexé par la version DE DÉPART
 // qu'elles savent transformer. Un futur incrément de SAVE_VERSION qui peut
 // être mappé proprement vers la nouvelle forme devrait ajouter une entrée
@@ -7,7 +9,32 @@
 //
 // Exemple pour une future version 3 qui ajouterait un champ :
 //   2: (old) => ({ ...old, version: 3, monNouveauChamp: valeurParDefaut })
-const MIGRATIONS = {};
+const MIGRATIONS = {
+  // V4.1 : ajoute globalAwareness (Conscience mondiale) et globalMobilization
+  // (accumulateur interne de suppression, distinct de la Réponse affichée -
+  // voir simulation.js). globalAwareness est reconstituée à partir de la
+  // moyenne des awareness déjà enregistrées par territoire dans la
+  // sauvegarde V3 - plus fidèle qu'un simple 0, qui aurait fait repartir une
+  // partie en cours d'une Conscience nulle malgré une progression déjà bien
+  // engagée. L'ancien globalContainment (V3) était exactement cet
+  // accumulateur avant que la Réponse affichée ne soit plafonnée par la
+  // Conscience : il devient donc globalMobilization tel quel, et la nouvelle
+  // Réponse affichée est recalculée en lui appliquant immédiatement le
+  // plafond (jamais une Réponse déjà affichée plus haute que ce que le
+  // nouveau plafond autoriserait).
+  3: (old) => {
+    const territories = old.territories && typeof old.territories === 'object' ? Object.values(old.territories) : [];
+    const globalAwareness = territories.length
+      ? territories.reduce((sum, t) => sum + (Number(t?.awareness) || 0), 0) / territories.length
+      : 0;
+    const globalMobilization = Number(old.globalContainment) || 0;
+    const { responseCapBaseline, responseCapPower, fullConscienceLevel } = BALANCE.humanity;
+    const fraction = Math.max(0, Math.min(1, globalAwareness / 100 / fullConscienceLevel));
+    const responseCap = responseCapBaseline + (100 - responseCapBaseline) * Math.pow(fraction, responseCapPower);
+    const globalContainment = Math.min(globalMobilization, responseCap);
+    return { ...old, version: 4, globalAwareness, globalMobilization, globalContainment };
+  }
+};
 
 // Applique la chaîne de migrations nécessaire pour amener `raw` à
 // targetVersion. Renvoie null si aucun chemin complet n'existe (version

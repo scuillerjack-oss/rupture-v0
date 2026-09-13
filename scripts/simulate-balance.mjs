@@ -1,8 +1,11 @@
-// Batterie de simulations de pré-équilibrage pour RUPTURE (V3, V3.1, V4...).
+// Batterie de simulations de pré-équilibrage pour RUPTURE (V3, V3.1, V4, V4.1...).
 // Ne truque pas les résultats : chaque stratégie est un heuristique honnête,
 // exécuté tel quel contre le moteur réel (src/engine), sans connaissance
 // privilégiée de l'issue. Sert à révéler les faiblesses du moteur, pas à les
-// cacher. Résultats bruts écrits dans docs/v4-simulation-results.json.
+// cacher. Depuis V4.1, chaque stratégie est rejouée sur les trois difficultés
+// (easy/normal/hard) : Facile/Normal/Difficile doivent avoir des rôles
+// réellement distincts, ce qui se vérifie et ne se décrète pas. Résultats
+// bruts écrits dans docs/v4.1-simulation-results.json.
 
 import { writeFileSync } from 'node:fs';
 import { createInitialState, beginNewGame, confirmOrigin } from '../src/engine/state.js';
@@ -182,10 +185,10 @@ const STRATEGIES = {
   }
 };
 
-function runOne(strategyName, originId) {
+function runOne(strategyName, originId, difficulty = 'normal') {
   const decide = STRATEGIES[strategyName];
   const state = createInitialState();
-  beginNewGame(state);
+  beginNewGame(state, difficulty);
   confirmOrigin(state, originId);
 
   let totalEarned = 0;
@@ -217,6 +220,7 @@ function runOne(strategyName, originId) {
   return {
     strategy: strategyName,
     origin: originId,
+    difficulty,
     status: state.status,
     endReason: state.endReason,
     days: state.day,
@@ -235,22 +239,33 @@ function runOne(strategyName, originId) {
   };
 }
 
+const DIFFICULTIES_TESTED = ['easy', 'normal', 'hard'];
+
 const results = [];
-for (const strategyName of Object.keys(STRATEGIES)) {
-  for (const t of TERRITORIES) {
-    results.push(runOne(strategyName, t.id));
+for (const difficulty of DIFFICULTIES_TESTED) {
+  for (const strategyName of Object.keys(STRATEGIES)) {
+    for (const t of TERRITORIES) {
+      results.push(runOne(strategyName, t.id, difficulty));
+    }
   }
 }
 
 // --- Analysis ---
+// Groupé par (stratégie, difficulté) - V4.1 ajoute la difficulté comme
+// dimension permanente de la batterie (voir §5 : Facile/Normal/Difficile
+// doivent avoir des rôles réellement distincts, vérifié par simulation et
+// non postulé).
 const byStrategy = {};
 for (const r of results) {
-  byStrategy[r.strategy] ??= [];
-  byStrategy[r.strategy].push(r);
+  const key = `${r.strategy}::${r.difficulty}`;
+  byStrategy[key] ??= [];
+  byStrategy[key].push(r);
 }
 
 const summary = [];
-for (const [strategy, rows] of Object.entries(byStrategy)) {
+for (const rows of Object.values(byStrategy)) {
+  const strategy = rows[0].strategy;
+  const difficulty = rows[0].difficulty;
   const wins = rows.filter((r) => r.status === 'victory').length;
   const days = rows.map((r) => r.days);
   const stuck = rows.filter((r) => r.hitTickCap);
@@ -274,6 +289,7 @@ for (const [strategy, rows] of Object.entries(byStrategy)) {
   const avg = (arr) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null);
   summary.push({
     strategy,
+    difficulty,
     runs: rows.length,
     victoires: wins,
     premierAchatJourMoyen: avg(firstDays),
@@ -293,12 +309,15 @@ for (const [strategy, rows] of Object.entries(byStrategy)) {
   });
 }
 
-console.log('=== RESUME PAR STRATEGIE (', results.length, 'simulations au total ) ===');
-console.table(summary);
+for (const difficulty of DIFFICULTIES_TESTED) {
+  console.log(`=== RESUME (${difficulty}) ===`);
+  console.table(summary.filter((s) => s.difficulty === difficulty));
+}
+console.log('=== TOTAL simulations :', results.length, '===');
 
 writeFileSync(
-  new URL('../docs/v4-simulation-results.json', import.meta.url),
+  new URL('../docs/v4.1-simulation-results.json', import.meta.url),
   JSON.stringify({ generatedAt: new Date().toISOString(), totalRuns: results.length, summary, results }, null, 2)
 );
 
-console.log('Résultats bruts écrits dans docs/v4-simulation-results.json');
+console.log('Résultats bruts écrits dans docs/v4.1-simulation-results.json');

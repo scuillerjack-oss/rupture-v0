@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createInitialState, beginNewGame, confirmOrigin } from '../src/engine/state.js';
 import { simulateTick, buyUpgrade } from '../src/engine/simulation.js';
 import { TERRITORIES, buildAdjacency } from '../src/engine/territories.js';
-import { BALANCE, upgradeCost, tensionAt } from '../src/engine/balance.js';
+import { BALANCE, upgradeCost, tensionAt, responseCapAt } from '../src/engine/balance.js';
 
 const MAX_TICKS = 3000;
 const KINDS = ['propagation', 'dangerosity', 'resilience', 'discretion'];
@@ -164,12 +164,26 @@ test('victory triggers once dominance crosses the threshold, with a clear reason
   }
 });
 
-test('defeat triggers once global containment reaches 100 without upgrades (passive play)', () => {
+// V4.1 (§2) : depuis que la Réponse mondiale affichée est plafonnée par la
+// Conscience (voir balance.js: responseCapAt, fullConscienceLevel), elle ne
+// peut plus atteindre 100 tant que la Conscience moyenne reste loin en
+// dessous de son propre seuil d'ouverture complète (70%) - ce qui est
+// justement le cas d'un joueur totalement passif : sans Dangerosité, la
+// crise de chaque territoire plafonne bas, et la Conscience avec elle
+// (mesuré : ~31% en fin de partie). La défaite reste garantie (aucune
+// stratégie passive ne doit jamais gagner), mais désormais par le filet de
+// sécurité (timeout) plutôt que par une Réponse qui se serait complétée
+// malgré une Conscience très incomplète - exactement l'incohérence
+// rapportée en bêta que cette passe corrige.
+test('defeat is guaranteed without upgrades (passive play), now via the timeout safety net since Réponse cannot complete at low Conscience', () => {
   const state = freshGame();
   runUntilEnd(state);
   assert.equal(state.status, 'defeat');
-  assert.equal(state.endReason, 'containment');
-  assert.equal(state.globalContainment, 100);
+  assert.equal(state.endReason, 'timeout');
+  assert.ok(
+    state.globalAwareness < BALANCE.humanity.fullConscienceLevel * 100,
+    `passive play should never reach the Conscience level needed for Réponse to complete, got ${state.globalAwareness.toFixed(1)}%`
+  );
 });
 
 test('a safety cap forces the game to end even in a frozen edge case', () => {
@@ -340,7 +354,10 @@ test('V3: once the world response is mobilized, zero Résilience erodes crisis f
     const state = freshGame('fenwick');
     state.upgrades.resilience = resilienceLevel;
     state.territories.fenwick.crisis = 80;
-    state.globalContainment = BALANCE.humanity.mobilizationThreshold + 30; // clairement mobilisé
+    // V4.1 : la pression de suppression dépend désormais de l'accumulateur
+    // interne globalMobilization, plus de la Réponse affichée (plafonnée par
+    // la Conscience) - voir simulation.js.
+    state.globalMobilization = BALANCE.humanity.mobilizationThreshold + 30; // clairement mobilisé
     const before = state.territories.fenwick.crisis;
     simulateTick(state);
     return before - state.territories.fenwick.crisis; // perte nette de crise ce tick
@@ -355,7 +372,7 @@ test('V3: below the mobilization threshold, Résilience level has no active-supp
     const state = freshGame('fenwick');
     state.upgrades.resilience = resilienceLevel;
     state.territories.fenwick.crisis = 80;
-    state.globalContainment = BALANCE.humanity.mobilizationThreshold - 10; // pas encore mobilisé
+    state.globalMobilization = BALANCE.humanity.mobilizationThreshold - 10; // pas encore mobilisé
     simulateTick(state);
     return state.territories.fenwick.crisis;
   }
@@ -672,6 +689,79 @@ test('V4: high Discrétion investment measurably slows local awareness growth, a
   assert.ok(
     withDiscretion.awareness < withoutDiscretion.awareness,
     `max Discrétion (awareness=${withDiscretion.awareness.toFixed(2)}) should slow awareness growth compared to none (awareness=${withoutDiscretion.awareness.toFixed(2)})`
+  );
+});
+
+// --- V4.1 (bêta manuelle post-V4) : la Réponse mondiale affichée doit être
+// gouvernée par la Conscience, pas par un accumulateur qui lui est
+// indifférent. Voir RUPTURE_V4.1_Rapport_Technique_Officiel.pdf pour le
+// diagnostic complet (défaite rapportée à jour ~480, 95% de Progression
+// contre 100% de Réponse, avec une Conscience mondiale très incomplète).
+
+// §2, demande explicite : vérifie le cœur du correctif directement sur la
+// fonction de plafond, indépendamment de toute partie complète - à
+// Conscience nulle, la Réponse peut déjà progresser un peu (l'Humanité
+// n'attend pas de tout comprendre pour réagir) ; à Conscience atteignant
+// fullConscienceLevel, le plafond s'ouvre pleinement (100%).
+test("V4.1: the Réponse mondiale cap starts above zero at no Conscience, but only fully opens once Conscience reaches fullConscienceLevel", () => {
+  const { responseCapBaseline, fullConscienceLevel } = BALANCE.humanity;
+  assert.ok(responseCapAt(0) === responseCapBaseline, `at zero Conscience, the cap should sit exactly at its baseline (${responseCapBaseline}), got ${responseCapAt(0)}`);
+  assert.ok(responseCapAt(0) > 0, 'the Réponse should be able to start before Conscience is complete, not be blocked at zero');
+  assert.equal(responseCapAt(fullConscienceLevel), 100, 'the cap must fully open (100) once Conscience reaches fullConscienceLevel');
+  assert.ok(
+    responseCapAt(fullConscienceLevel / 2) < 100,
+    'at half of fullConscienceLevel, the cap should still be meaningfully closed, not already fully open'
+  );
+});
+
+// §2, demande explicite : sur une partie jouée en direct (pas la fonction
+// isolée ci-dessus), la Réponse affichée ne doit jamais atteindre 100 - et
+// donc jamais déclencher de défaite par Réponse - tant que la Conscience
+// mondiale moyenne reste clairement incomplète. C'est exactement
+// l'incohérence rapportée en bêta que cette passe corrige : mesuré ici sur
+// plusieurs origines avec une stratégie réactive live, pas seulement
+// affirmé sur la formule.
+test('V4.1: a Réponse-driven defeat never occurs while average Conscience is clearly incomplete', () => {
+  let containmentDefeats = 0;
+  for (const originId of TERRITORIES.map((t) => t.id)) {
+    const state = freshGame(originId);
+    for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
+      simulateTick(state);
+      buyReactively(state);
+    }
+    if (state.status === 'defeat' && state.endReason === 'containment') {
+      containmentDefeats += 1;
+      assert.ok(
+        state.globalAwareness >= BALANCE.humanity.fullConscienceLevel * 100 * 0.9,
+        `origin=${originId}: Réponse completed (defeat) at Conscience=${state.globalAwareness.toFixed(1)}%, well below what fullConscienceLevel requires`
+      );
+    }
+  }
+  assert.ok(containmentDefeats > 0, 'test setup error: at least one Réponse-driven defeat should occur across these origins, to make this check meaningful');
+});
+
+// §3, demande explicite : investir en Discrétion doit retarder la
+// mobilisation (le moment où l'accumulateur interne franchit
+// mobilizationThreshold), donnant une base mesurable au lien
+// "rester sous les radars -> réponse coordonnée retardée" demandé.
+test('V4.1: heavy Discrétion investment measurably delays when mobilization begins, at matched Dangerosité/Propagation', () => {
+  function mobilizationDay(discretionLevel) {
+    const state = freshGame('fenwick');
+    state.upgrades.discretion = discretionLevel;
+    for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
+      simulateTick(state);
+      if (state.upgrades.propagation < 6) buyUpgrade(state, 'propagation');
+      else if (state.upgrades.dangerosity < 6) buyUpgrade(state, 'dangerosity');
+      if (state.globalMobilization >= BALANCE.humanity.mobilizationThreshold) return state.day;
+    }
+    return null;
+  }
+  const withDiscretion = mobilizationDay(BALANCE.upgrades.discretion.maxLevel);
+  const withoutDiscretion = mobilizationDay(0);
+  assert.ok(withDiscretion !== null && withoutDiscretion !== null, 'test setup error: mobilization should occur in both scenarios');
+  assert.ok(
+    withDiscretion > withoutDiscretion,
+    `max Discrétion should delay mobilization (day ${withDiscretion}) compared to none (day ${withoutDiscretion})`
   );
 });
 
