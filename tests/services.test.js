@@ -49,3 +49,108 @@ test('a hypothetical future commercial build could gate specific speeds for non-
   assert.deepEqual(getAvailableSpeeds(freeServices, commercialConfig), [0, 1, 2]);
   assert.deepEqual(getAvailableSpeeds(premiumServices, commercialConfig), [0, 1, 2, 4]);
 });
+
+// --- Monétisation V-finale : modèle réel de l'audit économique ---
+// (docs/RUPTURE_Audit_Economique_Precommercialisation.pdf, §2/§3/§8/§9) :
+// pas pendant une partie, pas autour de la toute première, 1 pub/partie
+// dès 3 minutes réelles, sinon 1 pub / 2 parties courtes.
+const AD_CONFIG = { env: 'beta', adsEnabled: true, interstitialMinGameDurationMs: 180000, interstitialShortGameRatio: 2 };
+
+test('shouldShowInterstitial never fires around the very first game ever completed', async () => {
+  const { createAdsService } = await import('../src/services/ads.js');
+  const ads = createAdsService(AD_CONFIG);
+  assert.equal(ads.shouldShowInterstitial({ isFirstGameEver: true, gameDurationMs: 999999, isPremium: false }), false);
+});
+
+test('shouldShowInterstitial never fires for a Premium player, however long the game', async () => {
+  const { createAdsService } = await import('../src/services/ads.js');
+  const ads = createAdsService(AD_CONFIG);
+  assert.equal(ads.shouldShowInterstitial({ isFirstGameEver: false, gameDurationMs: 999999, isPremium: true }), false);
+});
+
+test('shouldShowInterstitial fires for a real game lasting at least the configured threshold', async () => {
+  const { createAdsService } = await import('../src/services/ads.js');
+  const ads = createAdsService(AD_CONFIG);
+  assert.equal(ads.shouldShowInterstitial({ isFirstGameEver: false, gameDurationMs: 180000, isPremium: false }), true);
+  assert.equal(ads.shouldShowInterstitial({ isFirstGameEver: false, gameDurationMs: 500000, isPremium: false }), true);
+});
+
+test('shouldShowInterstitial applies the degraded "1 per N short games" rule below the threshold, exactly at the configured ratio', async () => {
+  const { createAdsService } = await import('../src/services/ads.js');
+  const ads = createAdsService(AD_CONFIG); // ratio = 2
+  const shortGame = { isFirstGameEver: false, gameDurationMs: 10000, isPremium: false };
+  assert.equal(ads.shouldShowInterstitial(shortGame), false, 'first short game: no ad yet');
+  assert.equal(ads.shouldShowInterstitial(shortGame), true, 'second consecutive short game: ad due');
+  assert.equal(ads.shouldShowInterstitial(shortGame), false, 'streak reset after the ad, first short game again: no ad');
+});
+
+test('shouldShowInterstitial never fires when adsEnabled is off, regardless of context', async () => {
+  const { createAdsService } = await import('../src/services/ads.js');
+  const ads = createAdsService({ ...AD_CONFIG, adsEnabled: false });
+  assert.equal(ads.shouldShowInterstitial({ isFirstGameEver: false, gameDurationMs: 999999, isPremium: false }), false);
+});
+
+test('showInterstitialAd is simulated in dev/beta and explicitly not-connected in a commercial build', async () => {
+  const { createAdsService } = await import('../src/services/ads.js');
+  const betaAds = createAdsService(AD_CONFIG);
+  const betaResult = await betaAds.showInterstitialAd();
+  assert.equal(betaResult.shown, true);
+  assert.equal(betaResult.resultKind, 'simulated');
+
+  const commercialAds = createAdsService({ ...AD_CONFIG, env: 'commercial' });
+  const commercialResult = await commercialAds.showInterstitialAd();
+  assert.equal(commercialResult.shown, false);
+  assert.equal(commercialResult.resultKind, 'not-connected');
+});
+
+test('ad completion tokens are single-use: a second consumption of the same token is rejected', async () => {
+  const { createAdsService } = await import('../src/services/ads.js');
+  const ads = createAdsService(AD_CONFIG);
+  const token = ads.createAdToken();
+  assert.equal(ads.consumeAdToken(token), true);
+  assert.equal(ads.consumeAdToken(token), false, 'replaying the same token must be rejected, not silently accepted');
+  assert.equal(ads.consumeAdToken('never-issued'), false);
+});
+
+test('no rewarded-ad mechanic is active today: the model documented in the economic audit has none', async () => {
+  const { createAdsService } = await import('../src/services/ads.js');
+  const ads = createAdsService(AD_CONFIG);
+  assert.equal(ads.isRewardedAdAvailable(), false);
+  const result = await ads.showRewardedAd();
+  assert.equal(result.shown, false);
+});
+
+test('purchasePremium grants a simulated-test entitlement in dev/beta, never confused with a store-verified one', async () => {
+  const { createPremiumService } = await import('../src/services/premium.js');
+  const premium = createPremiumService({ env: 'beta' });
+  assert.equal(premium.isPremium(), false);
+  const result = await premium.purchasePremium();
+  assert.equal(result.granted, true);
+  assert.equal(result.resultKind, 'simulated');
+  assert.equal(premium.isPremium(), true);
+  assert.equal(premium.getEntitlementSource(), 'simulated-test');
+  premium.setPremium(false);
+});
+
+test('purchasePremium and restorePurchases refuse to act in a commercial build (no real billing connected)', async () => {
+  const { createPremiumService } = await import('../src/services/premium.js');
+  const premium = createPremiumService({ env: 'commercial' });
+  const purchaseResult = await premium.purchasePremium();
+  assert.equal(purchaseResult.granted, false);
+  assert.equal(purchaseResult.resultKind, 'not-connected');
+  assert.equal(premium.isPremium(), false, 'a commercial build must never grant Premium for free');
+
+  const restoreResult = await premium.restorePurchases();
+  assert.equal(restoreResult.restored, false);
+  assert.equal(restoreResult.resultKind, 'not-connected');
+});
+
+test('restorePurchases reflects the current simulated entitlement in dev/beta', async () => {
+  const { createPremiumService } = await import('../src/services/premium.js');
+  const premium = createPremiumService({ env: 'beta' });
+  await premium.purchasePremium();
+  const result = await premium.restorePurchases();
+  assert.equal(result.restored, true);
+  assert.equal(result.resultKind, 'simulated');
+  premium.setPremium(false);
+});
