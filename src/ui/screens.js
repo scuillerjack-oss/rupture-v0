@@ -58,14 +58,14 @@ export function renderSelectingOrigin(state) {
     </div>`;
 }
 
-export function renderPlaying(state, statsView) {
+export function renderPlaying(state, statsView, services) {
   return `
     <div class="screen play-screen">
       <div class="map-container">
         <button class="menu-fab" data-action="open-game-menu" aria-label="Menu">☰</button>
         ${renderMap(state, true)}${renderMapLegend()}
       </div>
-      ${renderHud(state, statsView)}
+      ${renderHud(state, statsView, services)}
     </div>`;
 }
 

@@ -1,5 +1,8 @@
 import { getTerritory, TERRITORIES, SECTORS } from '../engine/territories.js';
 import { BALANCE, upgradeCost } from '../engine/balance.js';
+import { getAvailableSpeeds } from '../config/runtime.js';
+
+const SPEED_LABELS = { 0: '⏸', 1: '1x', 2: '2x', 4: '4x' };
 
 function speedButton(state, value, label) {
   const active = state.speed === value ? ' active' : '';
@@ -91,7 +94,7 @@ function renderTerritoryPanel(state) {
     </div>`;
 }
 
-export function renderHud(state, statsView) {
+export function renderHud(state, statsView, services) {
   const view = statsView === 'sectors' ? 'sectors' : 'territory';
 
   return `
@@ -115,10 +118,7 @@ export function renderHud(state, statsView) {
         </div>
       </div>
       <div class="speed-controls">
-        ${speedButton(state, 0, '⏸')}
-        ${speedButton(state, 1, '1x')}
-        ${speedButton(state, 2, '2x')}
-        ${speedButton(state, 4, '4x')}
+        ${getAvailableSpeeds(services).map((speed) => speedButton(state, speed, SPEED_LABELS[speed])).join('')}
       </div>
       <div class="view-tabs">
         <button class="view-tab${view === 'territory' ? ' active' : ''}" data-action="set-stats-view" data-view="territory">Région</button>

@@ -6,8 +6,20 @@ import {
   getDifficultySetting, setDifficultySetting
 } from './save.js';
 import { renderMenu, renderTutorial, renderSelectingOrigin, renderPlaying, renderEnd, renderGameMenu } from './ui/screens.js';
+import { createServices } from './services/index.js';
 
 const app = document.getElementById('app');
+const services = createServices();
+
+// Aucun fournisseur analytics réel n'est branché (adaptateur no-op) : ce
+// n'est qu'un point d'entrée déjà en place pour une future remontée
+// d'erreurs, sans effet observable aujourd'hui.
+window.addEventListener('error', (event) => {
+  services.analytics.logError(event.error ?? event.message, { type: 'window-error' });
+});
+window.addEventListener('unhandledrejection', (event) => {
+  services.analytics.logError(event.reason, { type: 'unhandled-rejection' });
+});
 
 let state = loadState() || createInitialState();
 let showTutorial = false;
@@ -39,7 +51,7 @@ function render() {
       app.innerHTML = renderSelectingOrigin(state);
       break;
     case 'playing':
-      app.innerHTML = renderPlaying(state, statsView);
+      app.innerHTML = renderPlaying(state, statsView, services);
       break;
     case 'victory':
     case 'defeat':

@@ -22,18 +22,29 @@ src/
     balance.js        constantes de gameplay (croissance, coûts, seuils)
     state.js           état initial, démarrage de partie, choix d'origine
     simulation.js      boucle de simulation (tick), achats d'améliorations
+    migrations.js      registre de migrations de sauvegarde entre versions
   ui/
     map.js             rendu SVG de la carte
     hud.js              ressources, vitesse/pause, améliorations, panneau territoire
     screens.js          assemblage des écrans (menu, choix origine, jeu, fin)
+  services/            interfaces Premium/Publicité/Analytics (adaptateurs no-op)
+  config/runtime.js    configuration centralisée dev/bêta/commercial
   save.js               sauvegarde/chargement localStorage
   main.js                boucle principale, gestion des événements, rendu
 public/
   manifest.webmanifest, icons/, sw.js
 tests/
-  state.test.js, simulation.test.js, save.test.js   suite node:test
+  state.test.js, simulation.test.js, save.test.js, migrations.test.js,
+  services.test.js, hud.test.js   suite node:test
 .github/workflows/deploy.yml   tests + build + déploiement GitHub Pages
 ```
+
+## Architecture et trajectoire commerciale
+
+- `docs/ARCHITECTURE.md` — séparation jeu / services, configuration
+  centralisée, migrations de sauvegarde.
+- `docs/TRAJECTOIRE_COMMERCIALE.md` — trajectoire PWA → bêta → monétisation →
+  Android/Google Play → publication, et ce qui reste à décider.
 
 ## Développement local
 
