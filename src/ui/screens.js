@@ -15,7 +15,7 @@ export function renderMenu(hasSave) {
         <button class="link-btn" data-action="show-tutorial">Comment jouer ?</button>
         <button class="link-btn" data-action="open-settings">Paramètres</button>
       </div>
-      <p class="version-tag">V4.1 — build bêta</p>
+      <p class="version-tag">V5 — build bêta finale</p>
     </div>`;
 }
 
@@ -206,6 +206,39 @@ export function renderEnd(state) {
     </div>`;
 }
 
+// Premium : cf. src/services/premium.js. TOUJOURS étiqueté "simulation" /
+// "test" dans l'interface tant qu'aucun module Google Play Billing / App
+// Store réel n'est connecté - conformément à la demande explicite de ne
+// jamais créer un faux sentiment de finalisation. `options.premiumSource`
+// vaut 'simulated-test' (seule valeur possible aujourd'hui) ou null.
+function renderPremiumSection(options) {
+  const isPremium = Boolean(options.isPremium);
+  return `
+    <h3 class="settings-subhead">Premium <span class="test-badge">${isPremium ? 'simulation' : 'aperçu'}</span></h3>
+    ${isPremium ? `
+      <p class="hint">Premium actif : vitesse ×4 débloquée, aucune publicité entre les parties.
+        Statut réel : <strong>${options.premiumSource === 'store-verified' ? 'achat vérifié par un store' : 'simulation de test (aucun paiement réel)'}</strong>.</p>
+      <button class="secondary-btn" data-action="premium-reset-test">Désactiver Premium (test uniquement)</button>
+    ` : `
+      <p class="hint">2,99€, achat unique : retire la publicité et débloque la vitesse ×4. Aucun avantage stratégique, aucune méta-monnaie.</p>
+      <button class="primary-btn" data-action="premium-purchase-test">Simuler l'achat (test — aucun paiement réel)</button>
+      <button class="link-btn" data-action="premium-restore-test">Restaurer un achat (simulation)</button>
+    `}`;
+}
+
+// Publicité interstitielle : cf. src/services/ads.js. N'apparaît jamais
+// pendant une partie, uniquement entre deux parties, et jamais un vrai
+// contenu publicitaire (aucun SDK connecté) - clairement étiqueté.
+export function renderInterstitialAd() {
+  return `
+    <div class="screen menu-overlay-screen interstitial-screen">
+      <span class="test-badge">simulation</span>
+      <h2>Publicité (simulation)</h2>
+      <p class="hint">Aucun réseau publicitaire réel n'est encore connecté à RUPTURE. Cet écran occupe la même place, au même moment, qu'une vraie publicité interstitielle une fois AdMob branché.</p>
+      <button class="primary-btn" data-action="interstitial-continue">Continuer</button>
+    </div>`;
+}
+
 export function renderGameMenu(view, state, options) {
   if (view === 'settings') {
     const current = options.pendingDifficulty;
@@ -220,6 +253,7 @@ export function renderGameMenu(view, state, options) {
             </button>`).join('')}
         </div>
         ${state ? `<p class="hint">Partie en cours : difficulté ${DIFFICULTIES[state.difficulty]?.label ?? 'Normal'} (fixée au démarrage, aussi consultable depuis la vue Monde).</p>` : ''}
+        ${renderPremiumSection(options)}
         <h3 class="settings-subhead">Audio</h3>
         <div class="settings-row">
           <span>Musique</span>

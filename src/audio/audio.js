@@ -5,37 +5,41 @@
 // explicitement préférée). Toute la musique et tous les effets sont
 // synthétisés en direct via des oscillateurs et enveloppes de gain.
 //
-// Musique : un drone ambiant continu (pas un sample qui boucle) - il n'y a
-// donc littéralement pas de point de boucle à soigner, la question du
-// "loop propre" ne se pose pas. Discret, légèrement inquiétant (intervalle
-// mineur, filtre passe-bas sombre), volume faible par défaut.
+// Musique : une ambiance minimaliste par événements espacés (PAS un fond
+// continu) - de vraies plages de silence entre chaque note, jamais une
+// tonalité qui tourne en boucle pendant toute la partie.
 //
-// V4.2 : bug réel trouvé après bêta manuelle PWA mobile - "Musique : Activée"
-// s'affichait mais aucun son n'était audible sur téléphone. Cause diagnostiquée
-// et mesurée (pas supposée) : les fréquences d'origine (55/65.4/82.4Hz)
-// plaçaient l'essentiel de l'énergie du son sous 200Hz - une bande que les
-// haut-parleurs de smartphone reproduisent très mal (souvent inaudible en
-// pratique). Vérifié par rendu hors-ligne (OfflineAudioContext) + filtre
-// passe-haut 200Hz en analyse (proxy de la réponse d'un haut-parleur de
-// téléphone) : seulement ~12% de l'énergie du signal survivait au-dessus de
-// ce seuil. Décalé de deux octaves (220/261.6/329.6Hz, toujours un accord
-// mineur discret) : même mesure, >100% de survie (la quasi-totalité de
-// l'énergie utile passe désormais dans une bande audible). Gain légèrement
-// réduit en compensation (les fréquences plus hautes sont perçues plus fort
-// à RMS égal). Les effets sonores (tone()) ne sont pas concernés par ce bug
-// (déjà dans un registre audible, 220-1046Hz) et n'ont pas été modifiés.
+// V-finale (correctif bêta) : la V4.2 utilisait un drone continu (3
+// oscillateurs jouant sans interruption pendant toute la partie). Retour de
+// bêta explicite : perçu comme "une seule note continue", fatiguant. Plutôt
+// que de retravailler un système continu (risque de rester fatiguant sous
+// une autre forme), remplacé par une approche volontairement plus simple :
+// aucun son ne joue en continu, une seule note (ou parfois deux, à quelques
+// centaines de ms d'écart) toutes les 15 à 45 secondes environ, avec de
+// vraies plages de silence entre - conforme à l'instruction explicite
+// "le silence partiel est largement préférable à une mauvaise bande-son
+// continue". Chaque événement varie (note choisie au hasard dans un petit
+// accord mineur cohérent, timbre, durée) pour éviter toute répétition
+// perçue comme une note unique.
+//
+// V4.2 (hérité, toujours valable pour les fréquences choisies) : le registre
+// grave d'origine (55-82Hz) était quasi inaudible sur haut-parleur de
+// téléphone (~12% de l'énergie survivant au-dessus de 200Hz, mesuré par
+// rendu hors-ligne + filtre passe-haut). Le nouveau palette de notes reste
+// dans le registre alors validé comme audible (165-440Hz).
 //
 // Effets : achat/amélioration, changement de phase de la Réponse mondiale
 // (qui correspond aussi à la réaction humaine majeure - même événement dans
-// ce moteur), victoire, défaite. Volontairement peu nombreux et discrets :
-// accompagner l'action, jamais fatiguer.
+// ce moteur), victoire, défaite. Volontairement peu nombreux et discrets,
+// non modifiés par cette passe (déjà validés en bêta) : accompagner
+// l'action, jamais fatiguer.
 import { getMusicSetting, setMusicSetting, getSfxSetting, setSfxSetting } from '../save.js';
 
 let ctx = null;
 let masterMusicGain = null;
-let musicNodes = null;
+let musicFilter = null;
 let musicStarted = false;
-let plucker = null;
+let ambientTimer = null;
 
 function ensureContext() {
   if (ctx) return ctx;
@@ -45,17 +49,55 @@ function ensureContext() {
   return ctx;
 }
 
-// Drone ambiant : deux voix graves détonnées (fondamentale + tierce mineure)
-// passées dans un filtre passe-bas, plus une voix de quinte très douce
-// modulée lentement en amplitude pour une légère "respiration". Aucune
-// donnée enregistrée : tout est généré en continu tant que la musique est
-// activée, donc jamais de raccord de boucle à faire.
+// Petit accord mineur cohérent (le même esprit que l'ancien drone), mais
+// jamais joué en continu : une seule note piochée au hasard dans cette
+// palette à chaque événement, pour que deux événements consécutifs sonnent
+// rarement pareil. Registre déjà validé audible sur haut-parleur de
+// téléphone (165-440Hz, voir commentaire en tête de fichier).
+const AMBIENT_NOTES = [165, 220, 261.6, 329.6, 440];
+
+function playAmbientNote(now, freq) {
+  const type = Math.random() < 0.7 ? 'sine' : 'triangle';
+  const duration = 1.4 + Math.random() * 2; // 1.4 à 3.4s : une vraie respiration, pas un clic
+  const peak = 0.09 + Math.random() * 0.07; // discret, jamais dominant
+  const osc = ctx.createOscillator();
+  osc.type = type;
+  osc.frequency.value = freq;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(peak, now + 0.25); // attaque douce, pas percussive
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  osc.connect(gain);
+  gain.connect(musicFilter);
+  osc.start(now);
+  osc.stop(now + duration + 0.1);
+}
+
+// Un seul événement ambiant : une note, et parfois (1 fois sur 5) une
+// deuxième note de l'accord juste après - jamais plus, pour rester discret.
+// Puis un vrai silence avant le prochain (15-45s, avec occasionnellement un
+// silence deux fois plus long) : conforme à la demande explicite de
+// "vraies périodes de silence", pas un fond qui tourne.
+function scheduleAmbientEvent() {
+  if (!musicStarted || !ctx) return;
+  const now = ctx.currentTime;
+  const note = AMBIENT_NOTES[Math.floor(Math.random() * AMBIENT_NOTES.length)];
+  playAmbientNote(now, note);
+  if (Math.random() < 0.2) {
+    const second = AMBIENT_NOTES[Math.floor(Math.random() * AMBIENT_NOTES.length)];
+    playAmbientNote(now + 0.3 + Math.random() * 0.25, second);
+  }
+  let gapMs = 15000 + Math.random() * 30000;
+  if (Math.random() < 0.25) gapMs += 15000 + Math.random() * 15000; // silence plus long, occasionnel
+  ambientTimer = setTimeout(scheduleAmbientEvent, gapMs);
+}
+
 function startMusicGraph() {
   if (!ctx || musicStarted) return;
   musicStarted = true;
 
   const master = ctx.createGain();
-  master.gain.value = 0.12;
+  master.gain.value = 1; // le volume réel est porté par chaque note (peak), pas par ce gain global
   master.connect(ctx.destination);
   masterMusicGain = master;
 
@@ -63,69 +105,19 @@ function startMusicGraph() {
   filter.type = 'lowpass';
   filter.frequency.value = 900;
   filter.connect(master);
+  musicFilter = filter;
 
-  const voices = [];
-  // V4.2 : décalé de deux octaves (était 55/65.4/82.4Hz) - voir le
-  // commentaire en tête de fichier pour le diagnostic et la mesure.
-  const freqs = [220, 261.6, 329.6]; // fondamentale, tierce mineure, quinte (Hz)
-  freqs.forEach((freq, i) => {
-    const osc = ctx.createOscillator();
-    osc.type = i === 0 ? 'sine' : 'triangle';
-    osc.frequency.value = freq;
-    const gain = ctx.createGain();
-    gain.gain.value = i === 0 ? 0.55 : 0.22;
-    osc.connect(gain);
-    gain.connect(filter);
-    osc.start();
-    voices.push({ osc, gain });
-  });
-
-  // LFO lent sur la voix de quinte pour une respiration discrète, pas un
-  // volume constant et statique.
-  const lfo = ctx.createOscillator();
-  lfo.type = 'sine';
-  lfo.frequency.value = 0.06;
-  const lfoGain = ctx.createGain();
-  lfoGain.gain.value = 0.1;
-  lfo.connect(lfoGain);
-  lfoGain.connect(voices[2].gain.gain);
-  lfo.start();
-
-  musicNodes = { master, filter, voices, lfo };
-
-  // Ponctuation éparse : un "pluck" doux toutes les ~9-16s, jamais deux fois
-  // le même timing exact - une présence, pas un métronome.
-  const schedulePluck = () => {
-    if (!musicStarted || !ctx) return;
-    const now = ctx.currentTime;
-    const pluckOsc = ctx.createOscillator();
-    pluckOsc.type = 'sine';
-    pluckOsc.frequency.value = freqs[1] * 2;
-    const pluckGain = ctx.createGain();
-    pluckGain.gain.setValueAtTime(0, now);
-    pluckGain.gain.linearRampToValueAtTime(0.05, now + 0.05);
-    pluckGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
-    pluckOsc.connect(pluckGain);
-    pluckGain.connect(filter);
-    pluckOsc.start(now);
-    pluckOsc.stop(now + 2);
-    plucker = setTimeout(schedulePluck, 9000 + Math.random() * 7000);
-  };
-  plucker = setTimeout(schedulePluck, 4000);
+  // Premier événement après un court délai (pas immédiatement au
+  // déverrouillage, pour ne pas coïncider avec un clic de l'interface).
+  ambientTimer = setTimeout(scheduleAmbientEvent, 3000 + Math.random() * 4000);
 }
 
 function stopMusicGraph() {
   if (!musicStarted) return;
   musicStarted = false;
-  if (plucker) clearTimeout(plucker);
-  plucker = null;
-  if (musicNodes) {
-    for (const { osc } of musicNodes.voices) {
-      try { osc.stop(); } catch { /* déjà arrêté */ }
-    }
-    try { musicNodes.lfo.stop(); } catch { /* déjà arrêté */ }
-  }
-  musicNodes = null;
+  if (ambientTimer) clearTimeout(ambientTimer);
+  ambientTimer = null;
+  musicFilter = null;
   masterMusicGain = null;
 }
 

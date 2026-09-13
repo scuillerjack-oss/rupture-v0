@@ -12,12 +12,25 @@ const ALL_SPEEDS = [0, 1, 2, 4];
 
 export const RUNTIME_CONFIG = {
   env: BUILD_ENV,
-  // Vitesses qui nécessiteraient Premium dans un futur build commercial.
-  // Vide pendant dev/bêta : conformément à la demande explicite, x1/x2/x4
-  // doivent rester intégralement accessibles pendant le développement et
-  // les bêta-tests, quel que soit le contenu de cette liste.
-  premiumOnlySpeeds: [],
-  adsEnabled: false,
+  // Vitesse réservée à Premium dans un futur build commercial (modèle
+  // audité : ×1/×2 gratuites, ×4 Premium - voir
+  // docs/RUPTURE_Audit_Economique_Precommercialisation.pdf §3/§8). Cette
+  // valeur ne s'applique QUE si env==='commercial' (voir
+  // getAvailableSpeeds ci-dessous) : pendant dev/bêta, x1/x2/x4 restent
+  // intégralement accessibles quel que soit ce contenu, conformément à la
+  // demande explicite de ne jamais restreindre la bêta gameplay en cours.
+  premiumOnlySpeeds: [4],
+  // Active la LOGIQUE de fréquence publicitaire réelle (services/ads.js) -
+  // n'affiche jamais une vraie publicité (aucun SDK connecté, voir ce
+  // fichier) : en dev/bêta l'affichage reste simulé et clairement labellisé
+  // dans l'UI, jamais confondu avec un vrai revenu publicitaire.
+  adsEnabled: true,
+  // Règle de fréquence exacte retenue dans l'audit économique (§2, §8, §9) :
+  // 1 publicité par partie si la partie a réellement duré au moins ce
+  // seuil (horloge murale), sinon 1 publicité toutes les
+  // `interstitialShortGameRatio` parties plus courtes.
+  interstitialMinGameDurationMs: 3 * 60 * 1000,
+  interstitialShortGameRatio: 2,
   analyticsEnabled: false
 };
 

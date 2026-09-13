@@ -643,6 +643,32 @@ button {
   color: #e8ecf1;
 }
 
+.test-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #e06b2d;
+  background: #2a1f14;
+  border: 1px solid #e06b2d;
+  border-radius: 6px;
+  padding: 2px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.interstitial-screen {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.interstitial-screen .test-badge {
+  margin-left: 0;
+}
+
 .primary-btn.danger {
   background: #d13b3b;
   color: #fff;

@@ -3,9 +3,10 @@ import { simulateTick, buyUpgrade, selectTerritory, setSpeed } from './engine/si
 import {
   saveState, loadState, clearSave,
   hasSeenTutorial, markTutorialSeen,
-  getDifficultySetting, setDifficultySetting
+  getDifficultySetting, setDifficultySetting,
+  hasCompletedFirstGame, markFirstGameCompleted
 } from './save.js';
-import { renderMenu, renderDifficultyPicker, renderTutorial, renderSelectingOrigin, renderPlaying, renderEnd, renderGameMenu } from './ui/screens.js';
+import { renderMenu, renderDifficultyPicker, renderTutorial, renderSelectingOrigin, renderPlaying, renderEnd, renderGameMenu, renderInterstitialAd } from './ui/screens.js';
 import { createServices } from './services/index.js';
 import { createAudio } from './audio/audio.js';
 
@@ -23,7 +24,22 @@ window.addEventListener('unhandledrejection', (event) => {
   services.analytics.logError(event.reason, { type: 'unhandled-rejection' });
 });
 
-let state = loadState() || createInitialState();
+// V-finale (correctif bêta §1) : NE JAMAIS charger la sauvegarde directement
+// en mémoire au démarrage. Un rechargement de page (fermeture complète de
+// l'app, ou simple éviction de la WebView par l'OS mobile en arrière-plan -
+// les deux sont indiscernables d'un point de vue web) déclenche un nouveau
+// chargement de ce module ; démarrer directement en 'playing' ici court-
+// circuitait le menu et donnait l'impression que RUPTURE "ne fermait
+// jamais" la partie précédente. Le menu (état initial, toujours affiché en
+// premier) propose déjà "Reprendre la partie" quand une sauvegarde existe
+// (voir renderMenu/l'action 'resume-game' ci-dessous) : c'est desormais
+// l'UNIQUE façon d'y revenir. Rien n'est perdu (la sauvegarde elle-même
+// n'est pas touchée) - seule la reprise automatique et silencieuse est
+// supprimée. Le cycle premier-plan/arrière-plan PENDANT une session normale
+// (verrouillage de l'écran, changement d'app bref) ne recharge pas ce
+// module (voir document.hidden dans la boucle de simulation plus bas) : ce
+// correctif ne l'affecte donc pas.
+let state = createInitialState();
 let showTutorial = false;
 let tutorialPendingNewGame = false;
 let showDifficultyPicker = false;
@@ -34,10 +50,27 @@ let menuView = null;
 let settingsReturnTo = null; // where "Retour" from Paramètres should go: null (main menu) or 'menu' (in-game)
 let pendingDifficulty = getDifficultySetting();
 
+// Monétisation (voir services/ads.js, services/premium.js) : horloge murale
+// réelle de la partie en cours (pas des jours simulés) pour appliquer la
+// règle de fréquence publicitaire exacte de l'audit économique. Volontairement
+// en mémoire seulement - un redémarrage complet de l'app perd la trace d'une
+// partie non terminée, ce qui ne peut jamais déclencher une publicité en
+// trop (voir services/ads.js pour le raisonnement complet).
+let gameStartedAt = null;
+let lastCompletedGameDurationMs = null;
+let lastCompletedGameWasFirst = false;
+let showInterstitial = false;
+let afterInterstitial = null;
+
 function startNewGame() {
   clearSave();
   state = createInitialState();
   beginNewGame(state, getDifficultySetting());
+}
+
+function actuallyBeginNewGameFlow() {
+  pendingDifficulty = getDifficultySetting();
+  showDifficultyPicker = true;
 }
 
 // La difficulté est désormais choisie explicitement avant CHAQUE nouvelle
@@ -45,9 +78,31 @@ function startNewGame() {
 // éventuel passage antérieur par Paramètres - voir renderDifficultyPicker.
 // Rien n'est détruit tant que "Continuer" n'a pas été cliqué : une ancienne
 // partie en cours reste intacte si le joueur fait "Retour" depuis cet écran.
+//
+// Monétisation : évalue ici, une seule fois par partie réellement terminée,
+// si une publicité interstitielle (simulée, voir services/ads.js) doit
+// s'intercaler avant de proposer la partie suivante - jamais pendant une
+// partie, jamais autour de la toute première. Un redémarrage en cours de
+// partie (partie jamais terminée) ne consomme ni ne déclenche cette
+// vérification : seule une victoire/défaite réelle alimente
+// lastCompletedGameDurationMs (voir la boucle de simulation plus bas).
 function beginNewGameFlow() {
-  pendingDifficulty = getDifficultySetting();
-  showDifficultyPicker = true;
+  if (lastCompletedGameDurationMs !== null) {
+    const context = {
+      isFirstGameEver: lastCompletedGameWasFirst,
+      gameDurationMs: lastCompletedGameDurationMs,
+      isPremium: services.premium.isPremium()
+    };
+    lastCompletedGameDurationMs = null;
+    lastCompletedGameWasFirst = false;
+    if (services.ads.shouldShowInterstitial(context)) {
+      showInterstitial = true;
+      services.ads.showInterstitialAd(); // simulation - voir renderInterstitialAd()/le bouton "Continuer"
+      afterInterstitial = actuallyBeginNewGameFlow;
+      return;
+    }
+  }
+  actuallyBeginNewGameFlow();
 }
 
 function proceedAfterDifficultyPicked() {
@@ -61,6 +116,10 @@ function proceedAfterDifficultyPicked() {
 }
 
 function render() {
+  if (showInterstitial) {
+    app.innerHTML = renderInterstitialAd();
+    return;
+  }
   if (showDifficultyPicker) {
     app.innerHTML = renderDifficultyPicker(pendingDifficulty);
     return;
@@ -73,7 +132,9 @@ function render() {
     app.innerHTML = renderGameMenu(menuView, state, {
       pendingDifficulty,
       musicEnabled: audio.isMusicEnabled(),
-      sfxEnabled: audio.isSfxEnabled()
+      sfxEnabled: audio.isSfxEnabled(),
+      isPremium: services.premium.isPremium(),
+      premiumSource: services.premium.getEntitlementSource()
     });
     return;
   }
@@ -135,6 +196,7 @@ app.addEventListener('click', (event) => {
       break;
     case 'confirm-origin':
       confirmOrigin(state, target.dataset.id);
+      gameStartedAt = Date.now();
       break;
     case 'buy-upgrade':
       if (buyUpgrade(state, target.dataset.kind)) audio.playPurchase();
@@ -181,6 +243,24 @@ app.addEventListener('click', (event) => {
       menuView = null;
       beginNewGameFlow();
       break;
+
+    // --- monétisation (voir services/ads.js, services/premium.js) ---
+    case 'interstitial-continue': {
+      showInterstitial = false;
+      const resume = afterInterstitial;
+      afterInterstitial = null;
+      if (resume) resume();
+      break;
+    }
+    case 'premium-purchase-test':
+      services.premium.purchasePremium().then(render);
+      break;
+    case 'premium-restore-test':
+      services.premium.restorePurchases().then(render);
+      break;
+    case 'premium-reset-test':
+      services.premium.setPremium(false);
+      break;
     default:
       return;
   }
@@ -192,7 +272,7 @@ app.addEventListener('click', (event) => {
 const TICK_MS = 1000;
 setInterval(() => {
   if (document.hidden) return;
-  if (showTutorial || showDifficultyPicker || menuView) return;
+  if (showTutorial || showDifficultyPicker || menuView || showInterstitial) return;
   if (state.status !== 'playing' || state.speed <= 0) return;
   const phaseBefore = state.responsePhase;
   for (let i = 0; i < state.speed; i += 1) {
@@ -203,8 +283,18 @@ setInterval(() => {
   // la phase en une seule boucle : la Réponse mondiale ne peut que
   // progresser (jamais reculer), comparer avant/après la boucle suffit.
   if (state.responsePhase !== phaseBefore) audio.playPhaseChange();
-  if (state.status === 'victory') audio.playVictory();
-  else if (state.status === 'defeat') audio.playDefeat();
+  if (state.status === 'victory' || state.status === 'defeat') {
+    if (state.status === 'victory') audio.playVictory();
+    else audio.playDefeat();
+    // Monétisation : n'alimente la décision publicitaire qu'à partir d'une
+    // partie réellement terminée (jamais un abandon/redémarrage en cours de
+    // partie, jamais plusieurs fois pour la même partie - voir
+    // beginNewGameFlow, seul consommateur de ces deux variables).
+    lastCompletedGameWasFirst = !hasCompletedFirstGame();
+    if (lastCompletedGameWasFirst) markFirstGameCompleted();
+    lastCompletedGameDurationMs = gameStartedAt ? Date.now() - gameStartedAt : 0;
+    gameStartedAt = null;
+  }
   saveState(state);
   render();
 }, TICK_MS);

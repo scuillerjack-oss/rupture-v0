@@ -1,19 +1,81 @@
-// Adaptateur Premium local. Aucun achat réel n'est intégré : le statut est
-// un simple indicateur stocké côté appareil, pensé pour qu'un futur flux
-// d'achat (Google Play Billing ou autre plateforme) n'ait qu'à appeler
-// setPremiumFlag(true) après une transaction vérifiée, sans toucher au
-// reste du jeu.
+// Premium — modèle RÉEL, achat SIMULÉ.
 //
-// Limite assumée et documentée (voir docs/TRAJECTOIRE_COMMERCIALE.md) :
-// un indicateur localStorage n'est PAS une preuve d'achat fiable pour une
-// vraie commercialisation. Une intégration réelle devra vérifier
-// l'entitlement via la plateforme (Play Billing, restauration d'achat)
-// plutôt que de faire confiance à cette seule valeur locale.
-import { getPremiumFlag, setPremiumFlag } from '../save.js';
+// Source de vérité : docs/RUPTURE_Audit_Economique_Precommercialisation.pdf
+// (§3, §8). Premium = achat unique 2,99€ = retire la publicité + débloque
+// la vitesse ×4. Aucun avantage stratégique, aucune méta-monnaie, aucune
+// dégradation du contenu gratuit — le gameplay complet (×1, ×2, toutes les
+// orientations) reste jouable sans Premium.
+//
+// Distinction explicite (§4 de la demande) :
+//  - RÉEL : isPremium()/getEntitlementSource() lisent un état réel (pas un
+//    exemple de code) ; getAvailableSpeeds() (config/runtime.js) applique
+//    réellement la restriction ×4 en environnement 'commercial'.
+//  - SIMULÉ : purchasePremium()/restorePurchases() ne parlent à AUCUNE
+//    plateforme de paiement réelle (aucun compte Google Play Billing/App
+//    Store n'existe). En dev/bêta, elles accordent un entitlement marqué
+//    'simulated-test' - jamais confondu avec un achat réel (voir
+//    getEntitlementSource()).
+//  - PRÉPARÉ, PAS CONNECTÉ : en environnement 'commercial', ces deux
+//    fonctions refusent explicitement d'agir (result 'not-connected')
+//    plutôt que de simuler un achat gratuit qui déclencherait une
+//    interface Premium sans qu'aucune vraie transaction n'ait eu lieu -
+//    voir docs/TRAJECTOIRE_COMMERCIALE.md pour le plugin Play Billing à
+//    brancher ici le moment venu (seul ce fichier serait réécrit).
+//
+// Sécurité assumée et documentée (§6/§7 de la demande) : un flag
+// localStorage, même nommé "vérifié", reste modifiable par un utilisateur
+// muni des outils de développement de son navigateur - aucune obfuscation
+// côté client ne change cela réellement. La vraie protection, une fois
+// Play Billing connecté, est la vérification de l'achat par la plateforme
+// (reçu signé, `Purchase.acknowledge()`), jamais une valeur locale seule.
+// Ce fichier sépare donc explicitement isPremium() (cache d'affichage
+// rapide) de getEntitlementSource() (d'où vient cette valeur), pour qu'un
+// futur code de vérification n'ait qu'à écrire 'store-verified' au bon
+// endroit sans réécrire le reste du jeu.
+import {
+  getPremiumFlag,
+  setPremiumFlag,
+  getPremiumSource,
+  logSecurityEvent
+} from '../save.js';
+import { RUNTIME_CONFIG } from '../config/runtime.js';
 
-export function createPremiumService() {
+export function createPremiumService(config = RUNTIME_CONFIG) {
+  // Garde de cohérence : un Premium actif dont la source n'est ni
+  // 'simulated-test' ni 'store-verified' n'a pas pu être écrit par ce
+  // fichier - journalisé pour diagnostic, jamais utilisé pour bloquer le
+  // joueur (voir en-tête : ce n'est pas une protection, juste un
+  // diagnostic).
+  const isPremium = () => getPremiumFlag();
+  const source = () => getPremiumSource();
+  if (isPremium() && source() !== 'simulated-test' && source() !== 'store-verified') {
+    logSecurityEvent('premium-flag-unknown-source', { source: source() });
+  }
+
   return {
-    isPremium: () => getPremiumFlag(),
-    setPremium: (value) => setPremiumFlag(Boolean(value))
+    isPremium,
+    getEntitlementSource: source,
+
+    // Réservé aux tests/scripts internes (ex. batteries de simulation qui
+    // veulent forcer un état) - jamais appelé depuis un flux d'achat réel.
+    // Conservé pour compatibilité avec le code existant qui l'utilisait
+    // déjà comme point d'indirection unique.
+    setPremium: (value) => setPremiumFlag(Boolean(value), 'simulated-test'),
+
+    async purchasePremium() {
+      if (config.env === 'commercial') {
+        return { granted: false, resultKind: 'not-connected', reason: 'Aucun module Google Play Billing / App Store connecté - voir docs/TRAJECTOIRE_COMMERCIALE.md' };
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300)); // simule un court délai, pas un vrai réseau de paiement
+      setPremiumFlag(true, 'simulated-test');
+      return { granted: true, resultKind: 'simulated' };
+    },
+
+    async restorePurchases() {
+      if (config.env === 'commercial') {
+        return { restored: false, resultKind: 'not-connected', reason: 'Aucun module de restauration d\'achats connecté - voir docs/TRAJECTOIRE_COMMERCIALE.md' };
+      }
+      return { restored: isPremium(), resultKind: 'simulated' };
+    }
   };
 }

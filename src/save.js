@@ -55,6 +55,28 @@ export function markTutorialSeen() {
   }
 }
 
+// Persisté à vie sur l'appareil (jamais réinitialisé par une simple
+// fermeture d'app) : sert uniquement à garantir qu'aucune publicité
+// n'apparaît jamais autour de la toute première partie réellement terminée
+// par ce joueur - voir services/ads.js et l'audit économique.
+const FIRST_GAME_DONE_KEY = 'rupture-v0-first-game-done';
+
+export function hasCompletedFirstGame() {
+  try {
+    return localStorage.getItem(FIRST_GAME_DONE_KEY) === '1';
+  } catch (e) {
+    return false;
+  }
+}
+
+export function markFirstGameCompleted() {
+  try {
+    localStorage.setItem(FIRST_GAME_DONE_KEY, '1');
+  } catch (e) {
+    console.warn('Impossible de mémoriser la fin de la première partie', e);
+  }
+}
+
 const DIFFICULTY_KEY = 'rupture-v0-difficulty';
 
 export function getDifficultySetting() {
@@ -111,9 +133,15 @@ export function setSfxSetting(enabled) {
   }
 }
 
-// Indicateur Premium local (voir src/services/premium.js). Aucun achat réel
-// n'existe : ce n'est qu'un indicateur côté appareil, faux par défaut.
+// Indicateur Premium local (voir src/services/premium.js). AUCUN achat réel
+// n'est vérifié ici : c'est un cache local rapide, jamais une preuve
+// d'achat. `PREMIUM_SOURCE_KEY` documente explicitement l'origine de ce
+// cache, pour ne jamais confondre une valeur simulée avec une valeur
+// réellement vérifiée par une plateforme (Play Billing) le jour où celle-ci
+// sera connectée - voir docs/RUPTURE_Rapport_Technique_Final.pdf, section
+// sécurité de la monétisation.
 const PREMIUM_KEY = 'rupture-v0-premium';
+const PREMIUM_SOURCE_KEY = 'rupture-v0-premium-source';
 
 export function getPremiumFlag() {
   try {
@@ -123,11 +151,59 @@ export function getPremiumFlag() {
   }
 }
 
-export function setPremiumFlag(value) {
+// source : 'simulated-test' (dev/bêta, aucune plateforme réelle impliquée)
+// ou 'store-verified' (réservé à une future intégration réelle - jamais
+// écrit par le code actuel). Toujours interroger cette valeur avant de
+// traiter isPremium() comme autre chose qu'un cache d'affichage.
+export function setPremiumFlag(value, source = 'simulated-test') {
   try {
-    if (value) localStorage.setItem(PREMIUM_KEY, '1');
-    else localStorage.removeItem(PREMIUM_KEY);
+    if (value) {
+      localStorage.setItem(PREMIUM_KEY, '1');
+      localStorage.setItem(PREMIUM_SOURCE_KEY, source);
+    } else {
+      localStorage.removeItem(PREMIUM_KEY);
+      localStorage.removeItem(PREMIUM_SOURCE_KEY);
+    }
   } catch (e) {
     console.warn('Impossible de mémoriser le statut Premium', e);
+  }
+}
+
+export function getPremiumSource() {
+  try {
+    return localStorage.getItem(PREMIUM_SOURCE_KEY) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Journal minimal d'anomalies de monétisation (diagnostic uniquement, voir
+// §6/§7 de la demande de finalisation) : jamais utilisé pour bloquer quoi
+// que ce soit côté client (un journal local n'est pas une protection), mais
+// permet de repérer après coup un état incohérent (ex. Premium actif sans
+// source connue) pendant les bêtas et après publication. Anneau borné :
+// jamais plus de 20 entrées, pour rester un diagnostic léger, pas un
+// stockage illimité.
+const SECURITY_LOG_KEY = 'rupture-v0-security-log';
+const SECURITY_LOG_MAX = 20;
+
+export function logSecurityEvent(type, details = {}) {
+  try {
+    const raw = localStorage.getItem(SECURITY_LOG_KEY);
+    const log = raw ? JSON.parse(raw) : [];
+    log.push({ type, details, at: new Date().toISOString() });
+    while (log.length > SECURITY_LOG_MAX) log.shift();
+    localStorage.setItem(SECURITY_LOG_KEY, JSON.stringify(log));
+  } catch (e) {
+    console.warn('Journalisation de sécurité impossible', e);
+  }
+}
+
+export function getSecurityLog() {
+  try {
+    const raw = localStorage.getItem(SECURITY_LOG_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
   }
 }
