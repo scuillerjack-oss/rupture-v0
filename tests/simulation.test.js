@@ -232,15 +232,33 @@ test('Monte-Carlo: passive play does not produce a systematic instant win or an 
   assert.equal(outcomes.defeat, TERRITORIES.length, 'passive play (no upgrades) should consistently lose in this balance');
 });
 
-test('Monte-Carlo: a sustained, diversified upgrade strategy across all four branches wins from every origin', () => {
-  let wins = 0;
+// V3.1 : depuis que la Résilience doit être investie sérieusement pour
+// neutraliser le resserrement du plafond une fois l'Humanité mobilisée (voir
+// simulation.js), un round-robin aveugle (qui ne réagit jamais à l'état du
+// monde) n'est plus suffisant pour gagner de façon fiable - seul l'ORDRE
+// d'achat (Résilience priorisée une fois mobilisé) fait la différence, à
+// dépense égale. Comparaison mesurée, pas un chiffre choisi à l'avance.
+test('Monte-Carlo: a state-aware reactive strategy wins meaningfully more often than blind round-robin, from a majority of origins', () => {
+  let roundRobinWins = 0;
+  let reactiveWins = 0;
   for (const origin of TERRITORIES.map((t) => t.id)) {
-    const state = freshGame(origin);
-    runUntilEnd(state, buyRoundRobin);
-    if (state.status === 'victory') wins += 1;
-    assert.ok(state.day > 100, `origin ${origin} ended suspiciously fast even with active upgrades (day ${state.day})`);
+    const roundRobinState = freshGame(origin);
+    runUntilEnd(roundRobinState, buyRoundRobin);
+    if (roundRobinState.status === 'victory') roundRobinWins += 1;
+    assert.ok(roundRobinState.day > 100, `origin ${origin} ended suspiciously fast even with active upgrades (day ${roundRobinState.day})`);
+
+    const reactiveState = freshGame(origin);
+    runUntilEnd(reactiveState, buyReactively);
+    if (reactiveState.status === 'victory') reactiveWins += 1;
   }
-  assert.equal(wins, TERRITORIES.length, 'a sustained diversified strategy across all 4 branches should win from every origin');
+  assert.ok(
+    reactiveWins > roundRobinWins,
+    `a state-aware order should win more often (${reactiveWins}/${TERRITORIES.length}) than blind round-robin (${roundRobinWins}/${TERRITORIES.length})`
+  );
+  assert.ok(
+    reactiveWins >= TERRITORIES.length / 2,
+    `a well-adapted strategy should win from at least half the origins, got ${reactiveWins}/${TERRITORIES.length}`
+  );
 });
 
 // V3 : la Propagation ne doit plus, seule, pouvoir gagner - la conversion de
@@ -259,6 +277,58 @@ test('V3: maxing Propagation (and only Propagation) can spread everywhere but ca
       `origin=${origin}: Propagation-only should still spread noticeably before being pushed back (reach=${state.reach.toFixed(1)})`
     );
   }
+});
+
+// V3.1 (bêta manuelle, demande explicite §2) : à Dangerosité 0, une région
+// doit pouvoir être touchée mais jamais devenir Sévère (>=50) ou Critique
+// (>=75) - vérifié sur TOUT le déroulé de la partie, pas seulement à la fin.
+test('V3.1: with Dangerosity at 0, no territory ever becomes Sévère or Critique (crisis stays below 50)', () => {
+  const state = freshGame('fenwick');
+  runUntilEnd(state, (s) => {
+    // Investit dans tout SAUF Dangerosité, pour pousser la crise aussi fort
+    // que possible sans jamais l'ouvrir.
+    for (const kind of ['propagation', 'resilience', 'discretion']) buyUpgrade(s, kind);
+    for (const t of TERRITORIES) {
+      assert.ok(
+        s.territories[t.id].crisis < 50,
+        `${t.id} reached Sévère/Critique (crisis=${s.territories[t.id].crisis.toFixed(1)}) despite Dangerosité=0 at day ${s.day}`
+      );
+    }
+  });
+  assert.equal(state.upgrades.dangerosity, 0, 'test setup error: Dangerosity should never have been purchased');
+});
+
+// V3.1 (demande explicite §2) : Propagation élevée + Dangerosité 0 doit
+// quand même permettre une large diffusion (beaucoup de régions touchées),
+// même si leur gravité individuelle reste plafonnée.
+test('V3.1: high Propagation with Dangerosity at 0 still reaches most territories', () => {
+  const state = freshGame('fenwick');
+  runUntilEnd(state, (s) => {
+    if (s.upgrades.propagation < BALANCE.upgrades.propagation.maxLevel) buyUpgrade(s, 'propagation');
+  });
+  const touched = TERRITORIES.filter((t) => state.territories[t.id].crisis > 0).length;
+  assert.ok(
+    touched >= TERRITORIES.length - 2,
+    `Propagation-only should still touch nearly every territory, got ${touched}/${TERRITORIES.length}`
+  );
+  assert.ok(state.reach >= 70, `Propagation-only should reach a wide share of the population, got reach=${state.reach.toFixed(1)}`);
+});
+
+// V3.1 (demande explicite §3) : la courbe de Réponse mondiale doit être
+// lissée (montée plus progressive à conscience faible/moyenne) sans changer
+// le danger final (conscience totale -> même résultat qu'une progression
+// linéaire). Testé directement sur la formule de mise en forme, isolée de
+// toute autre dynamique.
+test('V3.1: the world response curve is smoothed at low/mid awareness but unchanged at the extremes', () => {
+  const { responseCurvePower } = BALANCE.humanity;
+  assert.ok(responseCurvePower > 1, 'a smoothing exponent > 1 is required to slow the early/mid ramp');
+  const shape = (awarenessFraction) => Math.pow(awarenessFraction, responseCurvePower) * 100;
+  assert.equal(shape(0), 0, 'no awareness should still mean no response progress');
+  assert.equal(shape(1), 100, 'full awareness must still drive the response at full strength (danger not neutralized)');
+  assert.ok(
+    shape(0.5) < 50,
+    `at half awareness, the shaped response (${shape(0.5).toFixed(1)}) should lag behind a linear one (50) - that is the smoothing`
+  );
 });
 
 // V3 : une fois la Réponse mondiale mobilisée (au-delà du seuil), l'Humanité
@@ -455,17 +525,18 @@ function buyReactively(state) {
 // The same reactive priority, but exercised every tick rather than in
 // periodic batches - matching how an actual play session works (the HUD
 // updates live; a real player taps "buy" as soon as something lights up,
-// they don't bank days of income before deciding). Measured finding worth
-// recording honestly: batching this same reactive order into infrequent
-// (25-100 in-game day) lump sessions performs markedly worse (4-5/18 in
-// exploratory measurement) purely because of interaction with the Influence
-// cap - raising the cap doesn't fix it either (tested up to 500, no change).
-// This mirrors an active playthrough far better than the old V2-era
-// "checking in every 100/200 days" proxy did: at V3's higher total upgrade
-// cost across 4 branches, that proxy no longer represents realistic
-// attentive play, only a big real-world gap between sessions - which the
-// negligence tests above already cover, and which correctly still fails.
-test('V3: a reactive spending order (Résilience once mobilized, offense otherwise), exercised live, wins reliably', () => {
+// they don't bank days of income before deciding).
+//
+// V3.1 : depuis que la Résilience doit être investie jusqu'à
+// humanity.resilienceImmunityLevel pour neutraliser entièrement le
+// resserrement du plafond de gravité (voir simulation.js), le budget total
+// nécessaire a augmenté ; certaines origines les moins bien connectées
+// n'accumulent pas assez d'Influence à temps pour tout financer avant que
+// la Réponse mondiale ne conclue. Mesuré honnêtement à 13/18 (72%) plutôt
+// que forcé à 18/18 - cohérent avec l'origine de départ qui a toujours
+// compté dans ce jeu (voir README) et avec la demande explicite de ne pas
+// garantir la victoire en Normal.
+test('V3: a reactive spending order (Résilience once mobilized, offense otherwise), exercised live, wins from most origins', () => {
   let wins = 0;
   const days = [];
   for (const originId of TERRITORIES.map((t) => t.id)) {
@@ -479,6 +550,9 @@ test('V3: a reactive spending order (Résilience once mobilized, offense otherwi
       days.push(state.day);
     }
   }
-  assert.equal(wins, TERRITORIES.length, `a live reactive spending order should win from every origin, got ${wins}/${TERRITORIES.length}`);
+  assert.ok(
+    wins >= TERRITORIES.length * 0.6,
+    `a live reactive spending order should win from a solid majority of origins, got ${wins}/${TERRITORIES.length}`
+  );
 });
 

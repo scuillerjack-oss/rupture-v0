@@ -1,6 +1,6 @@
 import { TERRITORIES } from './territories.js';
 import { adjacency, pushLog } from './state.js';
-import { BALANCE, upgradeCost, tensionAt, responsePhaseAt } from './balance.js';
+import { BALANCE, upgradeCost, tensionAt, responsePhaseAt, dangerosityCapAt } from './balance.js';
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
@@ -19,17 +19,43 @@ export function simulateTick(state) {
   const dangerosityEffect = state.upgrades.dangerosity * BALANCE.upgrades.dangerosity.effectPerLevel;
 
   // L'Humanité ne se contente plus de ralentir la croissance de l'Anomalie :
-  // une fois sa Réponse mondiale sérieusement engagée, elle la repousse
-  // activement. `state.globalContainment` reflète l'état AVANT ce tick (il
-  // n'est recalculé qu'après la boucle, comme en V2) : léger décalage d'un
-  // tick, sans effet observable, déjà le cas pour awareness/containment.
+  // une fois sa Réponse mondiale sérieusement engagée, elle referme aussi le
+  // plafond de gravité que Dangerosité avait ouvert. `state.globalContainment`
+  // reflète l'état AVANT ce tick (il n'est recalculé qu'après la boucle,
+  // comme en V2) : léger décalage d'un tick, sans effet observable, déjà le
+  // cas pour awareness/containment.
+  //
+  // Modélisée comme une réduction du plafond plutôt qu'une érosion
+  // proportionnelle de la crise déjà acquise : une érosion proportionnelle
+  // ne converge jamais exactement vers un palier (elle s'en approche sans
+  // jamais l'atteindre). Le seuil de mobilisation (15%) est franchi tôt dans
+  // quasiment toute partie sérieuse et ne redescend jamais : une victoire par
+  // Progression resterait donc mathématiquement impossible dès la
+  // mobilisation, quel que soit l'investissement du joueur, si rien ne
+  // pouvait un jour ramener ce resserrement à zéro. Une Résilience investie
+  // jusqu'à humanity.resilienceImmunityLevel neutralise donc entièrement CE
+  // resserrement spécifique. Les autres usages de la Résilience (croissance
+  // locale, amortissement de la propagation entrante) restent plafonnés à
+  // 80% comme avant : cette neutralisation complète est spécifique à la
+  // mobilisation.
+  const resilienceEffectForSuppression = clamp(
+    state.upgrades.resilience / BALANCE.humanity.resilienceImmunityLevel,
+    0,
+    1
+  );
   const mobilizationThreshold = BALANCE.humanity.mobilizationThreshold;
   const mobilizationProgress = clamp(
     (state.globalContainment - mobilizationThreshold) / (100 - mobilizationThreshold),
     0,
     1
   );
-  const suppressionRate = BALANCE.humanity.maxSuppressionPerTick * mobilizationProgress * (1 - resilienceEffect) * tension;
+  const suppressionRate =
+    BALANCE.humanity.maxSuppressionPerTick * mobilizationProgress * (1 - resilienceEffectForSuppression) * tension;
+  // Plafond de crise partagé par tous les territoires ce tick : d'abord fixé
+  // par la Dangerosité (dangerosityCapAt), puis resserré par la Réponse
+  // mondiale mobilisée - jamais annulé (voir suppressionRate), la Résilience
+  // atténuant ce resserrement sans jamais l'annuler complètement.
+  const crisisCap = dangerosityCapAt(state.upgrades.dangerosity) * (1 - suppressionRate);
 
   for (const t of TERRITORIES) {
     const ts = state.territories[t.id];
@@ -60,12 +86,12 @@ export function simulateTick(state) {
     spreadIn *= incomingDamping;
 
     let newCrisis = clamp(currentCrisis + growth + spreadIn, 0, 100);
-    // Érosion active une fois l'Humanité mobilisée (voir suppressionRate
-    // ci-dessus) : proportionnelle à la crise actuelle, donc elle ne peut
-    // jamais produire de valeur négative ni incohérente.
-    if (suppressionRate > 0) {
-      newCrisis = clamp(newCrisis - newCrisis * suppressionRate, 0, 100);
-    }
+    // Sans Dangerosité, un territoire peut être largement atteint (la
+    // Propagation continue de fonctionner normalement, spreadThreshold=15
+    // reste bien en dessous du plafond) mais jamais réellement grave : sa
+    // crise ne peut pas dépasser crisisCap (Active, jamais Sévère/Critique -
+    // resserré au fil de la mobilisation de l'Humanité, voir plus haut).
+    newCrisis = Math.min(newCrisis, crisisCap);
 
     // Propagation ET Dangerosité rendent l'Anomalie plus visible ; une
     // Anomalie rendue dangereuse est bien plus alarmante qu'une Anomalie
@@ -91,33 +117,40 @@ export function simulateTick(state) {
     ts.crisis = newCrisis;
   }
 
-  let weightedReach = 0;
+  let weightedCrisis = 0;
+  let touchedPopulation = 0;
   let totalPopulation = 0;
   let awarenessSum = 0;
   let influenceGain = 0;
 
   for (const t of TERRITORIES) {
     const ts = state.territories[t.id];
-    weightedReach += ts.crisis * t.population;
+    weightedCrisis += ts.crisis * t.population;
+    if (ts.crisis > 0) touchedPopulation += t.population;
     totalPopulation += t.population;
     awarenessSum += ts.awareness;
     influenceGain += (ts.crisis * t.population) / 100;
   }
 
-  // "Portée" : à quel point l'Anomalie s'est répandue, indépendamment de sa
-  // gravité réelle. Affichée séparément dans la vue Monde pour rendre visible
-  // exactement ce que la Dangerosité change.
-  state.reach = clamp(weightedReach / totalPopulation, 0, 100);
-  // "Progression" (ex-domination) : ce qui compte réellement pour la
-  // victoire. severityFactor vaut BALANCE.severity.baseFactor sans aucun
-  // investissement en Dangerosité — une Anomalie purement répandue ne peut
-  // donc pas gagner seule, quelle que soit sa Propagation.
-  const severityFactor = BALANCE.severity.baseFactor + dangerosityEffect;
-  state.dominance = clamp(state.reach * severityFactor, 0, 100);
+  // "Portée" : quelle part de la population mondiale vit désormais dans une
+  // région touchée, indépendamment de sa gravité réelle - gouvernée par
+  // Propagation. Reste ouverte jusqu'à 100% même à Dangerosité 0.
+  state.reach = clamp((touchedPopulation / totalPopulation) * 100, 0, 100);
+  // "Progression" (ce qui compte pour la victoire) : gravité réelle moyenne,
+  // pondérée par population. Chaque territoire étant plafonné par
+  // crisisCap (voir plus haut), la Progression reste mathématiquement
+  // toujours <= Portée, et ne peut approcher 100 qu'avec une Dangerosité
+  // développée - gouvernée par Dangerosité.
+  state.dominance = clamp(weightedCrisis / totalPopulation, 0, 100);
 
   const containmentGainFactor = state.rules?.globalContainmentGainFactor ?? BALANCE.globalContainmentGainFactor;
+  // Lisse la transition "conscience faible -> réponse sérieuse" (voir
+  // BALANCE.humanity.responseCurvePower) sans changer le danger final : à
+  // conscience nulle ou totale, le résultat est inchangé (0^p=0, 1^p=1).
+  const awarenessFraction = clamp(awarenessSum / TERRITORIES.length / 100, 0, 1);
+  const shapedAwareness = Math.pow(awarenessFraction, BALANCE.humanity.responseCurvePower) * 100;
   state.globalContainment = clamp(
-    state.globalContainment + (awarenessSum / TERRITORIES.length) * containmentGainFactor * tension,
+    state.globalContainment + shapedAwareness * containmentGainFactor * tension,
     0,
     100
   );

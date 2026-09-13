@@ -1,5 +1,5 @@
 import { getTerritory, TERRITORIES } from '../engine/territories.js';
-import { BALANCE, DIFFICULTIES, upgradeCost, responsePhaseAt } from '../engine/balance.js';
+import { BALANCE, DIFFICULTIES, upgradeCost, responsePhaseAt, dangerosityCapAt } from '../engine/balance.js';
 import { getAvailableSpeeds } from '../config/runtime.js';
 
 const SPEED_LABELS = { 0: '⏸', 1: '1x', 2: '2x', 4: '4x' };
@@ -13,10 +13,20 @@ const UPGRADE_ORDER = ['propagation', 'dangerosity', 'resilience', 'discretion']
 
 const NEXT_LEVEL_EFFECT = {
   propagation: (pct) => `Prochain niveau : +${pct}% de vitesse de propagation vers les voisins (et un peu plus visible).`,
-  dangerosity: (pct) => `Prochain niveau : +${pct} pt de facteur de gravité réelle (et beaucoup plus alarmant pour le monde).`,
   resilience: (pct) => `Prochain niveau : +${pct}% de résistance aux mesures de confinement (locales et à la propagation).`,
   discretion: (pct) => `Prochain niveau : +${pct}% de ralentissement de la prise de conscience mondiale.`
 };
+
+// Dangerosité ne suit pas le schéma générique "+X% d'un effet" des trois
+// autres branches : son effet réel est un plafond de gravité par région
+// (voir dangerosityCapAt). Le texte affiche donc la traduction exacte de la
+// mécanique - le plafond actuel et celui du prochain niveau - plutôt qu'un
+// pourcentage esthétique déconnecté du moteur.
+function dangerosityNextLevelText(level) {
+  const currentCap = Math.round(dangerosityCapAt(level));
+  const nextCap = Math.round(dangerosityCapAt(level + 1));
+  return `Prochain niveau : porte le plafond de gravité d'une région de ${currentCap}% à ${nextCap}% (et alarme davantage le monde).`;
+}
 
 function upgradeRow(state, kind) {
   const cfg = BALANCE.upgrades[kind];
@@ -26,7 +36,9 @@ function upgradeRow(state, kind) {
   const canAfford = !maxed && state.influence >= upgradeCost(kind, level);
   const nextLevelText = maxed
     ? 'Niveau maximum atteint.'
-    : NEXT_LEVEL_EFFECT[kind](kind === 'dangerosity' ? cfg.effectPerLevel.toFixed(3) : Math.round(cfg.effectPerLevel * 100));
+    : kind === 'dangerosity'
+      ? dangerosityNextLevelText(level)
+      : NEXT_LEVEL_EFFECT[kind](Math.round(cfg.effectPerLevel * 100));
   return `
     <div class="upgrade-row">
       <div class="upgrade-info">

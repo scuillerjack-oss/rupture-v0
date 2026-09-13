@@ -32,24 +32,43 @@ export const BALANCE = {
   // qu'une Anomalie simplement répandue (dangerosityAwarenessBleed est
   // volontairement plus de deux fois supérieur à propagationAwarenessBleed).
   dangerosityAwarenessBleed: 1.6,
-  // Convertit la "portée" brute (crise pondérée par population) en progression
-  // réelle vers la victoire. Sans aucun investissement en Dangerosité, cette
-  // conversion plafonne à baseFactor : une Anomalie qui a touché 100% du monde
-  // mais n'a jamais investi en Dangerosité ne peut PAS gagner seule. C'est le
-  // mécanisme qui rend Propagation seule insuffisante (voir le rapport V3).
+  // V3.1 : Dangerosité ne multiplie plus un agrégat abstrait après coup - elle
+  // plafonne directement la crise que peut atteindre CHAQUE territoire. Sans
+  // aucun investissement, la crise d'un territoire ne peut jamais dépasser
+  // activeCeiling (elle reste "Active", jamais Sévère/Critique - voir
+  // src/ui/map.js pour les seuils de couleur), quelle que soit la Propagation :
+  // l'Anomalie peut se répandre partout (spreadThreshold=15 reste bien en
+  // dessous du plafond) sans devenir réellement grave nulle part. Chaque
+  // niveau de Dangerosité relève ce plafond linéairement jusqu'à 100 au
+  // niveau maximum - voir dangerosityCapAt().
   severity: {
-    baseFactor: 0.35
+    activeCeiling: 45,
+    // Le plafond atteint 100% dès ce niveau plutôt qu'au niveau maximum
+    // (10) : les tout derniers niveaux de Dangerosité servent alors à
+    // libérer de l'Influence pour les trois autres branches plutôt qu'à
+    // rester un palier obligatoire supplémentaire avant de pouvoir gagner.
+    fullSeverityLevel: 8
   },
   // Une fois la Réponse mondiale sérieusement engagée (au-delà de
-  // mobilizationThreshold), l'Humanité commence à activement repousser
-  // l'Anomalie dans chaque territoire, et pas seulement à ralentir sa
-  // croissance. La Résilience atténue cette érosion (jusqu'à 80%, comme son
-  // plafond usuel) mais ne l'annule jamais complètement : négliger totalement
-  // la Résilience devient réellement dangereux une fois cette phase entamée,
-  // sans que la Résilience soit obligatoire avant.
+  // mobilizationThreshold), l'Humanité referme le plafond de gravité que
+  // Dangerosité avait ouvert (voir simulation.js). Négliger totalement la
+  // Résilience devient réellement dangereux une fois cette phase entamée,
+  // sans que la Résilience soit obligatoire avant ; y investir à fond
+  // (resilienceImmunityLevel) neutralise entièrement ce resserrement -
+  // seuil volontairement élevé (mais pas le niveau maximum) : un engagement
+  // réel et coûteux sur une branche entière, pas un palier anodin.
   humanity: {
     mobilizationThreshold: 15,
-    maxSuppressionPerTick: 0.25
+    maxSuppressionPerTick: 0.25,
+    resilienceImmunityLevel: 8,
+    // V3.1 : lisse la transition "conscience faible -> réponse sérieuse" sans
+    // réduire le danger final. La Réponse mondiale progresse comme
+    // (conscience moyenne / 100) ^ responseCurvePower - à conscience quasi
+    // nulle ou totale (0 ou 100%), rien ne change (0^p=0, 1^p=1) ; entre les
+    // deux, un exposant > 1 ralentit la montée tant que la conscience n'est
+    // pas déjà bien installée, laissant plus de temps pour réagir avant que
+    // la mobilisation ne devienne sérieuse - voir simulation.js.
+    responseCurvePower: 1.6
   },
   upgrades: {
     propagation: {
@@ -78,7 +97,7 @@ export const BALANCE = {
     },
     dangerosity: {
       label: 'Dangerosité',
-      description: "Rend l'Anomalie réellement plus grave là où elle est déjà présente — indispensable pour transformer sa portée en une véritable victoire — mais l'expose beaucoup plus vite au regard du monde.",
+      description: "Permet aux régions où l'Anomalie est présente de devenir réellement graves (Sévères puis Critiques), au lieu de rester simplement actives — mais l'expose beaucoup plus vite au regard du monde.",
       maxLevel: 10,
       baseCost: 20,
       costGrowth: 1.1,
@@ -117,6 +136,16 @@ export function tensionAt(day) {
   const { min, max, rampDays, power } = BALANCE.tension;
   const progress = Math.max(0, Math.min(1, day / rampDays));
   return min + (max - min) * Math.pow(progress, power);
+}
+
+// Plafond de crise atteignable par un territoire pour un niveau de
+// Dangerosité donné : activeCeiling (aucun investissement) jusqu'à 100 (niveau
+// maximum), linéairement. Exportée pour que le HUD affiche la traduction
+// réelle de chaque niveau (voir src/ui/hud.js) au lieu d'un chiffre inventé.
+export function dangerosityCapAt(level) {
+  const { activeCeiling, fullSeverityLevel } = BALANCE.severity;
+  const fraction = Math.max(0, Math.min(1, level / fullSeverityLevel));
+  return activeCeiling + (100 - activeCeiling) * fraction;
 }
 
 // Étapes de la Réponse mondiale, dérivées de state.globalContainment plutôt
