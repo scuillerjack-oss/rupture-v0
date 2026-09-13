@@ -17,7 +17,17 @@ import { BALANCE, DIFFICULTIES } from './balance.js';
 // pour reconstituer une Conscience mondiale cohérente avec la partie déjà
 // jouée - voir migrations.js. Une partie en cours ne perd donc pas sa
 // progression pour ce changement.
-export const SAVE_VERSION = 4;
+//
+// V4.1 (§8) ajoute aussi maxDominance (plus haute Progression jamais
+// atteinte - peut différer de la Progression finale car la Dangerosité peut
+// redescendre le plafond de gravité une fois la Réponse mobilisée, voir
+// simulation.js) et phaseLog (jours de passage de chaque phase de Réponse),
+// utilisés uniquement par le récapitulatif de fin de partie. Une sauvegarde
+// V4 en cours n'a pas cet historique : la migration initialise maxDominance
+// à la Progression actuelle (minoration honnête plutôt qu'une valeur
+// inventée) et phaseLog à vide plutôt que de reconstituer un historique
+// qui n'a jamais été enregistré.
+export const SAVE_VERSION = 5;
 
 export function createTerritoryStates() {
   const map = {};
@@ -58,8 +68,18 @@ export function createInitialState() {
     // la menace, suivie séparément de la Réponse - voir simulation.js.
     globalAwareness: 0,
     dominance: 0,
+    // Plus haute Progression jamais atteinte - distincte de `dominance`
+    // (valeur courante, qui peut redescendre) : voir simulation.js et le
+    // récapitulatif de fin de partie (ui/screens.js).
+    maxDominance: 0,
     reach: 0,
     responsePhase: 'ignorance',
+    // Jour de passage de chaque phase de Réponse mondiale (hors 'ignorance',
+    // déjà la phase de départ) - alimente le récapitulatif de fin de partie.
+    // Borné par construction : au plus une entrée par phase (voir
+    // RESPONSE_PHASES dans balance.js), jamais rejouée en arrière (la
+    // Réponse affichée ne redescend jamais).
+    phaseLog: [],
     dominanceMilestoneLogged: false,
     upgrades: createInitialUpgrades(),
     territories: createTerritoryStates(),
@@ -82,8 +102,10 @@ export function beginNewGame(state, difficulty = 'normal') {
   state.globalMobilization = 0;
   state.globalAwareness = 0;
   state.dominance = 0;
+  state.maxDominance = 0;
   state.reach = 0;
   state.responsePhase = 'ignorance';
+  state.phaseLog = [];
   state.dominanceMilestoneLogged = false;
   state.upgrades = createInitialUpgrades();
   state.territories = createTerritoryStates();

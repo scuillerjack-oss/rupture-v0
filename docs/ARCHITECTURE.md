@@ -166,6 +166,28 @@ une reconstruction demain », n'ont **pas** été faits dans cette passe :
 - Un système d'internationalisation, un moteur audio, ou tout autre système
   non explicitement demandé pour cette passe.
 
+## 6bis. Mise à jour V4.1 — moteur audio
+
+La section 5 notait qu'aucun moteur audio n'existait et n'était prévu pour
+la passe d'architecture V2. V4.1 en ajoute un, mais volontairement **hors**
+`src/services/` : ce répertoire est réservé aux adaptateurs
+plateforme/commerciaux (Premium, publicité, analytics — voir section 2),
+alors que l'audio est une fonctionnalité de jeu locale, sans aucune
+dépendance externe ni décision commerciale associée.
+
+```
+src/audio/audio.js   →  moteur audio procédural (Web Audio API), aucun
+                          fichier/asset externe - donc aucune question de
+                          droits (voir RUPTURE_V4.1_Rapport_Technique_Officiel.pdf)
+```
+
+`src/audio/audio.js` lit et écrit ses réglages (musique/effets activés) via
+`src/save.js`, suivant exactement le même schéma que `getDifficultySetting`/
+`setDifficultySetting` — aucun nouveau point de contact `localStorage`
+introduit, la règle de la section 2 (« `save.js` est l'unique point de
+contact ») reste vraie. `main.js` reste la seule colle : il instancie
+`createAudio()` une fois, comme `createServices()`.
+
 ## 6. Non-régression vérifiée pour cette passe
 
 Aucun changement de gameplay, d'équilibrage ou d'expérience visible n'est

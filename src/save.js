@@ -73,6 +73,44 @@ export function setDifficultySetting(difficulty) {
   }
 }
 
+const MUSIC_KEY = 'rupture-v0-music';
+const SFX_KEY = 'rupture-v0-sfx';
+
+// Musique et effets sonores sont activés par défaut (silencieux uniquement
+// si le joueur les désactive explicitement), et persistent indépendamment
+// l'un de l'autre - voir src/audio/audio.js.
+export function getMusicSetting() {
+  try {
+    return localStorage.getItem(MUSIC_KEY) !== '0';
+  } catch (e) {
+    return true;
+  }
+}
+
+export function setMusicSetting(enabled) {
+  try {
+    localStorage.setItem(MUSIC_KEY, enabled ? '1' : '0');
+  } catch (e) {
+    console.warn('Impossible de mémoriser le réglage de musique', e);
+  }
+}
+
+export function getSfxSetting() {
+  try {
+    return localStorage.getItem(SFX_KEY) !== '0';
+  } catch (e) {
+    return true;
+  }
+}
+
+export function setSfxSetting(enabled) {
+  try {
+    localStorage.setItem(SFX_KEY, enabled ? '1' : '0');
+  } catch (e) {
+    console.warn('Impossible de mémoriser le réglage des effets sonores', e);
+  }
+}
+
 // Indicateur Premium local (voir src/services/premium.js). Aucun achat réel
 // n'existe : ce n'est qu'un indicateur côté appareil, faux par défaut.
 const PREMIUM_KEY = 'rupture-v0-premium';

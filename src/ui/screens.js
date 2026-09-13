@@ -1,6 +1,7 @@
 import { renderMap, renderMapLegend } from './map.js';
 import { renderHud } from './hud.js';
 import { BALANCE, DIFFICULTIES } from '../engine/balance.js';
+import { TERRITORIES } from '../engine/territories.js';
 
 export function renderMenu(hasSave) {
   return `
@@ -107,18 +108,99 @@ const END_EXPLANATIONS = {
   }
 };
 
+const UPGRADE_RECAP_LABELS = {
+  propagation: 'Propagation',
+  dangerosity: 'Dangerosité',
+  resilience: 'Résilience',
+  discretion: 'Discrétion'
+};
+
+// Compte-rendu de propagation, dérivé uniquement de l'état final (aucune
+// donnée inventée) - même logique que hud.js:computeWorldStats, mais gardée
+// locale à cet écran plutôt que partagée, l'un affichant une partie en
+// cours et l'autre un bilan figé.
+function computeSpreadStats(state) {
+  let touched = 0;
+  let severe = 0;
+  let critical = 0;
+  for (const t of TERRITORIES) {
+    const ts = state.territories[t.id];
+    if (ts.crisis > 0) touched += 1;
+    if (ts.crisis >= 50) severe += 1;
+    if (ts.crisis >= 75) critical += 1;
+  }
+  return { touched, total: TERRITORIES.length, severe, critical };
+}
+
+// Phrase de style courte, entièrement déterministe et locale (§8 : pas d'IA
+// ni d'API externe) - construite uniquement à partir de chiffres réellement
+// suivis par le moteur, jamais inventée. Peut produire des combinaisons
+// différentes selon la partie, mais toujours honnête vis-à-vis des données.
+function computeStyleAnalysis(state) {
+  const { upgrades, reach, maxDominance, phaseLog, endReason } = state;
+  const isVictory = state.status === 'victory';
+  const total = upgrades.propagation + upgrades.dangerosity + upgrades.resilience + upgrades.discretion || 1;
+  const dominant = Object.entries(upgrades).sort((a, b) => b[1] - a[1])[0];
+  const isBalanced = Object.values(upgrades).every((v) => Math.abs(v / total - 0.25) < 0.12);
+  const mobilizedEntry = phaseLog.find((p) => p.key === 'mobilisation');
+  const advancedEntry = phaseLog.find((p) => p.key === 'mesures' || p.key === 'maitrise');
+
+  const parts = [];
+  if (reach - maxDominance > 30) {
+    parts.push("Expansion très rapide, mais adaptation tardive à la transformer en réelle menace");
+  } else if (dominant[0] === 'dangerosity' && dominant[1] >= 6) {
+    parts.push('Une progression volontairement dangereuse, quitte à alarmer le monde très vite');
+  } else if (isBalanced) {
+    parts.push('Une approche équilibrée entre toutes les orientations');
+  } else {
+    parts.push(`Une stratégie centrée sur ${UPGRADE_RECAP_LABELS[dominant[0]]}`);
+  }
+
+  if (upgrades.discretion >= 6 && (!mobilizedEntry || mobilizedEntry.day > 400)) {
+    parts.push('une discrétion qui a longtemps retardé la prise de conscience mondiale');
+  } else if (upgrades.discretion <= 1 && mobilizedEntry) {
+    parts.push('sans discrétion pour ralentir la réaction du monde');
+  }
+
+  if (!isVictory && endReason === 'containment') {
+    parts.push(
+      upgrades.resilience <= 3
+        ? 'une résilience trop faible pour résister à la Réponse mondiale mobilisée'
+        : 'une Réponse mondiale finalement trop rapide malgré la résilience développée'
+    );
+  } else if (isVictory && advancedEntry) {
+    parts.push('une victoire arrachée alors que le monde avait déjà engagé des contre-mesures sérieuses');
+  }
+
+  return `${parts.join(', ')}.`;
+}
+
 export function renderEnd(state) {
   const isVictory = state.status === 'victory';
   const explanation = END_EXPLANATIONS[state.endReason]?.[isVictory ? 'victory' : 'defeat']
     || (isVictory ? "L'anomalie a durablement déstabilisé le monde." : 'Le monde a fini par contenir la crise.');
+  const spread = computeSpreadStats(state);
+  const style = computeStyleAnalysis(state);
   return `
     <div class="screen end-screen ${isVictory ? 'end-victory' : 'end-defeat'}">
       <h1>${isVictory ? 'VICTOIRE' : 'DÉFAITE'}</h1>
       <p>${explanation}</p>
-      <div class="end-stats">
-        <div>Jours écoulés : ${state.day}</div>
-        <div>Progression de l'Anomalie : ${state.dominance.toFixed(0)}% <span class="end-stat-hint">(victoire à ${BALANCE.victoryDominanceThreshold}%)</span></div>
-        <div>Réponse mondiale : ${state.globalContainment.toFixed(0)}% <span class="end-stat-hint">(défaite à ${BALANCE.defeatContainmentThreshold}%)</span></div>
+      <div class="end-recap">
+        <div class="end-stats">
+          <div>Jours écoulés : ${state.day}</div>
+          <div>Progression finale de l'Anomalie : ${state.dominance.toFixed(0)}% <span class="end-stat-hint">(max atteint : ${state.maxDominance.toFixed(0)}%, victoire à ${BALANCE.victoryDominanceThreshold}%)</span></div>
+          <div>Conscience mondiale : ${state.globalAwareness.toFixed(0)}%</div>
+          <div>Réponse mondiale : ${state.globalContainment.toFixed(0)}% <span class="end-stat-hint">(défaite à ${BALANCE.defeatContainmentThreshold}%)</span></div>
+          <div>Portée (régions touchées) : ${spread.touched}/${spread.total} <span class="end-stat-hint">(sévères : ${spread.severe}, critiques : ${spread.critical})</span></div>
+        </div>
+        <div class="end-upgrades">
+          ${Object.entries(UPGRADE_RECAP_LABELS).map(([kind, label]) => `<div class="end-upgrade-chip">${label} <strong>Niv. ${state.upgrades[kind]}</strong></div>`).join('')}
+        </div>
+        ${state.phaseLog.length ? `
+          <div class="end-timeline">
+            ${state.phaseLog.map((p) => `<div class="end-timeline-row"><span>${p.label}</span><span>Jour ${p.day}</span></div>`).join('')}
+          </div>` : ''}
+        <p class="end-style">${style}</p>
       </div>
       <button class="primary-btn" data-action="new-game">Recommencer</button>
     </div>`;
@@ -139,13 +221,13 @@ export function renderGameMenu(view, state, options) {
         </div>
         ${state ? `<p class="hint">Partie en cours : difficulté ${DIFFICULTIES[state.difficulty]?.label ?? 'Normal'} (fixée au démarrage, aussi consultable depuis la vue Monde).</p>` : ''}
         <h3 class="settings-subhead">Audio</h3>
-        <div class="settings-row disabled">
+        <div class="settings-row">
           <span>Musique</span>
-          <span class="coming-soon">Bientôt disponible</span>
+          <button class="toggle-btn${options.musicEnabled ? ' active' : ''}" data-action="toggle-music">${options.musicEnabled ? 'Activée' : 'Coupée'}</button>
         </div>
-        <div class="settings-row disabled">
+        <div class="settings-row">
           <span>Effets sonores</span>
-          <span class="coming-soon">Bientôt disponible</span>
+          <button class="toggle-btn${options.sfxEnabled ? ' active' : ''}" data-action="toggle-sfx">${options.sfxEnabled ? 'Activés' : 'Coupés'}</button>
         </div>
         <button class="secondary-btn" data-action="close-settings">Retour</button>
       </div>`;

@@ -152,6 +152,7 @@ export function simulateTick(state) {
   // toujours <= Portée, et ne peut approcher 100 qu'avec une Dangerosité
   // développée - gouvernée par Dangerosité.
   state.dominance = clamp(weightedCrisis / totalPopulation, 0, 100);
+  if (state.dominance > state.maxDominance) state.maxDominance = state.dominance;
 
   const containmentGainFactor = state.rules?.globalContainmentGainFactor ?? BALANCE.globalContainmentGainFactor;
   // V4.1 (§2) : la Réponse mondiale progresse toujours à une vitesse
@@ -210,6 +211,7 @@ export function simulateTick(state) {
     state.responsePhase = phase.key;
     if (phase.key !== 'ignorance') {
       pushLog(state, `Réponse mondiale : nouvelle phase — ${phase.label}.`);
+      state.phaseLog.push({ day: state.day, key: phase.key, label: phase.label });
     }
   }
   if (!state.dominanceMilestoneLogged && state.dominance >= 50) {

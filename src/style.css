@@ -427,6 +427,7 @@ button {
   justify-content: center;
   text-align: center;
   gap: 16px;
+  overflow-y: auto;
 }
 
 .end-screen h1 {
@@ -448,6 +449,56 @@ button {
 .end-stat-hint {
   color: #5a6472;
   font-size: 0.75rem;
+}
+
+.end-recap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.end-upgrades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.end-upgrade-chip {
+  background: #171e27;
+  color: #9aa5b1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}
+
+.end-upgrade-chip strong {
+  color: #e8ecf1;
+}
+
+.end-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #171e27;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.end-timeline-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #9aa5b1;
+}
+
+.end-style {
+  font-size: 0.82rem;
+  color: #9aa5b1;
+  font-style: italic;
+  margin: 0;
 }
 
 .map-legend {
@@ -574,6 +625,22 @@ button {
   background: #0b0f14;
   border-radius: 6px;
   padding: 3px 8px;
+}
+
+.toggle-btn {
+  min-height: 32px;
+  min-width: 76px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #0b0f14;
+  color: #5a6472;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.toggle-btn.active {
+  background: #2d7a4f;
+  color: #e8ecf1;
 }
 
 .primary-btn.danger {

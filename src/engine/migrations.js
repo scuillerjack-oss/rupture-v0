@@ -33,7 +33,20 @@ const MIGRATIONS = {
     const responseCap = responseCapBaseline + (100 - responseCapBaseline) * Math.pow(fraction, responseCapPower);
     const globalContainment = Math.min(globalMobilization, responseCap);
     return { ...old, version: 4, globalAwareness, globalMobilization, globalContainment };
-  }
+  },
+  // V4.1 ajoute maxDominance et phaseLog, utilisés uniquement par le
+  // récapitulatif de fin de partie (voir state.js). Aucun des deux n'a
+  // d'historique dans une sauvegarde V4 : maxDominance part de la
+  // Progression actuelle (minoration honnête - la vraie valeur maximale
+  // n'a jamais été enregistrée, mais elle n'a certainement pas été
+  // inférieure à la valeur courante) et phaseLog part vide plutôt que
+  // d'inventer des jours de transition qui n'ont jamais été mesurés.
+  4: (old) => ({
+    ...old,
+    version: 5,
+    maxDominance: Number(old.dominance) || 0,
+    phaseLog: []
+  })
 };
 
 // Applique la chaîne de migrations nécessaire pour amener `raw` à
