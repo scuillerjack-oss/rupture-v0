@@ -154,3 +154,28 @@ test('restorePurchases reflects the current simulated entitlement in dev/beta', 
   assert.equal(result.resultKind, 'simulated');
   premium.setPremium(false);
 });
+
+// --- Scénario de contournement naïf (§6/§9 de la demande de finalisation) :
+// un joueur pose directement `rupture-v0-premium=1` dans localStorage via les
+// outils de développement de son navigateur, sans jamais passer par
+// purchasePremium(). Documenté honnêtement : rien ici ne bloque ce joueur
+// (impossible à empêcher réellement côté client, voir premium.js) mais
+// l'anomalie doit être détectable après coup dans le journal de sécurité,
+// jamais silencieuse.
+test('a naive exploit (directly setting the premium flag in localStorage, bypassing purchasePremium) is not blocked but IS logged as an anomaly', async () => {
+  const { setPremiumFlag, getSecurityLog } = await import('../src/save.js');
+  const { createPremiumService } = await import('../src/services/premium.js');
+
+  setPremiumFlag(false);
+  globalThis.localStorage.setItem('rupture-v0-premium', '1'); // pas de clé source associée : exactement ce qu'un joueur ferait à la main
+  globalThis.localStorage.removeItem('rupture-v0-security-log');
+
+  const premium = createPremiumService({ env: 'beta' });
+  assert.equal(premium.isPremium(), true, 'a local flag alone cannot be told apart from a real one - this is the documented, accepted limitation');
+  assert.equal(premium.getEntitlementSource(), null, 'no legitimate source was ever recorded for this flag');
+
+  const log = getSecurityLog();
+  assert.ok(log.some((entry) => entry.type === 'premium-flag-unknown-source'), 'the anomaly must be diagnosable after the fact, even though it cannot be blocked client-side');
+
+  setPremiumFlag(false);
+});
