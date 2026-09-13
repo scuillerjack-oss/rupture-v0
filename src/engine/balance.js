@@ -159,6 +159,48 @@ export const BALANCE = {
       maxLevel: 10,
       baseCost: 20,
       costGrowth: 1.1,
+      // V4.2 (bêta manuelle post-V4.1, défaite jour 581, Résilience Niv.5/10,
+      // 99% de Progression max contre 100% de Réponse) : demande explicite de
+      // faire en sorte que développer la Résilience ralentisse mesurablement
+      // la Réponse/mobilisation, calibrée par simulation. QUATRE hypothèses
+      // ont été conçues et testées avec la même rigueur (moyennées sur 5
+      // essais x 18 origines = 90 parties par valeur, pas un seul run, pour
+      // écarter le bruit des fermetures de routes aléatoires) ; TOUTES ont
+      // été REJETÉES - voir le rapport V4.2 pour le détail complet des
+      // mesures :
+      //  1) ralentir la croissance de globalMobilization proportionnellement
+      //     à la Résilience (dès le début de partie, puis seulement après le
+      //     seuil de mobilisation, puis seulement après des seuils encore
+      //     plus tardifs jusqu'à 85%) : dans TOUS les cas, dès 10-15% de
+      //     plafond de ralentissement, une ou plusieurs stratégies
+      //     auparavant perdantes (dont equilibree-naive, non réactive)
+      //     basculent à 90-100% de victoires ;
+      //  2) abaisser resilienceImmunityLevel (immunité totale au resserrement
+      //     du plafond de gravité atteinte plus tôt) : dès 7 au lieu de 8,
+      //     equilibree-naive passe de 6% à 72% ;
+      //  3) plafonner resilienceEffectForSuppression en dessous de 100%
+      //     (jamais d'immunité totale) : falaise inverse - TOUTES les
+      //     stratégies, y compris réactive-cohérente (78%), tombent à 0% ;
+      //  4) une petite marge sur le SEUIL DE VICTOIRE (Progression) plutôt
+      //     que sur la Réponse : dès 2 points de marge au niveau maximum,
+      //     equilibree-naive passe de 5,6% à 94,4% et réactive-cohérente
+      //     atteint 100% - la même falaise, côté opposé de la course.
+      // Un cinquième essai (relever effectPerLevel, qui n'agit que sur la
+      // résistance locale au confinement - croissance/propagation, jamais
+      // sur la course Réponse/Progression elle-même) ne produit AUCUNE
+      // falaise, mais aussi AUCUN effet mesurable une fois correctement
+      // échantillonné (90 parties/valeur) : furtive-puis-frappe reste entre
+      // 35% et 41% de 0,225 à 0,50, sans tendance - un premier relevé
+      // ponctuel (un seul run) avait suggéré un effet réel (28%->50%), qui
+      // s'est révélé être du bruit statistique en le remesurant proprement.
+      // Conclusion documentée plutôt que forcée (conformément à la consigne
+      // explicite de la demande) : la course Réponse/Progression de cette
+      // version repose sur une marge extrêmement étroite pour de nombreuses
+      // stratégies simultanément - un point de bascule net, pas une marge
+      // progressive, quel que soit le côté de la course touché. Aucun levier
+      // sûr ET réellement efficace n'a été trouvé cette passe. effectPerLevel
+      // reste donc inchangé (0,225, valeur V4.1) plutôt que de porter un
+      // changement sans bénéfice mesurable.
       effectPerLevel: 0.225
     },
     discretion: {

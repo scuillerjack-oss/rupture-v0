@@ -1,11 +1,11 @@
-// Batterie de simulations de pré-équilibrage pour RUPTURE (V3, V3.1, V4, V4.1...).
+// Batterie de simulations de pré-équilibrage pour RUPTURE (V3, V3.1, V4, V4.1, V4.2...).
 // Ne truque pas les résultats : chaque stratégie est un heuristique honnête,
 // exécuté tel quel contre le moteur réel (src/engine), sans connaissance
 // privilégiée de l'issue. Sert à révéler les faiblesses du moteur, pas à les
 // cacher. Depuis V4.1, chaque stratégie est rejouée sur les trois difficultés
 // (easy/normal/hard) : Facile/Normal/Difficile doivent avoir des rôles
 // réellement distincts, ce qui se vérifie et ne se décrète pas. Résultats
-// bruts écrits dans docs/v4.1-simulation-results.json.
+// bruts écrits dans docs/v4.2-simulation-results.json.
 
 import { writeFileSync } from 'node:fs';
 import { createInitialState, beginNewGame, confirmOrigin } from '../src/engine/state.js';
@@ -316,8 +316,8 @@ for (const difficulty of DIFFICULTIES_TESTED) {
 console.log('=== TOTAL simulations :', results.length, '===');
 
 writeFileSync(
-  new URL('../docs/v4.1-simulation-results.json', import.meta.url),
+  new URL('../docs/v4.2-simulation-results.json', import.meta.url),
   JSON.stringify({ generatedAt: new Date().toISOString(), totalRuns: results.length, summary, results }, null, 2)
 );
 
-console.log('Résultats bruts écrits dans docs/v4.1-simulation-results.json');
+console.log('Résultats bruts écrits dans docs/v4.2-simulation-results.json');
