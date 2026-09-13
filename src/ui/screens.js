@@ -6,15 +6,37 @@ export function renderMenu(hasSave) {
   return `
     <div class="screen menu-screen">
       <h1>RUPTURE</h1>
-      <p class="tagline">Une anomalie s'éveille. Le monde n'est pas encore prêt.</p>
-      <p class="hint">Choisissez un territoire, propagez l'anomalie, améliorez-la avant que le monde ne se referme.</p>
+      <p class="tagline">Une anomalie s'éveille. L'Humanité n'est pas encore prête.</p>
+      <p class="hint">Choisissez un territoire, propagez l'anomalie, rendez-la réellement dangereuse avant que le monde ne se referme.</p>
       <div class="menu-actions">
         <button class="primary-btn" data-action="new-game">Nouvelle partie</button>
         ${hasSave ? '<button class="secondary-btn" data-action="resume-game">Reprendre la partie</button>' : ''}
         <button class="link-btn" data-action="show-tutorial">Comment jouer ?</button>
         <button class="link-btn" data-action="open-settings">Paramètres</button>
       </div>
-      <p class="version-tag">V2 — build bêta</p>
+      <p class="version-tag">V3 — build bêta</p>
+    </div>`;
+}
+
+// Choisie explicitement avant CHAQUE nouvelle partie (nouvelle ou
+// redémarrage) : en V2, la difficulté existait mais n'était accessible que
+// via Paramètres, jamais proposée pendant le lancement lui-même - la bêta ne
+// l'a jamais trouvée (voir RUPTURE_V3_Rapport_Technique_Officiel.pdf).
+export function renderDifficultyPicker(pendingDifficulty) {
+  return `
+    <div class="screen menu-screen">
+      <h2>Choisissez la difficulté</h2>
+      <p class="hint">Détermine la vitesse à laquelle l'Humanité construit sa Réponse mondiale. Elle reste fixée pour toute la partie, mais vous pouvez consulter la difficulté en cours depuis la vue Monde.</p>
+      <div class="difficulty-options">
+        ${Object.entries(DIFFICULTIES).map(([id, cfg]) => `
+          <button class="difficulty-btn${pendingDifficulty === id ? ' active' : ''}" data-action="set-difficulty" data-difficulty="${id}">
+            ${cfg.label}
+          </button>`).join('')}
+      </div>
+      <div class="menu-actions">
+        <button class="primary-btn" data-action="confirm-difficulty-and-start">Continuer</button>
+        <button class="link-btn" data-action="cancel-difficulty-picker">Retour</button>
+      </div>
     </div>`;
 }
 
@@ -28,16 +50,17 @@ export function renderTutorial() {
         </div>
         <div class="tutorial-block">
           <h3>MON OBJECTIF</h3>
-          <p>Étends ton influence avant que le monde ne parvienne à te contenir.</p>
+          <p>Rendre ta progression réelle avant que l'Humanité ne parvienne à te maîtriser : une course à 100% des deux côtés.</p>
         </div>
         <div class="tutorial-block">
           <h3>MA RESSOURCE</h3>
           <p>Tu gagnes de l'Influence, à investir pour faire évoluer l'Anomalie.</p>
         </div>
         <div class="tutorial-block">
-          <h3>MES TROIS ORIENTATIONS</h3>
-          <p><strong>Propagation</strong> → facilite ton expansion, mais te rend plus visible.</p>
-          <p><strong>Résilience</strong> → améliore ta résistance au confinement.</p>
+          <h3>MES QUATRE ORIENTATIONS</h3>
+          <p><strong>Propagation</strong> → étend ta portée, mais te rend plus visible.</p>
+          <p><strong>Dangerosité</strong> → transforme ta portée en réelle progression, mais alarme fortement le monde.</p>
+          <p><strong>Résilience</strong> → indispensable pour résister une fois que l'Humanité mobilise sa réponse.</p>
           <p><strong>Discrétion</strong> → retarde la réaction du monde, au prix d'un peu d'Influence.</p>
         </div>
       </div>
@@ -71,12 +94,12 @@ export function renderPlaying(state, statsView, services) {
 
 const END_EXPLANATIONS = {
   dominance: {
-    victory: 'Votre domination mondiale a dépassé le seuil critique avant que le monde ne vous contienne.',
+    victory: "Votre progression a atteint 100% avant que l'Humanité n'achève sa maîtrise.",
     defeat: ''
   },
   containment: {
     victory: '',
-    defeat: 'Le confinement mondial a atteint 100 % avant que votre domination ne soit suffisante.'
+    defeat: "La Réponse mondiale a atteint la maîtrise complète avant votre progression. Défaite."
   },
   timeout: {
     victory: '',
@@ -94,8 +117,8 @@ export function renderEnd(state) {
       <p>${explanation}</p>
       <div class="end-stats">
         <div>Jours écoulés : ${state.day}</div>
-        <div>Domination atteinte : ${state.dominance.toFixed(0)}% <span class="end-stat-hint">(seuil de victoire : ${state.rules?.victoryDominanceThreshold ?? BALANCE.victoryDominanceThreshold}%)</span></div>
-        <div>Confinement mondial : ${state.globalContainment.toFixed(0)}% <span class="end-stat-hint">(seuil de défaite : 100%)</span></div>
+        <div>Progression de l'Anomalie : ${state.dominance.toFixed(0)}% <span class="end-stat-hint">(victoire à ${BALANCE.victoryDominanceThreshold}%)</span></div>
+        <div>Réponse mondiale : ${state.globalContainment.toFixed(0)}% <span class="end-stat-hint">(défaite à ${BALANCE.defeatContainmentThreshold}%)</span></div>
       </div>
       <button class="primary-btn" data-action="new-game">Recommencer</button>
     </div>`;
@@ -114,7 +137,7 @@ export function renderGameMenu(view, state, options) {
               ${cfg.label}
             </button>`).join('')}
         </div>
-        ${state ? `<p class="hint">Partie en cours : difficulté ${DIFFICULTIES[state.difficulty]?.label ?? 'Normal'} (fixée au démarrage).</p>` : ''}
+        ${state ? `<p class="hint">Partie en cours : difficulté ${DIFFICULTIES[state.difficulty]?.label ?? 'Normal'} (fixée au démarrage, aussi consultable depuis la vue Monde).</p>` : ''}
         <h3 class="settings-subhead">Audio</h3>
         <div class="settings-row disabled">
           <span>Musique</span>

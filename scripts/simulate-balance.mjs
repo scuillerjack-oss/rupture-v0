@@ -1,8 +1,8 @@
-// Batterie de simulations de pré-équilibrage pour RUPTURE.
+// Batterie de simulations de pré-équilibrage pour RUPTURE V3.
 // Ne truque pas les résultats : chaque stratégie est un heuristique honnête,
 // exécuté tel quel contre le moteur réel (src/engine), sans connaissance
 // privilégiée de l'issue. Sert à révéler les faiblesses du moteur, pas à les
-// cacher. Résultats bruts écrits dans docs/v2-simulation-results.json.
+// cacher. Résultats bruts écrits dans docs/v3-simulation-results.json.
 
 import { writeFileSync } from 'node:fs';
 import { createInitialState, beginNewGame, confirmOrigin } from '../src/engine/state.js';
@@ -11,104 +11,130 @@ import { TERRITORIES } from '../src/engine/territories.js';
 import { BALANCE, upgradeCost } from '../src/engine/balance.js';
 
 const MAX_TICKS = 3000;
-const KINDS = ['propagation', 'resilience', 'discretion'];
+const KINDS = ['propagation', 'dangerosity', 'resilience', 'discretion'];
 
-function cheapestAffordable(state, kinds) {
-  let best = null;
-  for (const kind of kinds) {
-    const cfg = BALANCE.upgrades[kind];
-    const level = state.upgrades[kind];
-    if (level >= cfg.maxLevel) continue;
-    const cost = upgradeCost(kind, level);
-    if (state.influence < cost) continue;
-    if (!best || cost < best.cost) best = { kind, cost };
-  }
-  return best?.kind ?? null;
+function affordable(state, kind) {
+  const cfg = BALANCE.upgrades[kind];
+  return state.upgrades[kind] < cfg.maxLevel && state.influence >= upgradeCost(kind, state.upgrades[kind]);
 }
 
-function makeDominant(preferredKind) {
-  const others = KINDS.filter((k) => k !== preferredKind);
-  return (state) => {
-    const cfg = BALANCE.upgrades[preferredKind];
-    if (state.upgrades[preferredKind] < cfg.maxLevel) {
-      if (cheapestAffordable(state, [preferredKind])) buyUpgrade(state, preferredKind);
-      return;
+function buyFirstAffordable(state, order) {
+  for (const kind of order) {
+    if (affordable(state, kind)) {
+      buyUpgrade(state, kind);
+      return true;
     }
-    const kind = cheapestAffordable(state, others);
-    if (kind) buyUpgrade(state, kind);
-  };
+  }
+  return false;
 }
+
+function isMobilized(state) {
+  return state.globalContainment >= BALANCE.humanity.mobilizationThreshold;
+}
+
+function spendEverythingAffordable(state) {
+  let bought = true;
+  while (bought) {
+    bought = false;
+    for (const kind of KINDS) {
+      if (affordable(state, kind)) {
+        buyUpgrade(state, kind);
+        bought = true;
+      }
+    }
+  }
+}
+
+// --- Stratégies "mauvaises ou naïves" (demandées explicitement, §8) ---
 
 const STRATEGIES = {
   passive: () => {},
 
-  // "Dominant" strategies hoard influence exclusively for their preferred track
-  // until it is fully maxed, only then spending on the others. A strategy that
-  // bought "whichever is affordable, preferring X" turned out to converge with
-  // every other strategy (affordability is usually a one-at-a-time gate), which
-  // hid any real difference between orientations -- this hoarding version is
-  // what actually exercises "committing to Propagation vs Discretion" as
-  // genuinely different playstyles.
-  'propagation-dominante': (state) => makeDominant('propagation')(state),
-  'resilience-dominante': (state) => makeDominant('resilience')(state),
-  'discretion-dominante': (state) => makeDominant('discretion')(state),
-
-  equilibree: (state) => {
-    // Buys whichever affordable upgrade currently has the lowest level (ties -> cheapest).
-    let candidate = null;
-    for (const kind of KINDS) {
-      const cfg = BALANCE.upgrades[kind];
-      const level = state.upgrades[kind];
-      if (level >= cfg.maxLevel) continue;
-      const cost = upgradeCost(kind, level);
-      if (state.influence < cost) continue;
-      if (!candidate || level < candidate.level || (level === candidate.level && cost < candidate.cost)) {
-        candidate = { kind, level, cost };
-      }
-    }
-    if (candidate) buyUpgrade(state, candidate.kind);
-  },
-
-  agressive: (state) => {
-    for (const kind of KINDS) buyUpgrade(state, kind);
-  },
-
-  prudente: (state) => {
-    // Saves up: only buys once influence is at least 2x the cost of some affordable upgrade.
-    const kind = cheapestAffordable(state, KINDS);
-    if (kind) {
-      const cost = upgradeCost(kind, state.upgrades[kind]);
-      if (state.influence >= cost * 2) buyUpgrade(state, kind);
-    }
-  },
-
-  'semi-aleatoire': (state) => {
+  'achats-aleatoires': (state) => {
     if (Math.random() < 0.08) {
       const kind = KINDS[Math.floor(Math.random() * KINDS.length)];
       buyUpgrade(state, kind);
     }
   },
 
-  // The exact pattern reported after the V1 beta: ignore the game entirely, come
-  // back once very late, spend everything accumulated in one go, never touch it
-  // again. Included as a named strategy so this stays a tracked, visible number
-  // rather than a one-off check. State is tracked on the game state itself (not
-  // in a closure) so it resets correctly for every fresh run/origin.
-  negligente: (state) => {
-    if (state.__negligentSpent || state.day < 600) return;
-    state.__negligentSpent = true;
-    let boughtSomething = true;
-    while (boughtSomething) {
-      boughtSomething = false;
-      for (const kind of KINDS) {
-        const cfg = BALANCE.upgrades[kind];
-        if (state.upgrades[kind] >= cfg.maxLevel) continue;
-        if (upgradeCost(kind, state.upgrades[kind]) <= state.influence) {
-          buyUpgrade(state, kind);
-          boughtSomething = true;
-        }
-      }
+  // Investissement quasi exclusif dans Propagation : hoarde Propagation
+  // jusqu'au niveau max avant de considérer autre chose. Doit démontrer que
+  // la Propagation seule ne suffit plus (voir aussi le test unitaire dédié).
+  'propagation-exclusive': (state) => {
+    if (state.upgrades.propagation < BALANCE.upgrades.propagation.maxLevel) {
+      if (affordable(state, 'propagation')) buyUpgrade(state, 'propagation');
+      return;
     }
+    buyFirstAffordable(state, ['dangerosity', 'resilience', 'discretion']);
+  },
+
+  // Dangerosité maximale trop tôt : hoarde Dangerosité en premier, avant
+  // toute Résilience ou Discrétion - doit alarmer le monde très vite sans
+  // aucune défense en place.
+  'dangerosite-precoce': (state) => {
+    if (state.upgrades.dangerosity < BALANCE.upgrades.dangerosity.maxLevel) {
+      if (affordable(state, 'dangerosity')) buyUpgrade(state, 'dangerosity');
+      return;
+    }
+    buyFirstAffordable(state, ['propagation', 'resilience', 'discretion']);
+  },
+
+  // Résilience totalement négligée : jamais achetée, quoi qu'il arrive.
+  // Doit devenir dangereux une fois la Réponse mondiale mobilisée.
+  'resilience-negligee': (state) => {
+    buyFirstAffordable(state, ['propagation', 'dangerosity', 'discretion']);
+  },
+
+  // Discrétion totalement négligée : jamais achetée. Le monde réagit plus
+  // vite, sans aucun ralentissement.
+  'discretion-negligee': (state) => {
+    buyFirstAffordable(state, ['propagation', 'dangerosity', 'resilience']);
+  },
+
+  // Accumulation d'Influence puis achats tardifs : ignore tout jusqu'au
+  // jour 600, puis dépense tout ce qui est finançable d'un coup. État
+  // suivi sur `state` (jamais dans une fermeture partagée entre runs).
+  'accumulation-tardive': (state) => {
+    if (state.__lateSpent || state.day < 600) return;
+    state.__lateSpent = true;
+    spendEverythingAffordable(state);
+  },
+
+  // Répartition équilibrée mais sans tenir compte de la situation : achète
+  // toujours dans le même ordre fixe, sans jamais regarder l'état du monde
+  // (ni mobilisation, ni conscience). C'est la stratégie "naïve" de
+  // référence que les stratégies cohérentes doivent battre.
+  'equilibree-naive': (state) => {
+    buyFirstAffordable(state, KINDS);
+  },
+
+  // --- Stratégies "cohérentes et réfléchies" (§8) ---
+
+  // Réactive : offensive (Propagation/Dangerosité) tant que le monde n'a pas
+  // mobilisé de réponse sérieuse, puis priorité à la Résilience une fois
+  // cette étape franchie - la seule chose qui distingue cette stratégie de
+  // "equilibree-naive" est l'ORDRE, décidé à partir de l'état du jeu.
+  'reactive-coherente': (state) => {
+    const order = isMobilized(state)
+      ? ['resilience', 'dangerosity', 'propagation', 'discretion']
+      : ['propagation', 'dangerosity', 'discretion', 'resilience'];
+    buyFirstAffordable(state, order);
+  },
+
+  // Furtive puis frappe : construit d'abord une bonne Discrétion (retarde
+  // la réaction du monde) tout en étendant la Propagation, ne commence à
+  // investir dans la Dangerosité qu'une fois discrète et bien répandue,
+  // puis bascule vers la Résilience si le monde mobilise malgré tout.
+  'furtive-puis-frappe': (state) => {
+    if (state.upgrades.discretion < 5) {
+      buyFirstAffordable(state, ['discretion', 'propagation']);
+      return;
+    }
+    if (isMobilized(state)) {
+      buyFirstAffordable(state, ['resilience', 'dangerosity', 'propagation']);
+      return;
+    }
+    buyFirstAffordable(state, ['propagation', 'dangerosity', 'discretion']);
   }
 };
 
@@ -124,15 +150,17 @@ function runOne(strategyName, originId) {
   let firstPurchaseDay = null;
   let secondPurchaseDay = null;
   let purchaseCount = 0;
+  let mobilizedAtDay = null;
   for (; ticks < MAX_TICKS && state.status === 'playing'; ticks++) {
     const beforeTick = state.influence;
     simulateTick(state);
     const afterTick = state.influence;
     totalEarned += Math.max(0, afterTick - beforeTick);
+    if (mobilizedAtDay === null && isMobilized(state)) mobilizedAtDay = state.day;
 
-    const upgradesBefore = state.upgrades.propagation + state.upgrades.resilience + state.upgrades.discretion;
+    const upgradesBefore = KINDS.reduce((sum, k) => sum + state.upgrades[k], 0);
     decide(state);
-    const upgradesAfter = state.upgrades.propagation + state.upgrades.resilience + state.upgrades.discretion;
+    const upgradesAfter = KINDS.reduce((sum, k) => sum + state.upgrades[k], 0);
     if (upgradesAfter > upgradesBefore) {
       purchaseCount += upgradesAfter - upgradesBefore;
       if (firstPurchaseDay === null) firstPurchaseDay = state.day;
@@ -150,8 +178,10 @@ function runOne(strategyName, originId) {
     days: state.day,
     firstPurchaseDay,
     secondPurchaseDay,
+    mobilizedAtDay,
     purchaseCount,
     dominance: Number(state.dominance.toFixed(2)),
+    reach: Number(state.reach.toFixed(2)),
     globalContainment: Number(state.globalContainment.toFixed(2)),
     influenceRemaining: Number(state.influence.toFixed(2)),
     influenceEarned: Number(totalEarned.toFixed(2)),
@@ -184,15 +214,19 @@ for (const [strategy, rows] of Object.entries(byStrategy)) {
     (r) =>
       !Number.isFinite(r.dominance) ||
       !Number.isFinite(r.globalContainment) ||
+      !Number.isFinite(r.reach) ||
       r.dominance < 0 ||
       r.dominance > 100 ||
       r.globalContainment < 0 ||
-      r.globalContainment > 100
+      r.globalContainment > 100 ||
+      r.reach < 0 ||
+      r.reach > 100
   );
   const earned = rows.map((r) => r.influenceEarned);
   const spent = rows.map((r) => r.influenceSpent);
   const firstDays = rows.map((r) => r.firstPurchaseDay).filter((d) => d !== null);
   const secondDays = rows.map((r) => r.secondPurchaseDay).filter((d) => d !== null);
+  const winDays = rows.filter((r) => r.status === 'victory').map((r) => r.days);
   const avg = (arr) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null);
   summary.push({
     strategy,
@@ -202,6 +236,9 @@ for (const [strategy, rows] of Object.entries(byStrategy)) {
     deuxiemeAchatJourMoyen: avg(secondDays),
     defaites: rows.length - wins,
     tauxVictoire: `${Math.round((wins / rows.length) * 100)}%`,
+    dureeJoursMinVictoire: winDays.length ? Math.min(...winDays) : null,
+    dureeJoursMaxVictoire: winDays.length ? Math.max(...winDays) : null,
+    dureeJoursMoyenneVictoire: avg(winDays),
     dureeJoursMin: Math.min(...days),
     dureeJoursMax: Math.max(...days),
     dureeJoursMoyenne: Math.round(days.reduce((a, b) => a + b, 0) / days.length),
@@ -216,8 +253,8 @@ console.log('=== RESUME PAR STRATEGIE (', results.length, 'simulations au total 
 console.table(summary);
 
 writeFileSync(
-  new URL('../docs/v2-simulation-results.json', import.meta.url),
+  new URL('../docs/v3-simulation-results.json', import.meta.url),
   JSON.stringify({ generatedAt: new Date().toISOString(), totalRuns: results.length, summary, results }, null, 2)
 );
 
-console.log('Résultats bruts écrits dans docs/v2-simulation-results.json');
+console.log('Résultats bruts écrits dans docs/v3-simulation-results.json');

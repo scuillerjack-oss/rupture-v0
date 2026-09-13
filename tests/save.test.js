@@ -46,3 +46,21 @@ test('loadState rejects a save with a mismatched version', () => {
   globalThis.localStorage.setItem('rupture-v0-save', JSON.stringify({ version: 999 }));
   assert.equal(loadState(), null);
 });
+
+// V3 change de forme la sauvegarde (nouvelle branche Dangerosité, nouvelle
+// formule de victoire) d'une façon qui réinterpréterait silencieusement une
+// progression V2 déjà acquise - voir state.js et le rapport V3. Aucune
+// migration 2->3 n'est enregistrée : une sauvegarde V2 doit donc être
+// rejetée proprement, jamais acceptée avec une branche manquante.
+test('a V2-shaped save (no dangerosity branch, old victory rules) is rejected cleanly rather than silently reinterpreted', () => {
+  const v2Save = {
+    version: 2,
+    status: 'playing',
+    day: 400,
+    upgrades: { propagation: 5, resilience: 2, discretion: 1 },
+    territories: {},
+    rules: { victoryDominanceThreshold: 90, globalContainmentGainFactor: 0.135 }
+  };
+  globalThis.localStorage.setItem('rupture-v0-save', JSON.stringify(v2Save));
+  assert.equal(loadState(), null);
+});

@@ -5,7 +5,7 @@ import {
   hasSeenTutorial, markTutorialSeen,
   getDifficultySetting, setDifficultySetting
 } from './save.js';
-import { renderMenu, renderTutorial, renderSelectingOrigin, renderPlaying, renderEnd, renderGameMenu } from './ui/screens.js';
+import { renderMenu, renderDifficultyPicker, renderTutorial, renderSelectingOrigin, renderPlaying, renderEnd, renderGameMenu } from './ui/screens.js';
 import { createServices } from './services/index.js';
 
 const app = document.getElementById('app');
@@ -24,6 +24,7 @@ window.addEventListener('unhandledrejection', (event) => {
 let state = loadState() || createInitialState();
 let showTutorial = false;
 let tutorialPendingNewGame = false;
+let showDifficultyPicker = false;
 let statsView = 'territory';
 
 // menuView: null | 'menu' | 'settings' | 'confirm-restart'
@@ -37,7 +38,31 @@ function startNewGame() {
   beginNewGame(state, getDifficultySetting());
 }
 
+// La difficulté est désormais choisie explicitement avant CHAQUE nouvelle
+// partie (nouvelle ou redémarrage) plutôt que silencieusement héritée d'un
+// éventuel passage antérieur par Paramètres - voir renderDifficultyPicker.
+// Rien n'est détruit tant que "Continuer" n'a pas été cliqué : une ancienne
+// partie en cours reste intacte si le joueur fait "Retour" depuis cet écran.
+function beginNewGameFlow() {
+  pendingDifficulty = getDifficultySetting();
+  showDifficultyPicker = true;
+}
+
+function proceedAfterDifficultyPicked() {
+  showDifficultyPicker = false;
+  if (!hasSeenTutorial()) {
+    showTutorial = true;
+    tutorialPendingNewGame = true;
+  } else {
+    startNewGame();
+  }
+}
+
 function render() {
+  if (showDifficultyPicker) {
+    app.innerHTML = renderDifficultyPicker(pendingDifficulty);
+    return;
+  }
   if (showTutorial) {
     app.innerHTML = renderTutorial();
     return;
@@ -69,12 +94,13 @@ app.addEventListener('click', (event) => {
 
   switch (action) {
     case 'new-game':
-      if (!hasSeenTutorial()) {
-        showTutorial = true;
-        tutorialPendingNewGame = true;
-      } else {
-        startNewGame();
-      }
+      beginNewGameFlow();
+      break;
+    case 'confirm-difficulty-and-start':
+      proceedAfterDifficultyPicked();
+      break;
+    case 'cancel-difficulty-picker':
+      showDifficultyPicker = false;
       break;
     case 'show-tutorial':
       showTutorial = true;
@@ -136,12 +162,7 @@ app.addEventListener('click', (event) => {
       break;
     case 'confirm-restart':
       menuView = null;
-      if (!hasSeenTutorial()) {
-        showTutorial = true;
-        tutorialPendingNewGame = true;
-      } else {
-        startNewGame();
-      }
+      beginNewGameFlow();
       break;
     default:
       return;
@@ -154,7 +175,7 @@ app.addEventListener('click', (event) => {
 const TICK_MS = 1000;
 setInterval(() => {
   if (document.hidden) return;
-  if (showTutorial || menuView) return;
+  if (showTutorial || showDifficultyPicker || menuView) return;
   if (state.status !== 'playing' || state.speed <= 0) return;
   for (let i = 0; i < state.speed; i += 1) {
     simulateTick(state);

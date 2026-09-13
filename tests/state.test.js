@@ -4,11 +4,13 @@ import { createInitialState, beginNewGame, confirmOrigin } from '../src/engine/s
 import { TERRITORIES } from '../src/engine/territories.js';
 import { BALANCE } from '../src/engine/balance.js';
 
-test('createInitialState produces a menu state with all territories at zero', () => {
+test('createInitialState produces a menu state with all territories at zero and the fourth branch present', () => {
   const state = createInitialState();
   assert.equal(state.status, 'menu');
   assert.equal(state.day, 0);
   assert.equal(state.influence, 0);
+  assert.deepEqual(state.upgrades, { propagation: 0, resilience: 0, discretion: 0, dangerosity: 0 });
+  assert.equal(state.responsePhase, 'ignorance');
   assert.equal(Object.keys(state.territories).length, TERRITORIES.length);
   for (const t of TERRITORIES) {
     assert.equal(state.territories[t.id].crisis, 0);
@@ -59,10 +61,18 @@ test('a new game after a previous run does not bleed state from the old run', ()
   state.territories.boreal.closedRoutes.push('arca');
   state.influence = 500;
   state.upgrades.propagation = 3;
+  state.upgrades.dangerosity = 4;
 
   beginNewGame(state);
   assert.equal(state.territories.arca.crisis, 0);
   assert.deepEqual(state.territories.boreal.closedRoutes, []);
   assert.equal(state.influence, 0);
   assert.equal(state.upgrades.propagation, 0);
+  assert.equal(state.upgrades.dangerosity, 0);
+});
+
+test('beginNewGame resolves an unknown difficulty to normal instead of crashing', () => {
+  const state = createInitialState();
+  beginNewGame(state, 'nonexistent');
+  assert.equal(state.difficulty, 'normal');
 });

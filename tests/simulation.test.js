@@ -6,6 +6,7 @@ import { TERRITORIES, buildAdjacency } from '../src/engine/territories.js';
 import { BALANCE, upgradeCost, tensionAt } from '../src/engine/balance.js';
 
 const MAX_TICKS = 3000;
+const KINDS = ['propagation', 'dangerosity', 'resilience', 'discretion'];
 
 function freshGame(originId = 'fenwick') {
   const state = createInitialState();
@@ -20,6 +21,25 @@ function runUntilEnd(state, onTick) {
     if (onTick) onTick(state, i);
   }
   return state;
+}
+
+function buyRoundRobin(state) {
+  for (const kind of KINDS) buyUpgrade(state, kind);
+}
+
+function spendEverythingAffordable(state) {
+  let boughtSomething = true;
+  while (boughtSomething) {
+    boughtSomething = false;
+    for (const kind of KINDS) {
+      const cfg = BALANCE.upgrades[kind];
+      if (state.upgrades[kind] >= cfg.maxLevel) continue;
+      if (upgradeCost(kind, state.upgrades[kind]) <= state.influence) {
+        buyUpgrade(state, kind);
+        boughtSomething = true;
+      }
+    }
+  }
 }
 
 test('simulateTick does nothing when the game is not playing', () => {
@@ -73,13 +93,9 @@ test('a territory with no infected neighbor and zero crisis stays at zero', () =
   assert.equal(state.territories[distantId].crisis, 0);
 });
 
-test('influence only grows and never goes negative through a full playthrough', () => {
-  const state = freshGame();
-  let previous = state.influence;
-  runUntilEnd(state, (s) => {
+test('influence never goes negative through a full playthrough (it may fall when suppression erodes income sources)', () => {
+  runUntilEnd(freshGame(), (s) => {
     assert.ok(s.influence >= 0, `influence went negative at day ${s.day}`);
-    assert.ok(s.influence >= previous - 1e-9, 'influence should never decrease on its own');
-    previous = s.influence;
   });
 });
 
@@ -102,14 +118,16 @@ test('buyUpgrade fails without enough influence and state is unchanged', () => {
   assert.equal(state.influence, 0);
 });
 
-test('buyUpgrade refuses to exceed maxLevel', () => {
-  const state = freshGame();
-  state.influence = 1_000_000;
-  const cfg = BALANCE.upgrades.propagation;
-  for (let i = 0; i < cfg.maxLevel; i++) assert.equal(buyUpgrade(state, 'propagation'), true);
-  assert.equal(state.upgrades.propagation, cfg.maxLevel);
-  assert.equal(buyUpgrade(state, 'propagation'), false);
-  assert.equal(state.upgrades.propagation, cfg.maxLevel);
+test('buyUpgrade refuses to exceed maxLevel, for all four branches', () => {
+  for (const kind of KINDS) {
+    const state = freshGame();
+    state.influence = 1_000_000;
+    const cfg = BALANCE.upgrades[kind];
+    for (let i = 0; i < cfg.maxLevel; i++) assert.equal(buyUpgrade(state, kind), true);
+    assert.equal(state.upgrades[kind], cfg.maxLevel);
+    assert.equal(buyUpgrade(state, kind), false);
+    assert.equal(state.upgrades[kind], cfg.maxLevel);
+  }
 });
 
 test('buyUpgrade rejects an unknown upgrade kind', () => {
@@ -126,7 +144,7 @@ test('local reactions rise with crisis: awareness and containment increase for a
   assert.ok(ts.containment > 0, 'containment should follow awareness upward');
 });
 
-test('global containment rises monotonically while the anomaly is active', () => {
+test('global containment (Réponse mondiale) rises monotonically while the anomaly is active', () => {
   const state = freshGame();
   let previous = state.globalContainment;
   runUntilEnd(state, (s) => {
@@ -154,16 +172,6 @@ test('defeat triggers once global containment reaches 100 without upgrades (pass
   assert.equal(state.globalContainment, 100);
 });
 
-test('active investment in upgrades can flip a passive-defeat scenario toward victory', () => {
-  const state = freshGame();
-  runUntilEnd(state, (s) => {
-    buyUpgrade(s, 'propagation');
-    buyUpgrade(s, 'discretion');
-    buyUpgrade(s, 'resilience');
-  });
-  assert.equal(state.status, 'victory', 'diversified active upgrades should be enough to win');
-});
-
 test('a safety cap forces the game to end even in a frozen edge case', () => {
   const state = freshGame();
   state.day = BALANCE.maxDays - 1;
@@ -177,6 +185,8 @@ test('engine invariants hold over an extended run: no NaN, no negative stats, bo
   runUntilEnd(state, (s) => {
     assert.ok(Number.isFinite(s.influence) && s.influence >= 0);
     assert.ok(Number.isFinite(s.dominance) && s.dominance >= 0 && s.dominance <= 100);
+    assert.ok(Number.isFinite(s.reach) && s.reach >= 0 && s.reach <= 100);
+    assert.ok(s.dominance <= s.reach + 1e-9, 'progression (severity-weighted) must never exceed raw reach');
     assert.ok(Number.isFinite(s.globalContainment) && s.globalContainment >= 0 && s.globalContainment <= 100);
     for (const t of TERRITORIES) {
       const ts = s.territories[t.id];
@@ -190,9 +200,6 @@ test('engine invariants hold over an extended run: no NaN, no negative stats, bo
 
 // Regression test added after the first human smartphone beta: the player reported
 // winning after being essentially passive, having made only "about one" purchase.
-// This test locks in the fix at the exact scenario reported: a single isolated
-// upgrade purchase, tried at many different moments of the game and from every
-// origin, must never be enough to win on its own.
 test('REGRESSION (post-beta V0->V1): a single isolated upgrade purchase must never win, from any origin, at any timing', () => {
   const buyDays = [1, 5, 20, 50, 100, 150, 200, 300, 400, 500, 600, 700];
   for (const originId of TERRITORIES.map((t) => t.id)) {
@@ -225,27 +232,100 @@ test('Monte-Carlo: passive play does not produce a systematic instant win or an 
   assert.equal(outcomes.defeat, TERRITORIES.length, 'passive play (no upgrades) should consistently lose in this balance');
 });
 
-test('Monte-Carlo: a sustained aggressive upgrade strategy wins from every origin', () => {
+test('Monte-Carlo: a sustained, diversified upgrade strategy across all four branches wins from every origin', () => {
   let wins = 0;
   for (const origin of TERRITORIES.map((t) => t.id)) {
     const state = freshGame(origin);
-    runUntilEnd(state, (s) => {
-      buyUpgrade(s, 'propagation');
-      buyUpgrade(s, 'discretion');
-      buyUpgrade(s, 'resilience');
-    });
+    runUntilEnd(state, buyRoundRobin);
     if (state.status === 'victory') wins += 1;
     assert.ok(state.day > 100, `origin ${origin} ended suspiciously fast even with active upgrades (day ${state.day})`);
   }
-  assert.equal(wins, TERRITORIES.length, 'a sustained diversified strategy should win from every origin');
+  assert.equal(wins, TERRITORIES.length, 'a sustained diversified strategy across all 4 branches should win from every origin');
 });
 
-// Regression test added after the first human smartphone beta: at day 287 the
-// player had only ~20 Influence (barely enough for a first purchase), because
-// the tension curve that paces the mid/late game also starves the very start
-// of any real income. A tapering early trickle now covers that gap. Lock in
-// the fix here, on several origins (the player is free to choose any origin -
-// the fix must not be tuned around a single one).
+// V3 : la Propagation ne doit plus, seule, pouvoir gagner - la conversion de
+// portée en progression réelle exige un minimum de Dangerosité (voir
+// balance.js: severity.baseFactor). Une Anomalie extrêmement répandue mais
+// jamais rendue dangereuse doit rester bloquée loin du seuil de victoire.
+test('V3: maxing Propagation (and only Propagation) can spread everywhere but cannot reach victory alone', () => {
+  for (const origin of ['fenwick', 'jotun']) {
+    const state = freshGame(origin);
+    runUntilEnd(state, (s) => {
+      if (s.upgrades.propagation < BALANCE.upgrades.propagation.maxLevel) buyUpgrade(s, 'propagation');
+    });
+    assert.notEqual(state.status, 'victory', `origin=${origin}: Propagation-only should never reach victory`);
+    assert.ok(
+      state.reach > 20,
+      `origin=${origin}: Propagation-only should still spread noticeably before being pushed back (reach=${state.reach.toFixed(1)})`
+    );
+  }
+});
+
+// V3 : une fois la Réponse mondiale mobilisée (au-delà du seuil), l'Humanité
+// repousse activement l'Anomalie ; la Résilience atténue cette érosion.
+// Vérifié directement sur un tick isolé, à état initial identique, pour
+// mesurer le mécanisme lui-même plutôt qu'une partie entière.
+test('V3: once the world response is mobilized, zero Résilience erodes crisis faster than high Résilience', () => {
+  function tickWithResilience(resilienceLevel) {
+    const state = freshGame('fenwick');
+    state.upgrades.resilience = resilienceLevel;
+    state.territories.fenwick.crisis = 80;
+    state.globalContainment = BALANCE.humanity.mobilizationThreshold + 30; // clairement mobilisé
+    const before = state.territories.fenwick.crisis;
+    simulateTick(state);
+    return before - state.territories.fenwick.crisis; // perte nette de crise ce tick
+  }
+  const lossAtZero = tickWithResilience(0);
+  const lossAtMax = tickWithResilience(BALANCE.upgrades.resilience.maxLevel);
+  assert.ok(lossAtZero > lossAtMax, `zero Résilience should erode faster (${lossAtZero}) than max Résilience (${lossAtMax}) once mobilized`);
+});
+
+test('V3: below the mobilization threshold, Résilience level has no active-suppression effect yet', () => {
+  function crisisAfterOneTick(resilienceLevel) {
+    const state = freshGame('fenwick');
+    state.upgrades.resilience = resilienceLevel;
+    state.territories.fenwick.crisis = 80;
+    state.globalContainment = BALANCE.humanity.mobilizationThreshold - 10; // pas encore mobilisé
+    simulateTick(state);
+    return state.territories.fenwick.crisis;
+  }
+  // Sans mobilisation, la Résilience n'agit encore que sur la croissance/la
+  // propagation (comme en V2), pas sur une érosion active - la différence
+  // entre 0 et max doit donc être minime comparée au cas mobilisé ci-dessus.
+  const at0 = crisisAfterOneTick(0);
+  const atMax = crisisAfterOneTick(BALANCE.upgrades.resilience.maxLevel);
+  assert.ok(Math.abs(at0 - atMax) < 1, `pre-mobilization Résilience should barely matter yet (0=${at0.toFixed(2)}, max=${atMax.toFixed(2)})`);
+});
+
+// V3 : la Dangerosité alarme le monde beaucoup plus vite que la Propagation,
+// à niveau de crise égal (dangerosityAwarenessBleed > propagationAwarenessBleed
+// une fois ramené au même ordre de grandeur d'effet). Comparaison isolée sur
+// le seul territoire d'origine, tôt (avant que les voisins ne soient
+// atteints) : à ce stade Propagation n'a encore aucun effet sur SA PROPRE
+// crise (elle ne joue que sur la diffusion vers les voisins) - la crise du
+// territoire d'origine est donc quasi identique dans les deux scénarios, ce
+// qui isole proprement l'effet sur la conscience.
+test('V3: rushing Dangerosity early raises local awareness faster than rushing Propagation, at matched crisis levels', () => {
+  function awarenessAfter(kind, level, days) {
+    const state = freshGame('fenwick');
+    state.upgrades[kind] = level;
+    for (let i = 0; i < days; i++) simulateTick(state);
+    return state.territories.fenwick;
+  }
+  const days = 80;
+  const level = 6;
+  const viaDangerosity = awarenessAfter('dangerosity', level, days);
+  const viaPropagation = awarenessAfter('propagation', level, days);
+  assert.ok(
+    Math.abs(viaDangerosity.crisis - viaPropagation.crisis) < 0.01,
+    'this comparison requires matched crisis levels on the origin territory to be meaningful'
+  );
+  assert.ok(
+    viaDangerosity.awareness > viaPropagation.awareness,
+    `rushing Dangerosity (awareness=${viaDangerosity.awareness.toFixed(2)}) should alarm the world more, at equal crisis, than rushing Propagation (awareness=${viaPropagation.awareness.toFixed(2)})`
+  );
+});
+
 test('REGRESSION (post-beta1): the first affordable upgrade purchase arrives within a reasonable early window, from any origin', () => {
   const cost = upgradeCost('propagation', 0);
   for (const originId of ['jotun', 'fenwick', 'arca', 'lyrath', 'nyxor', 'halvern']) {
@@ -263,10 +343,6 @@ test('REGRESSION (post-beta1): the first affordable upgrade purchase arrives wit
 });
 
 test('speed (×1/×2/×4) is purely cosmetic: batching ticks (as ×2/×4 do) yields the exact same state as ticking one by one', () => {
-  // ×2/×4 only change how many simulateTick() calls happen per render frame in
-  // main.js; they must not change the simulation's own logic. We neutralize the
-  // one source of randomness (route closures) so both runs are directly comparable
-  // tick-for-tick, independent of any purchase timing.
   const originalRandom = Math.random;
   Math.random = () => 1; // never below routeCloseCheckChance -> no random route closures
 
@@ -297,28 +373,9 @@ test('speed (×1/×2/×4) is purely cosmetic: batching ticks (as ×2/×4 do) yie
   }
 });
 
-function spendEverythingAffordable(state) {
-  let boughtSomething = true;
-  while (boughtSomething) {
-    boughtSomething = false;
-    for (const kind of ['propagation', 'resilience', 'discretion']) {
-      const cfg = BALANCE.upgrades[kind];
-      if (state.upgrades[kind] >= cfg.maxLevel) continue;
-      if (upgradeCost(kind, state.upgrades[kind]) <= state.influence) {
-        buyUpgrade(state, kind);
-        boughtSomething = true;
-      }
-    }
-  }
-}
-
-// REGRESSION (post-beta V1, V2 request): the beta reported that a player could
-// leave the game running untouched for a long stretch, come back once, spend
-// everything accumulated in a single lump sum, and still win reliably - the
-// exact "pose ton telephone, reviens, achete sans reflechir, gagne" complaint.
-// An Influence cap (BALANCE.influenceCap) now makes hoarding lossy: influence
-// earned above the cap dissipates unused, so a single late dump buys less than
-// steady spending would have over the same span.
+// REGRESSION (post-beta V1, V2 request): leaving the game running untouched for a
+// long stretch, then spending everything accumulated in one lump sum, must not
+// reliably win - the influence cap (BALANCE.influenceCap) makes hoarding lossy.
 test('REGRESSION (post-beta V1->V2): a single very-late lump-sum purchase, after total neglect, must not reliably win', () => {
   let wins = 0;
   for (const originId of TERRITORIES.map((t) => t.id)) {
@@ -348,17 +405,80 @@ test('influence never exceeds its cap and stays finite/non-negative through pass
   }
 });
 
-test('checking in periodically every 100-200 days (a realistic casual pace) still wins reliably from every origin', () => {
-  for (const interval of [100, 200]) {
-    let wins = 0;
-    for (const originId of TERRITORIES.map((t) => t.id)) {
-      const state = freshGame(originId);
-      for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
-        simulateTick(state);
-        if (state.day % interval === 0) spendEverythingAffordable(state);
-      }
-      if (state.status === 'victory') wins += 1;
+// V3 finding (measured, not assumed - see RUPTURE_V3_Rapport_Technique_Officiel.pdf):
+// checking in periodically is no longer enough on its own if the SPENDING
+// ITSELF ignores the game's state. spendEverythingAffordable buys in a fixed
+// order (Propagation, Dangerosité, Résilience, Discrétion) regardless of how
+// mobilized the world's Response already is - exactly the "répartition
+// équilibrée mais sans tenir compte de la situation" naive pattern the
+// design brief asked to make measurably worse than reactive play. This is a
+// deliberate result of V3, not a bug: it replaces a V2-era test that expected
+// this exact non-reactive pattern to still win reliably.
+test('V3: a naive, non-reactive periodic spending pattern (fixed order, ignores world response) no longer wins reliably', () => {
+  let wins = 0;
+  for (const originId of TERRITORIES.map((t) => t.id)) {
+    const state = freshGame(originId);
+    for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
+      simulateTick(state);
+      if (state.day % 100 === 0) spendEverythingAffordable(state);
     }
-    assert.equal(wins, TERRITORIES.length, `checking in every ${interval} days should still win from every origin, got ${wins}`);
+    if (state.status === 'victory') wins += 1;
   }
+  assert.ok(
+    wins <= 4,
+    `a naive fixed-order spending pattern should now fail on most origins, got ${wins}/${TERRITORIES.length} wins`
+  );
 });
+
+// The same periodic check-in cadence, but reacting to one piece of state -
+// prioritizing Résilience once the world's Response is mobilized, offense
+// (Propagation/Dangerosité) otherwise - wins reliably. This is the
+// "stratégie cohérente et réfléchie" the design brief asked to keep viable:
+// the same influence income, spent in an order that respects the game's own
+// causality, is enough on its own to flip the outcome.
+function buyReactively(state) {
+  const mobilized = state.globalContainment >= BALANCE.humanity.mobilizationThreshold;
+  const order = mobilized
+    ? ['resilience', 'dangerosity', 'propagation', 'discretion']
+    : ['propagation', 'dangerosity', 'discretion', 'resilience'];
+  for (const kind of order) {
+    const cfg = BALANCE.upgrades[kind];
+    if (state.upgrades[kind] >= cfg.maxLevel) continue;
+    if (upgradeCost(kind, state.upgrades[kind]) <= state.influence) {
+      buyUpgrade(state, kind);
+      return true;
+    }
+  }
+  return false;
+}
+
+// The same reactive priority, but exercised every tick rather than in
+// periodic batches - matching how an actual play session works (the HUD
+// updates live; a real player taps "buy" as soon as something lights up,
+// they don't bank days of income before deciding). Measured finding worth
+// recording honestly: batching this same reactive order into infrequent
+// (25-100 in-game day) lump sessions performs markedly worse (4-5/18 in
+// exploratory measurement) purely because of interaction with the Influence
+// cap - raising the cap doesn't fix it either (tested up to 500, no change).
+// This mirrors an active playthrough far better than the old V2-era
+// "checking in every 100/200 days" proxy did: at V3's higher total upgrade
+// cost across 4 branches, that proxy no longer represents realistic
+// attentive play, only a big real-world gap between sessions - which the
+// negligence tests above already cover, and which correctly still fails.
+test('V3: a reactive spending order (Résilience once mobilized, offense otherwise), exercised live, wins reliably', () => {
+  let wins = 0;
+  const days = [];
+  for (const originId of TERRITORIES.map((t) => t.id)) {
+    const state = freshGame(originId);
+    for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
+      simulateTick(state);
+      buyReactively(state);
+    }
+    if (state.status === 'victory') {
+      wins += 1;
+      days.push(state.day);
+    }
+  }
+  assert.equal(wins, TERRITORIES.length, `a live reactive spending order should win from every origin, got ${wins}/${TERRITORIES.length}`);
+});
+

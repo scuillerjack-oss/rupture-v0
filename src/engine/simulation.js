@@ -1,6 +1,6 @@
 import { TERRITORIES } from './territories.js';
 import { adjacency, pushLog } from './state.js';
-import { BALANCE, upgradeCost, tensionAt } from './balance.js';
+import { BALANCE, upgradeCost, tensionAt, responsePhaseAt } from './balance.js';
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
@@ -16,6 +16,20 @@ export function simulateTick(state) {
   const propagationEffect = state.upgrades.propagation * BALANCE.upgrades.propagation.effectPerLevel;
   const resilienceEffect = clamp(state.upgrades.resilience * BALANCE.upgrades.resilience.effectPerLevel, 0, 0.8);
   const discretionEffect = clamp(state.upgrades.discretion * BALANCE.upgrades.discretion.effectPerLevel, 0, 0.8);
+  const dangerosityEffect = state.upgrades.dangerosity * BALANCE.upgrades.dangerosity.effectPerLevel;
+
+  // L'Humanité ne se contente plus de ralentir la croissance de l'Anomalie :
+  // une fois sa Réponse mondiale sérieusement engagée, elle la repousse
+  // activement. `state.globalContainment` reflète l'état AVANT ce tick (il
+  // n'est recalculé qu'après la boucle, comme en V2) : léger décalage d'un
+  // tick, sans effet observable, déjà le cas pour awareness/containment.
+  const mobilizationThreshold = BALANCE.humanity.mobilizationThreshold;
+  const mobilizationProgress = clamp(
+    (state.globalContainment - mobilizationThreshold) / (100 - mobilizationThreshold),
+    0,
+    1
+  );
+  const suppressionRate = BALANCE.humanity.maxSuppressionPerTick * mobilizationProgress * (1 - resilienceEffect) * tension;
 
   for (const t of TERRITORIES) {
     const ts = state.territories[t.id];
@@ -45,13 +59,21 @@ export function simulateTick(state) {
     );
     spreadIn *= incomingDamping;
 
-    const newCrisis = clamp(currentCrisis + growth + spreadIn, 0, 100);
+    let newCrisis = clamp(currentCrisis + growth + spreadIn, 0, 100);
+    // Érosion active une fois l'Humanité mobilisée (voir suppressionRate
+    // ci-dessus) : proportionnelle à la crise actuelle, donc elle ne peut
+    // jamais produire de valeur négative ni incohérente.
+    if (suppressionRate > 0) {
+      newCrisis = clamp(newCrisis - newCrisis * suppressionRate, 0, 100);
+    }
 
-    // Aggressive Propagation makes the Anomaly more conspicuous: a share of its
-    // effect bleeds into how fast the world catches on, offsetting the pure
-    // upside of spreading faster.
+    // Propagation ET Dangerosité rendent l'Anomalie plus visible ; une
+    // Anomalie rendue dangereuse est bien plus alarmante qu'une Anomalie
+    // simplement répandue (dangerosityAwarenessBleed > propagationAwarenessBleed).
     const awarenessRate =
-      BALANCE.awarenessCatchupRate * (1 + propagationEffect * BALANCE.propagationAwarenessBleed) * (1 - discretionEffect);
+      BALANCE.awarenessCatchupRate *
+      (1 + propagationEffect * BALANCE.propagationAwarenessBleed + dangerosityEffect * BALANCE.dangerosityAwarenessBleed) *
+      (1 - discretionEffect);
     ts.awareness = clamp(ts.awareness + (newCrisis - ts.awareness) * awarenessRate * tension, 0, 100);
     ts.containment = clamp(ts.containment + (ts.awareness * 0.6 - ts.containment) * 0.05 * tension, 0, 100);
 
@@ -69,26 +91,52 @@ export function simulateTick(state) {
     ts.crisis = newCrisis;
   }
 
-  let weightedCrisis = 0;
+  let weightedReach = 0;
   let totalPopulation = 0;
   let awarenessSum = 0;
   let influenceGain = 0;
 
   for (const t of TERRITORIES) {
     const ts = state.territories[t.id];
-    weightedCrisis += ts.crisis * t.population;
+    weightedReach += ts.crisis * t.population;
     totalPopulation += t.population;
     awarenessSum += ts.awareness;
     influenceGain += (ts.crisis * t.population) / 100;
   }
 
-  state.dominance = clamp(weightedCrisis / totalPopulation, 0, 100);
+  // "Portée" : à quel point l'Anomalie s'est répandue, indépendamment de sa
+  // gravité réelle. Affichée séparément dans la vue Monde pour rendre visible
+  // exactement ce que la Dangerosité change.
+  state.reach = clamp(weightedReach / totalPopulation, 0, 100);
+  // "Progression" (ex-domination) : ce qui compte réellement pour la
+  // victoire. severityFactor vaut BALANCE.severity.baseFactor sans aucun
+  // investissement en Dangerosité — une Anomalie purement répandue ne peut
+  // donc pas gagner seule, quelle que soit sa Propagation.
+  const severityFactor = BALANCE.severity.baseFactor + dangerosityEffect;
+  state.dominance = clamp(state.reach * severityFactor, 0, 100);
+
   const containmentGainFactor = state.rules?.globalContainmentGainFactor ?? BALANCE.globalContainmentGainFactor;
   state.globalContainment = clamp(
     state.globalContainment + (awarenessSum / TERRITORIES.length) * containmentGainFactor * tension,
     0,
     100
   );
+
+  // Journal : uniquement les transitions de phase de la Réponse mondiale
+  // (détection initiale comprise) plutôt qu'un événement par tick ou par
+  // achat — voir buyUpgrade, qui ne journalise plus rien.
+  const phase = responsePhaseAt(state.globalContainment);
+  if (phase.key !== state.responsePhase) {
+    state.responsePhase = phase.key;
+    if (phase.key !== 'ignorance') {
+      pushLog(state, `Réponse mondiale : nouvelle phase — ${phase.label}.`);
+    }
+  }
+  if (!state.dominanceMilestoneLogged && state.dominance >= 50) {
+    state.dominanceMilestoneLogged = true;
+    pushLog(state, 'L\'Anomalie franchit un seuil critique de progression mondiale.');
+  }
+
   // Crisis-driven income alone is scaled by tension, which starts extremely low so the
   // opening feels calm - but that also starves the player of any real choice for a very
   // long stretch. A separate, tapering trickle covers exactly that gap: it matters early
@@ -107,18 +155,17 @@ export function simulateTick(state) {
   );
   state.day += 1;
 
-  const victoryThreshold = state.rules?.victoryDominanceThreshold ?? BALANCE.victoryDominanceThreshold;
-  if (state.dominance >= victoryThreshold) {
+  if (state.dominance >= BALANCE.victoryDominanceThreshold) {
     state.status = 'victory';
     state.endReason = 'dominance';
     pushLog(
       state,
-      `Domination mondiale atteinte (${state.dominance.toFixed(0)}% ≥ ${victoryThreshold}%). Victoire.`
+      `Progression mondiale de l'Anomalie complète (${state.dominance.toFixed(0)}% ≥ ${BALANCE.victoryDominanceThreshold}%). Victoire.`
     );
   } else if (state.globalContainment >= BALANCE.defeatContainmentThreshold) {
     state.status = 'defeat';
     state.endReason = 'containment';
-    pushLog(state, 'Le confinement mondial a atteint 100 % avant votre domination. Défaite.');
+    pushLog(state, 'La Réponse mondiale a atteint la maîtrise complète avant votre victoire. Défaite.');
   } else if (state.day >= BALANCE.maxDays) {
     state.status = 'defeat';
     state.endReason = 'timeout';
@@ -135,7 +182,6 @@ export function buyUpgrade(state, kind) {
   if (state.influence < cost) return false;
   state.influence -= cost;
   state.upgrades[kind] = level + 1;
-  pushLog(state, `Amélioration ${cfg.label} niveau ${level + 1} acquise.`);
   return true;
 }
 

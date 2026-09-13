@@ -8,6 +8,14 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+  /* Empêche la sélection de texte tactile sur toute l'interface : sans ça,
+     un appui un peu long sur un libellé (ex. le nom d'un territoire dans la
+     carte SVG) sélectionne le texte et déclenche le menu contextuel "Rechercher
+     avec Google" de Chrome Android - un comportement du navigateur, pas de
+     RUPTURE, mais que ce correctif standard suffit à empêcher. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #app {
@@ -494,29 +502,13 @@ button {
   text-align: center;
 }
 
-.sector-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sector-row {
+.world-panel {
   background: #171e27;
   border-radius: 10px;
   padding: 10px 12px;
-}
-
-.sector-row-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 6px;
-  font-size: 0.85rem;
-}
-
-.sector-count {
-  font-size: 0.68rem;
-  color: #7f8b99;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .menu-overlay-screen {

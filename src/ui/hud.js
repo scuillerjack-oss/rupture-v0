@@ -1,5 +1,5 @@
-import { getTerritory, TERRITORIES, SECTORS } from '../engine/territories.js';
-import { BALANCE, upgradeCost } from '../engine/balance.js';
+import { getTerritory, TERRITORIES } from '../engine/territories.js';
+import { BALANCE, DIFFICULTIES, upgradeCost, responsePhaseAt } from '../engine/balance.js';
 import { getAvailableSpeeds } from '../config/runtime.js';
 
 const SPEED_LABELS = { 0: '⏸', 1: '1x', 2: '2x', 4: '4x' };
@@ -9,8 +9,11 @@ function speedButton(state, value, label) {
   return `<button class="speed-btn${active}" data-action="set-speed" data-speed="${value}">${label}</button>`;
 }
 
+const UPGRADE_ORDER = ['propagation', 'dangerosity', 'resilience', 'discretion'];
+
 const NEXT_LEVEL_EFFECT = {
   propagation: (pct) => `Prochain niveau : +${pct}% de vitesse de propagation vers les voisins (et un peu plus visible).`,
+  dangerosity: (pct) => `Prochain niveau : +${pct} pt de facteur de gravité réelle (et beaucoup plus alarmant pour le monde).`,
   resilience: (pct) => `Prochain niveau : +${pct}% de résistance aux mesures de confinement (locales et à la propagation).`,
   discretion: (pct) => `Prochain niveau : +${pct}% de ralentissement de la prise de conscience mondiale.`
 };
@@ -23,7 +26,7 @@ function upgradeRow(state, kind) {
   const canAfford = !maxed && state.influence >= upgradeCost(kind, level);
   const nextLevelText = maxed
     ? 'Niveau maximum atteint.'
-    : NEXT_LEVEL_EFFECT[kind](Math.round(cfg.effectPerLevel * 100));
+    : NEXT_LEVEL_EFFECT[kind](kind === 'dangerosity' ? cfg.effectPerLevel.toFixed(3) : Math.round(cfg.effectPerLevel * 100));
   return `
     <div class="upgrade-row">
       <div class="upgrade-info">
@@ -40,42 +43,37 @@ function upgradeRow(state, kind) {
     </div>`;
 }
 
-function computeSectorStats(state) {
-  const bySector = new Map(SECTORS.map((s) => [s.id, { ...s, popSum: 0, crisisSum: 0, awarenessSum: 0, containmentSum: 0, count: 0, touched: 0, severe: 0, critical: 0 }]));
+function computeWorldStats(state) {
+  let touched = 0;
+  let severe = 0;
+  let critical = 0;
+  let awarenessSum = 0;
   for (const t of TERRITORIES) {
     const ts = state.territories[t.id];
-    const b = bySector.get(t.sector);
-    if (!b) continue;
-    b.count += 1;
-    b.popSum += t.population;
-    b.crisisSum += ts.crisis * t.population;
-    b.awarenessSum += ts.awareness;
-    b.containmentSum += ts.containment;
-    if (ts.crisis > 0) b.touched += 1;
-    if (ts.crisis >= 50) b.severe += 1;
-    if (ts.crisis >= 75) b.critical += 1;
+    if (ts.crisis > 0) touched += 1;
+    if (ts.crisis >= 50) severe += 1;
+    if (ts.crisis >= 75) critical += 1;
+    awarenessSum += ts.awareness;
   }
-  return [...bySector.values()].map((b) => ({
-    ...b,
-    dominance: b.popSum ? b.crisisSum / b.popSum : 0,
-    awareness: b.count ? b.awarenessSum / b.count : 0,
-    containment: b.count ? b.containmentSum / b.count : 0
-  }));
+  return {
+    touched,
+    total: TERRITORIES.length,
+    severe,
+    critical,
+    awareness: awarenessSum / TERRITORIES.length,
+    phase: responsePhaseAt(state.globalContainment)
+  };
 }
 
-function renderSectorPanel(state) {
-  const sectors = computeSectorStats(state);
+function renderWorldPanel(state) {
+  const w = computeWorldStats(state);
   return `
-    <div class="sector-panel">
-      ${sectors.map((s) => `
-        <div class="sector-row">
-          <div class="sector-row-head">
-            <strong>${s.name}</strong>
-            <span class="sector-count">${s.touched}/${s.count} régions touchées</span>
-          </div>
-          <div class="stat-line">Domination <div class="bar"><div class="bar-fill crisis" style="width:${s.dominance}%"></div></div></div>
-          <div class="stat-line small">Sévères : ${s.severe} · Critiques : ${s.critical} · Confinement moyen : ${s.containment.toFixed(0)}%</div>
-        </div>`).join('')}
+    <div class="world-panel">
+      <div class="stat-line small">Difficulté : ${DIFFICULTIES[state.difficulty]?.label ?? 'Normal'} · Régions touchées : ${w.touched}/${w.total} · Sévères : ${w.severe} · Critiques : ${w.critical}</div>
+      <div class="stat-line">Portée (étendue brute) <div class="bar"><div class="bar-fill crisis" style="width:${state.reach}%"></div></div></div>
+      <div class="stat-line">Progression réelle de l'Anomalie <div class="bar"><div class="bar-fill crisis" style="width:${state.dominance}%"></div></div></div>
+      <div class="stat-line">Conscience mondiale <div class="bar"><div class="bar-fill awareness" style="width:${w.awareness}%"></div></div></div>
+      <div class="stat-line">Réponse mondiale — ${w.phase.label} <div class="bar"><div class="bar-fill containment" style="width:${state.globalContainment}%"></div></div></div>
     </div>`;
 }
 
@@ -95,7 +93,7 @@ function renderTerritoryPanel(state) {
 }
 
 export function renderHud(state, statsView, services) {
-  const view = statsView === 'sectors' ? 'sectors' : 'territory';
+  const view = statsView === 'world' ? 'world' : 'territory';
 
   return `
     <div class="hud">
@@ -109,11 +107,11 @@ export function renderHud(state, statsView, services) {
           <span class="metric-value">${Math.floor(state.influence)}</span>
         </div>
         <div class="metric">
-          <span class="metric-label">Domination</span>
+          <span class="metric-label">Progression</span>
           <span class="metric-value">${state.dominance.toFixed(0)}%</span>
         </div>
         <div class="metric">
-          <span class="metric-label">Confinement mondial</span>
+          <span class="metric-label">Réponse mondiale</span>
           <span class="metric-value">${state.globalContainment.toFixed(0)}%</span>
         </div>
       </div>
@@ -122,13 +120,11 @@ export function renderHud(state, statsView, services) {
       </div>
       <div class="view-tabs">
         <button class="view-tab${view === 'territory' ? ' active' : ''}" data-action="set-stats-view" data-view="territory">Région</button>
-        <button class="view-tab${view === 'sectors' ? ' active' : ''}" data-action="set-stats-view" data-view="sectors">Secteurs</button>
+        <button class="view-tab${view === 'world' ? ' active' : ''}" data-action="set-stats-view" data-view="world">Monde</button>
       </div>
-      ${view === 'sectors' ? renderSectorPanel(state) : renderTerritoryPanel(state)}
+      ${view === 'world' ? renderWorldPanel(state) : renderTerritoryPanel(state)}
       <div class="upgrades-panel">
-        ${upgradeRow(state, 'propagation')}
-        ${upgradeRow(state, 'resilience')}
-        ${upgradeRow(state, 'discretion')}
+        ${UPGRADE_ORDER.map((kind) => upgradeRow(state, kind)).join('')}
       </div>
       <div class="log-panel">
         ${state.log.slice(0, 6).map((l) => `<div class="log-line">${l}</div>`).join('')}
