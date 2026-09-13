@@ -1,7 +1,7 @@
 import { TERRITORIES, buildAdjacency } from './territories.js';
-import { BALANCE } from './balance.js';
+import { BALANCE, DIFFICULTIES } from './balance.js';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export function createTerritoryStates() {
   const map = {};
@@ -31,11 +31,14 @@ export function createInitialState() {
     territories: createTerritoryStates(),
     selectedId: null,
     endReason: null,
+    difficulty: 'normal',
+    rules: { ...DIFFICULTIES.normal },
     log: []
   };
 }
 
-export function beginNewGame(state) {
+export function beginNewGame(state, difficulty = 'normal') {
+  const resolvedDifficulty = DIFFICULTIES[difficulty] ? difficulty : 'normal';
   state.status = 'selecting-origin';
   state.day = 0;
   state.speed = 1;
@@ -46,6 +49,8 @@ export function beginNewGame(state) {
   state.upgrades = { propagation: 0, resilience: 0, discretion: 0 };
   state.territories = createTerritoryStates();
   state.selectedId = null;
+  state.difficulty = resolvedDifficulty;
+  state.rules = { ...DIFFICULTIES[resolvedDifficulty] };
   state.log = ['Choisissez un territoire de départ pour votre anomalie.'];
 }
 

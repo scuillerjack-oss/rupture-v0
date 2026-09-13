@@ -47,11 +47,12 @@ export function simulateTick(state) {
 
     const newCrisis = clamp(currentCrisis + growth + spreadIn, 0, 100);
 
-    ts.awareness = clamp(
-      ts.awareness + (newCrisis - ts.awareness) * BALANCE.awarenessCatchupRate * (1 - discretionEffect) * tension,
-      0,
-      100
-    );
+    // Aggressive Propagation makes the Anomaly more conspicuous: a share of its
+    // effect bleeds into how fast the world catches on, offsetting the pure
+    // upside of spreading faster.
+    const awarenessRate =
+      BALANCE.awarenessCatchupRate * (1 + propagationEffect * BALANCE.propagationAwarenessBleed) * (1 - discretionEffect);
+    ts.awareness = clamp(ts.awareness + (newCrisis - ts.awareness) * awarenessRate * tension, 0, 100);
     ts.containment = clamp(ts.containment + (ts.awareness * 0.6 - ts.containment) * 0.05 * tension, 0, 100);
 
     if (ts.awareness > BALANCE.routeCloseAwarenessThreshold) {
@@ -82,8 +83,9 @@ export function simulateTick(state) {
   }
 
   state.dominance = clamp(weightedCrisis / totalPopulation, 0, 100);
+  const containmentGainFactor = state.rules?.globalContainmentGainFactor ?? BALANCE.globalContainmentGainFactor;
   state.globalContainment = clamp(
-    state.globalContainment + (awarenessSum / TERRITORIES.length) * BALANCE.globalContainmentGainFactor * tension,
+    state.globalContainment + (awarenessSum / TERRITORIES.length) * containmentGainFactor * tension,
     0,
     100
   );
@@ -93,15 +95,25 @@ export function simulateTick(state) {
   // (when tension is near its minimum) and fades itself out as the real crisis-driven
   // economy takes over (tension rising toward 1), so it never inflates the mid/late game.
   const earlyTrickle = BALANCE.earlyInfluenceTrickle * clamp(1 - tension, 0, 1);
-  state.influence += influenceGain * BALANCE.influenceGainFactor + earlyTrickle;
+  // Discretion trades away some of the Influence a hidden Anomaly could otherwise extract.
+  const incomeFactor = 1 - discretionEffect * BALANCE.discretionIncomePenalty;
+  // Influence cannot be hoarded indefinitely: past the cap it dissipates unused. This is
+  // what actually stops the "ignore the game for 500 days, then dump it all at once" pattern -
+  // a lump purchase no longer buys as much as steady spending would have over the same span.
+  state.influence = clamp(
+    state.influence + influenceGain * BALANCE.influenceGainFactor * incomeFactor + earlyTrickle,
+    0,
+    BALANCE.influenceCap
+  );
   state.day += 1;
 
-  if (state.dominance >= BALANCE.victoryDominanceThreshold) {
+  const victoryThreshold = state.rules?.victoryDominanceThreshold ?? BALANCE.victoryDominanceThreshold;
+  if (state.dominance >= victoryThreshold) {
     state.status = 'victory';
     state.endReason = 'dominance';
     pushLog(
       state,
-      `Domination mondiale atteinte (${state.dominance.toFixed(0)}% ≥ ${BALANCE.victoryDominanceThreshold}%). Victoire.`
+      `Domination mondiale atteinte (${state.dominance.toFixed(0)}% ≥ ${victoryThreshold}%). Victoire.`
     );
   } else if (state.globalContainment >= BALANCE.defeatContainmentThreshold) {
     state.status = 'defeat';

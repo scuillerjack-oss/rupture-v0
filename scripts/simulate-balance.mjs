@@ -2,7 +2,7 @@
 // Ne truque pas les résultats : chaque stratégie est un heuristique honnête,
 // exécuté tel quel contre le moteur réel (src/engine), sans connaissance
 // privilégiée de l'issue. Sert à révéler les faiblesses du moteur, pas à les
-// cacher. Résultats bruts écrits dans docs/v1-simulation-results.json.
+// cacher. Résultats bruts écrits dans docs/v2-simulation-results.json.
 
 import { writeFileSync } from 'node:fs';
 import { createInitialState, beginNewGame, confirmOrigin } from '../src/engine/state.js';
@@ -86,6 +86,28 @@ const STRATEGIES = {
     if (Math.random() < 0.08) {
       const kind = KINDS[Math.floor(Math.random() * KINDS.length)];
       buyUpgrade(state, kind);
+    }
+  },
+
+  // The exact pattern reported after the V1 beta: ignore the game entirely, come
+  // back once very late, spend everything accumulated in one go, never touch it
+  // again. Included as a named strategy so this stays a tracked, visible number
+  // rather than a one-off check. State is tracked on the game state itself (not
+  // in a closure) so it resets correctly for every fresh run/origin.
+  negligente: (state) => {
+    if (state.__negligentSpent || state.day < 600) return;
+    state.__negligentSpent = true;
+    let boughtSomething = true;
+    while (boughtSomething) {
+      boughtSomething = false;
+      for (const kind of KINDS) {
+        const cfg = BALANCE.upgrades[kind];
+        if (state.upgrades[kind] >= cfg.maxLevel) continue;
+        if (upgradeCost(kind, state.upgrades[kind]) <= state.influence) {
+          buyUpgrade(state, kind);
+          boughtSomething = true;
+        }
+      }
     }
   }
 };
@@ -194,8 +216,8 @@ console.log('=== RESUME PAR STRATEGIE (', results.length, 'simulations au total 
 console.table(summary);
 
 writeFileSync(
-  new URL('../docs/v1-simulation-results.json', import.meta.url),
+  new URL('../docs/v2-simulation-results.json', import.meta.url),
   JSON.stringify({ generatedAt: new Date().toISOString(), totalRuns: results.length, summary, results }, null, 2)
 );
 
-console.log('Résultats bruts écrits dans docs/v1-simulation-results.json');
+console.log('Résultats bruts écrits dans docs/v2-simulation-results.json');

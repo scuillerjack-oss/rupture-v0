@@ -50,3 +50,21 @@ export function markTutorialSeen() {
     console.warn('Impossible de mémoriser que le tutoriel a été vu', e);
   }
 }
+
+const DIFFICULTY_KEY = 'rupture-v0-difficulty';
+
+export function getDifficultySetting() {
+  try {
+    return localStorage.getItem(DIFFICULTY_KEY) || 'normal';
+  } catch (e) {
+    return 'normal';
+  }
+}
+
+export function setDifficultySetting(difficulty) {
+  try {
+    localStorage.setItem(DIFFICULTY_KEY, difficulty);
+  } catch (e) {
+    console.warn('Impossible de mémoriser la difficulté choisie', e);
+  }
+}

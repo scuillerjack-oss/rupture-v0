@@ -296,3 +296,69 @@ test('speed (×1/×2/×4) is purely cosmetic: batching ticks (as ×2/×4 do) yie
     Math.random = originalRandom;
   }
 });
+
+function spendEverythingAffordable(state) {
+  let boughtSomething = true;
+  while (boughtSomething) {
+    boughtSomething = false;
+    for (const kind of ['propagation', 'resilience', 'discretion']) {
+      const cfg = BALANCE.upgrades[kind];
+      if (state.upgrades[kind] >= cfg.maxLevel) continue;
+      if (upgradeCost(kind, state.upgrades[kind]) <= state.influence) {
+        buyUpgrade(state, kind);
+        boughtSomething = true;
+      }
+    }
+  }
+}
+
+// REGRESSION (post-beta V1, V2 request): the beta reported that a player could
+// leave the game running untouched for a long stretch, come back once, spend
+// everything accumulated in a single lump sum, and still win reliably - the
+// exact "pose ton telephone, reviens, achete sans reflechir, gagne" complaint.
+// An Influence cap (BALANCE.influenceCap) now makes hoarding lossy: influence
+// earned above the cap dissipates unused, so a single late dump buys less than
+// steady spending would have over the same span.
+test('REGRESSION (post-beta V1->V2): a single very-late lump-sum purchase, after total neglect, must not reliably win', () => {
+  let wins = 0;
+  for (const originId of TERRITORIES.map((t) => t.id)) {
+    const state = freshGame(originId);
+    let spent = false;
+    for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
+      simulateTick(state);
+      if (!spent && state.day >= 600) {
+        spendEverythingAffordable(state);
+        spent = true;
+      }
+    }
+    if (state.status === 'victory') wins += 1;
+  }
+  assert.ok(
+    wins <= 2,
+    `a single dump at day 600 after total neglect should fail on almost every origin, got ${wins}/${TERRITORIES.length} wins`
+  );
+});
+
+test('influence never exceeds its cap and stays finite/non-negative through passive accumulation', () => {
+  const state = freshGame();
+  for (let i = 0; i < 1000; i++) {
+    simulateTick(state);
+    assert.ok(Number.isFinite(state.influence));
+    assert.ok(state.influence >= 0 && state.influence <= BALANCE.influenceCap);
+  }
+});
+
+test('checking in periodically every 100-200 days (a realistic casual pace) still wins reliably from every origin', () => {
+  for (const interval of [100, 200]) {
+    let wins = 0;
+    for (const originId of TERRITORIES.map((t) => t.id)) {
+      const state = freshGame(originId);
+      for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
+        simulateTick(state);
+        if (state.day % interval === 0) spendEverythingAffordable(state);
+      }
+      if (state.status === 'victory') wins += 1;
+    }
+    assert.equal(wins, TERRITORIES.length, `checking in every ${interval} days should still win from every origin, got ${wins}`);
+  }
+});

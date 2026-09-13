@@ -145,11 +145,29 @@ button {
 }
 
 .map-container {
+  position: relative;
   flex: 1;
   min-height: 240px;
   touch-action: pan-y;
   display: flex;
   flex-direction: column;
+}
+
+.menu-fab {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 5;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(23, 30, 39, 0.88);
+  color: #e8ecf1;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .world-map {
@@ -445,6 +463,130 @@ button {
   height: 8px;
   border-radius: 50%;
   display: inline-block;
+}
+
+.view-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.view-tab {
+  flex: 1;
+  padding: 8px;
+  border-radius: 10px;
+  background: #171e27;
+  color: #9aa5b1;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.view-tab.active {
+  background: #262f3a;
+  color: #e8ecf1;
+}
+
+.territory-panel.empty {
+  background: #171e27;
+  border-radius: 10px;
+  padding: 14px 12px;
+  color: #7f8b99;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.sector-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sector-row {
+  background: #171e27;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.sector-row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+}
+
+.sector-count {
+  font-size: 0.68rem;
+  color: #7f8b99;
+}
+
+.menu-overlay-screen {
+  align-items: stretch;
+  justify-content: center;
+  gap: 14px;
+  padding-top: max(env(safe-area-inset-top), 24px);
+}
+
+.menu-overlay-screen h2 {
+  margin: 0 0 4px;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.settings-subhead {
+  margin: 12px 0 4px;
+  font-size: 0.8rem;
+  color: #e06b2d;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.difficulty-options {
+  display: flex;
+  gap: 8px;
+}
+
+.difficulty-btn {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #171e27;
+  color: #e8ecf1;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.difficulty-btn.active {
+  background: #e06b2d;
+  color: #0b0f14;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #171e27;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+
+.settings-row.disabled {
+  color: #5a6472;
+}
+
+.coming-soon {
+  font-size: 0.68rem;
+  color: #5a6472;
+  background: #0b0f14;
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
+.primary-btn.danger {
+  background: #d13b3b;
+  color: #fff;
 }
 
 @media (min-width: 700px) {
