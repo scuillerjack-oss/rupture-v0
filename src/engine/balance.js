@@ -10,7 +10,17 @@ export const BALANCE = {
   routeCloseCheckChance: 0.05,
   globalContainmentGainFactor: 0.135,
   influenceGainFactor: 0.035,
-  earlyInfluenceTrickle: 0.62,
+  // V4 (§1) : relevé de 0.62 à 1.15 pour compenser la tension qui monte plus
+  // vite (voir tension.power ci-dessus) - cette source fond d'elle-même à
+  // mesure que la tension augmente (clamp(1-tension,0,1)), donc l'augmenter
+  // ici ne gonfle QUE le tout début de partie, jamais l'économie de fin de
+  // partie (qui reste gouvernée par influenceGainFactor, inchangé). Calibré
+  // par simulation (pas choisi a priori) : la valeur la plus basse qui
+  // rétablit un budget suffisant sans transformer une stratégie naïve ou
+  // délibérément mauvaise en stratégie gagnante - voir le rapport V4 pour
+  // le balayage complet (une compensation trop généreuse fait gagner
+  // TOUTES les stratégies, y compris les mauvaises, en quelques crans).
+  earlyInfluenceTrickle: 1.15,
   influenceCap: 150,
   // V3 : course symétrique Anomalie 100 / Humanité 100 (V2 opposait 90 à 100).
   // Voir RUPTURE_V3_Rapport_Technique_Officiel.pdf pour la justification et
@@ -18,11 +28,24 @@ export const BALANCE = {
   victoryDominanceThreshold: 100,
   defeatContainmentThreshold: 100,
   maxDays: 2200,
+  // V4 (bêta manuelle post-V3.1, §1) : mesuré à ~774-778 jours médians toutes
+  // stratégies confondues avant ce recalibrage - bien au-delà de la cible de
+  // design (~450-550 jours). rampDays reste inchangé (1800) : le réduire
+  // comprime TOUTE la courbe (avant ET après mobilisation) à parts égales,
+  // ce qui a été mesuré casser des stratégies patientes entières (furtive
+  // puis frappe tombe à 0/18) avant même de rétablir un budget d'Influence
+  // suffisant - voir RUPTURE_V4_Rapport_Technique_Officiel.pdf §1. Réduire
+  // seulement `power` (2.1 -> 1.3) avance la tension plus tôt SANS changer
+  // où elle plafonne : cela raccourcit spécifiquement la phase calme de
+  // début de partie, en laissant la fenêtre post-mobilisation quasiment
+  // intacte en jours absolus - donc en croissance en proportion du temps
+  // total. Combiné à earlyInfluenceTrickle (voir plus bas) pour rétablir un
+  // budget d'Influence suffisant sur la durée réduite.
   tension: {
     min: 0.005,
     max: 1.2,
     rampDays: 1800,
-    power: 2.1
+    power: 1.3
   },
   // Trade-offs (V2, conservés) : les branches ne sont plus des bonus "gratuits".
   propagationAwarenessBleed: 0.4,

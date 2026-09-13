@@ -86,6 +86,7 @@ function renderWorldPanel(state) {
       <div class="stat-line">Progression réelle de l'Anomalie <div class="bar"><div class="bar-fill crisis" style="width:${state.dominance}%"></div></div></div>
       <div class="stat-line">Conscience mondiale <div class="bar"><div class="bar-fill awareness" style="width:${w.awareness}%"></div></div></div>
       <div class="stat-line">Réponse mondiale — ${w.phase.label} <div class="bar"><div class="bar-fill containment" style="width:${state.globalContainment}%"></div></div></div>
+      <div class="stat-line small world-hint">Conscience : ce que l'Humanité comprend de la menace. Réponse : ce qu'elle fait concrètement pour vous arrêter — dangereuse une fois sérieusement engagée (défaite à 100%).</div>
     </div>`;
 }
 

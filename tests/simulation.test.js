@@ -446,6 +446,16 @@ test('speed (×1/×2/×4) is purely cosmetic: batching ticks (as ×2/×4 do) yie
 // REGRESSION (post-beta V1, V2 request): leaving the game running untouched for a
 // long stretch, then spending everything accumulated in one lump sum, must not
 // reliably win - the influence cap (BALANCE.influenceCap) makes hoarding lossy.
+//
+// V4 : le seuil "jour 600" datait d'une durée de partie médiane V3.1 proche de
+// 780 jours. Depuis le recalibrage V4 (voir balance.js: tension.power,
+// earlyInfluenceTrickle), une partie passive se termine désormais dès ~557-602
+// jours selon l'origine - le déclencheur à 600 ne se déclenchait plus du tout
+// pour certaines origines (la partie était déjà terminée avant), ce qui
+// affaiblissait silencieusement ce que le test vérifie réellement. Ramené à
+// 350 jours (confortablement avant la plus courte défaite passive mesurée),
+// pour que le déclenchement "tardif après négligence totale" ait bien lieu
+// sur toutes les origines, comme le test l'exige par construction.
 test('REGRESSION (post-beta V1->V2): a single very-late lump-sum purchase, after total neglect, must not reliably win', () => {
   let wins = 0;
   for (const originId of TERRITORIES.map((t) => t.id)) {
@@ -453,7 +463,7 @@ test('REGRESSION (post-beta V1->V2): a single very-late lump-sum purchase, after
     let spent = false;
     for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
       simulateTick(state);
-      if (!spent && state.day >= 600) {
+      if (!spent && state.day >= 350) {
         spendEverythingAffordable(state);
         spent = true;
       }
@@ -462,7 +472,7 @@ test('REGRESSION (post-beta V1->V2): a single very-late lump-sum purchase, after
   }
   assert.ok(
     wins <= 2,
-    `a single dump at day 600 after total neglect should fail on almost every origin, got ${wins}/${TERRITORIES.length} wins`
+    `a single dump at day 350 after total neglect should fail on almost every origin, got ${wins}/${TERRITORIES.length} wins`
   );
 });
 
@@ -553,6 +563,115 @@ test('V3: a reactive spending order (Résilience once mobilized, offense otherwi
   assert.ok(
     wins >= TERRITORIES.length * 0.6,
     `a live reactive spending order should win from a solid majority of origins, got ${wins}/${TERRITORIES.length}`
+  );
+});
+
+// --- V4 (bêta manuelle post-V3.1) : recalibrage ciblé du rythme, pas une
+// refonte. Voir RUPTURE_V4_Rapport_Technique_Officiel.pdf pour le diagnostic
+// complet et le balayage de simulations qui a mené à tension.power=1.3 et
+// earlyInfluenceTrickle=1.15 (au lieu de 2.1 / 0.62).
+
+// §1 : la durée médiane mesurée avant ce recalibrage était de ~774-778 jours
+// toutes stratégies confondues, largement au-dessus de la cible de design
+// (~450-550 jours). Ce test ne code pas cette cible comme une contrainte
+// exacte (le moteur doit rester libre de produire des parties plus courtes
+// ou plus longues) : il vérifie seulement qu'une victoire bien exécutée
+// n'a plus structurellement besoin de dépasser tout un ordre de grandeur
+// au-delà de cette cible - une marge large, pour ne pas rendre le test
+// fragile à une variation normale d'une origine à l'autre.
+test('V4: a well-executed reactive strategy now wins in a duration order-of-magnitude closer to the ~450-550 day design target', () => {
+  const winDays = [];
+  for (const originId of TERRITORIES.map((t) => t.id)) {
+    const state = freshGame(originId);
+    for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
+      simulateTick(state);
+      buyReactively(state);
+    }
+    if (state.status === 'victory') winDays.push(state.day);
+  }
+  assert.ok(winDays.length > 0, 'test setup error: the reactive strategy should still win from at least one origin');
+  for (const days of winDays) {
+    assert.ok(
+      days < 650,
+      `a reactive victory at day ${days} is not meaningfully shorter than the pre-V4 baseline (~774-778 days median)`
+    );
+  }
+});
+
+// §2 : le seuil de mobilisation lui-même (humanity.mobilizationThreshold)
+// n'a pas changé - ce qui compte pour "voir venir" la mobilisation, c'est
+// que la fenêtre entre ce seuil et la fin de partie reste une part réelle,
+// non négligeable, du temps total - pas un sprint final compressé dans les
+// derniers pourcents de la partie comme mesuré avant ce recalibrage
+// (~12-13% du temps total, contre ~16% après - voir le rapport V4).
+test('V4: the window between world mobilization and game end is a real, non-negligible share of total game length', () => {
+  const fractions = [];
+  for (const originId of TERRITORIES.map((t) => t.id)) {
+    const state = freshGame(originId);
+    let mobilizedAtDay = null;
+    for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
+      simulateTick(state);
+      if (mobilizedAtDay === null && state.globalContainment >= BALANCE.humanity.mobilizationThreshold) {
+        mobilizedAtDay = state.day;
+      }
+      buyReactively(state);
+    }
+    if (mobilizedAtDay !== null && state.day > mobilizedAtDay) {
+      fractions.push((state.day - mobilizedAtDay) / state.day);
+    }
+  }
+  assert.ok(fractions.length > 0, 'test setup error: mobilization should be reached from at least one origin');
+  const avgFraction = fractions.reduce((a, b) => a + b, 0) / fractions.length;
+  assert.ok(
+    avgFraction > 0.1,
+    `the post-mobilization window should be a real fraction of the game (>10%), got ${(avgFraction * 100).toFixed(1)}%`
+  );
+});
+
+// §3 : les nouvelles familles de stratégies demandées explicitement pour
+// cette passe (discrétion prioritaire, résilience précoce) doivent, comme
+// les familles déjà couvertes (Propagation seule), rester incapables de
+// gagner isolément - la diversité stratégique ne doit pas dégénérer en
+// "n'importe quelle branche poussée seule suffit" une fois le rythme
+// recalibré.
+test('V4: maxing Discrétion (and only Discrétion) first cannot reach victory alone', () => {
+  for (const origin of ['fenwick', 'jotun']) {
+    const state = freshGame(origin);
+    runUntilEnd(state, (s) => {
+      if (s.upgrades.discretion < BALANCE.upgrades.discretion.maxLevel) buyUpgrade(s, 'discretion');
+    });
+    assert.notEqual(state.status, 'victory', `origin=${origin}: Discrétion-only should never reach victory`);
+  }
+});
+
+test('V4: maxing Résilience (and only Résilience) first cannot reach victory alone', () => {
+  for (const origin of ['fenwick', 'jotun']) {
+    const state = freshGame(origin);
+    runUntilEnd(state, (s) => {
+      if (s.upgrades.resilience < BALANCE.upgrades.resilience.maxLevel) buyUpgrade(s, 'resilience');
+    });
+    assert.notEqual(state.status, 'victory', `origin=${origin}: Résilience-only should never reach victory`);
+  }
+});
+
+// §3/§4 : l'investissement en Discrétion doit garder un effet perceptible
+// sur la vitesse à laquelle le monde prend conscience de l'Anomalie, quel
+// que soit le rythme général de la partie - vérifié directement sur la
+// mécanique isolée (à crise égale), pas sur une partie complète, pour ne
+// pas dépendre du recalibrage §1/§2 ci-dessus.
+test('V4: high Discrétion investment measurably slows local awareness growth, at matched crisis levels', () => {
+  function awarenessAfter(discretionLevel, days) {
+    const state = freshGame('fenwick');
+    state.upgrades.discretion = discretionLevel;
+    for (let i = 0; i < days; i++) simulateTick(state);
+    return state.territories.fenwick;
+  }
+  const days = 80;
+  const withDiscretion = awarenessAfter(BALANCE.upgrades.discretion.maxLevel, days);
+  const withoutDiscretion = awarenessAfter(0, days);
+  assert.ok(
+    withDiscretion.awareness < withoutDiscretion.awareness,
+    `max Discrétion (awareness=${withDiscretion.awareness.toFixed(2)}) should slow awareness growth compared to none (awareness=${withoutDiscretion.awareness.toFixed(2)})`
   );
 });
 

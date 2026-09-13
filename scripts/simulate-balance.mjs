@@ -1,8 +1,8 @@
-// Batterie de simulations de pré-équilibrage pour RUPTURE V3.
+// Batterie de simulations de pré-équilibrage pour RUPTURE (V3, V3.1, V4...).
 // Ne truque pas les résultats : chaque stratégie est un heuristique honnête,
 // exécuté tel quel contre le moteur réel (src/engine), sans connaissance
 // privilégiée de l'issue. Sert à révéler les faiblesses du moteur, pas à les
-// cacher. Résultats bruts écrits dans docs/v3-simulation-results.json.
+// cacher. Résultats bruts écrits dans docs/v4-simulation-results.json.
 
 import { writeFileSync } from 'node:fs';
 import { createInitialState, beginNewGame, confirmOrigin } from '../src/engine/state.js';
@@ -135,6 +135,50 @@ const STRATEGIES = {
       return;
     }
     buyFirstAffordable(state, ['propagation', 'dangerosity', 'discretion']);
+  },
+
+  // --- Familles supplémentaires demandées explicitement pour V4 (§3) ---
+
+  // Discrétion prioritaire : maximise Discrétion avant tout le reste,
+  // bascule vers l'offensive puis (si mobilisé) vers la Résilience une fois
+  // Discrétion épuisée. Distincte de "furtive-puis-frappe" (qui ne pousse
+  // Discrétion qu'à 5 avant de bifurquer) : ici Discrétion va jusqu'au bout.
+  'discretion-prioritaire': (state) => {
+    if (state.upgrades.discretion < BALANCE.upgrades.discretion.maxLevel) {
+      if (affordable(state, 'discretion')) buyUpgrade(state, 'discretion');
+      return;
+    }
+    buyFirstAffordable(state, isMobilized(state) ? ['resilience', 'dangerosity', 'propagation'] : ['propagation', 'dangerosity', 'resilience']);
+  },
+
+  // Résilience développée plus tôt : à l'inverse de "resilience-negligee",
+  // maximise la Résilience en tout premier, avant même que le monde n'ait
+  // commencé à mobiliser une réponse - un pari sur la survie à long terme
+  // plutôt que sur la vitesse d'expansion initiale.
+  'resilience-precoce': (state) => {
+    if (state.upgrades.resilience < BALANCE.upgrades.resilience.maxLevel) {
+      if (affordable(state, 'resilience')) buyUpgrade(state, 'resilience');
+      return;
+    }
+    buyFirstAffordable(state, ['propagation', 'dangerosity', 'discretion']);
+  },
+
+  // Stratégie exacte jouée par l'utilisateur lors de la bêta manuelle V3.1
+  // qui a motivé cette passe (défaite jour 746, 98% de Progression contre
+  // 100% de Réponse mondiale - une partie extrêmement serrée) : Propagation
+  // à fond, puis Discrétion à fond, puis Dangerosité/Résilience au mieux
+  // selon le temps restant. Conservée telle quelle pour vérifier l'effet
+  // réel du recalibrage V4 sur ce cas concret, sans le forcer à gagner.
+  'beta-utilisateur-v3.1': (state) => {
+    if (state.upgrades.propagation < BALANCE.upgrades.propagation.maxLevel) {
+      if (affordable(state, 'propagation')) buyUpgrade(state, 'propagation');
+      return;
+    }
+    if (state.upgrades.discretion < BALANCE.upgrades.discretion.maxLevel) {
+      if (affordable(state, 'discretion')) buyUpgrade(state, 'discretion');
+      return;
+    }
+    buyFirstAffordable(state, isMobilized(state) ? ['resilience', 'dangerosity'] : ['dangerosity', 'resilience']);
   }
 };
 
@@ -253,8 +297,8 @@ console.log('=== RESUME PAR STRATEGIE (', results.length, 'simulations au total 
 console.table(summary);
 
 writeFileSync(
-  new URL('../docs/v3-simulation-results.json', import.meta.url),
+  new URL('../docs/v4-simulation-results.json', import.meta.url),
   JSON.stringify({ generatedAt: new Date().toISOString(), totalRuns: results.length, summary, results }, null, 2)
 );
 
-console.log('Résultats bruts écrits dans docs/v3-simulation-results.json');
+console.log('Résultats bruts écrits dans docs/v4-simulation-results.json');
