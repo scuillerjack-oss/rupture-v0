@@ -15,7 +15,7 @@ export function renderMenu(hasSave) {
         <button class="link-btn" data-action="show-tutorial">Comment jouer ?</button>
         <button class="link-btn" data-action="open-settings">Paramètres</button>
       </div>
-      <p class="version-tag">V3 — build bêta</p>
+      <p class="version-tag">V4.1 — build bêta</p>
     </div>`;
 }
 
