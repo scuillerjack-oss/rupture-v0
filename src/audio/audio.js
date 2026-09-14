@@ -6,34 +6,43 @@
 // synthétisés en direct via des oscillateurs et enveloppes de gain -
 // jamais de voix, jamais d'échantillon audio.
 //
-// V5.1 (deuxième correctif bêta sur l'audio - clarification du besoin) :
-// la V5 avait remplacé le drone continu par des notes isolées séparées de
-// 15 à 45s de silence. Retour explicite du joueur : ce n'était pas ce qui
-// était demandé - il veut une véritable petite musique d'ambiance
-// instrumentale (calme, posée, mélodique, discrète), ni un drone statique
-// ni des sons ponctuels noyés dans le silence. Nouvelle approche générative
-// à deux couches, jouées en continu tant que la musique est activée :
+// V5.2 (troisième correctif bêta sur l'audio - clarification du besoin) :
+// la V5.1 proposait une ambiance générative continue (nappe d'accords en La
+// mineur naturel + notes piochées au hasard). Retour explicite : perçue
+// comme trop sombre/angoissante, et ce n'était toujours pas la demande - le
+// joueur veut une véritable petite MÉLODIE instrumentale identifiable
+// (calme, posée, curieuse/réfléchie), pas une nappe ambient ni un drone,
+// aussi doux soit-il. Nouvelle approche, plus proche d'une vraie
+// composition qu'une génération procédurale :
 //
-//  1) Une NAPPE (pad) harmonique de fond, très douce, faite de 3 notes
-//     tenues (accord) qui changent lentement (progression Am -> F -> C ->
-//     G -> Am, un cycle mineur cohérent avec l'atmosphère du jeu) toutes
-//     les 45-75s, avec un fondu enchaîné de plusieurs secondes entre deux
-//     accords - jamais un accord figé indéfiniment, jamais de coupure nette.
-//  2) Une MÉLODIE générative éparse par-dessus, une note (parfois deux)
-//     piochée dans la même gamme toutes les 3 à 9 secondes environ - assez
-//     fréquent pour qu'on entende une vraie ligne mélodique qui bouge, pas
-//     des notes isolées séparées par de longs silences.
-// Chaque note (mélodie) et chaque accord (nappe) varie en timbre/durée/
-// volume pour qu'aucune boucle identique ne soit perceptible, même en
-// jouant longtemps. Le tout reste nettement plus discret que les effets
-// sonores (crêtes de volume volontairement plus basses, voir plus bas) et
-// filtré (passe-bas légèrement modulé, comme une respiration lente) pour
-// ne jamais prendre le dessus sur le gameplay.
+//  - Un thème mélodique COURT et FIXE (8 notes, contour simple qui monte
+//    puis redescend) et une phrase réponse plus courte (6 notes,
+//    descendante, volontairement ouverte) qui alternent à chaque
+//    apparition - reconnaissables d'une fois sur l'autre (c'est le point
+//    central de la demande), pas générées au hasard note par note.
+//  - Gamme choisie : La DORIEN (A-B-C-D-E-F#-G), pas La mineur naturel. Le
+//    6e degré rehaussé (F# au lieu de F) est précisément ce qui distingue
+//    une couleur "pensive/curieuse" d'une couleur "triste/sombre" en theorie
+//    modale usuelle - c'était la source la plus probable du ressenti
+//    "angoissant" de la V5.1 (mineur naturel, harmonisé en power-chords
+//    graves). Aucune basse menaçante, aucun timbre percussif.
+//  - Chaque note du thème est légèrement humanisée (durée/volume/écart
+//    temporel variés à chaque apparition, dans une fourchette étroite) pour
+//    ne jamais sonner comme un enregistrement figé qui boucle à
+//    l'identique, sans pour autant perdre le contour mélodique reconnu.
+//  - Un unique support harmonique très doux (une note grave tenue, jamais un
+//    accord complet) apparaît UNIQUEMENT pendant que le thème joue et
+//    s'éteint avec lui - jamais de son continu entre deux apparitions.
+//  - De vraies plages de silence (35 à 65 secondes) séparent chaque
+//    apparition du thème : la musique reste présente et identifiable sans
+//    jamais fatiguer en fond de partie, conformément à la demande explicite
+//    "elle doit pouvoir tourner en fond sans fatiguer".
 //
-// Registre choisi (174-392Hz) : reste dans la zone déjà validée audible sur
+// Registre choisi (165-440Hz) : reste dans la zone déjà validée audible sur
 // haut-parleur de téléphone en V4.2 (mesuré par rendu hors-ligne + filtre
 // passe-haut 200Hz, corrigé par un décalage de deux octaves depuis le
-// registre grave d'origine 55-82Hz).
+// registre grave d'origine 55-82Hz) - la note de soutien la plus grave
+// (F#3, 185Hz) reste dans cette zone.
 //
 // Effets : achat/amélioration, changement de phase de la Réponse mondiale
 // (qui correspond aussi à la réaction humaine majeure - même événement dans
@@ -44,12 +53,9 @@ import { getMusicSetting, setMusicSetting, getSfxSetting, setSfxSetting } from '
 
 let ctx = null;
 let masterMusicGain = null;
-let musicFilter = null;
 let musicStarted = false;
-let melodyTimer = null;
-let chordTimer = null;
-let filterLfo = null;
-let currentPad = null; // { gain, oscs } - accord actuellement audible
+let themeTimer = null;
+let useAlternateTheme = false; // alterne thème principal / phrase réponse à chaque apparition
 
 function ensureContext() {
   if (ctx) return ctx;
@@ -59,104 +65,99 @@ function ensureContext() {
   return ctx;
 }
 
-// Progression d'accords mineurs cohérente (i - VI - III - VII en La mineur),
-// lente et cyclique - jamais un accord figé indéfiniment, jamais de
-// dissonance surprenante. Fréquences dans le registre validé audible
-// (174-392Hz, voir en-tête de fichier).
-const CHORDS = [
-  [220.0, 261.63, 329.63], // Am : A3 C4 E4
-  [174.61, 220.0, 261.63], // F  : F3 A3 C4
-  [261.63, 329.63, 392.0], // C  : C4 E4 G4
-  [196.0, 246.94, 293.66] // G  : G3 B3 D4
-];
+// La Dorien (A3-A4) : A-B-C-D-E-F#-G-A. Le 6e degré rehaussé (F#, contre un
+// Fa naturel en La mineur) donne une couleur pensive/curieuse plutôt que
+// triste - voir l'en-tête de fichier. Fréquences en Hz.
+const A3 = 220.0;
+const B3 = 246.94;
+const C4 = 261.63;
+const D4 = 293.66;
+const E4 = 329.63;
+const FS4 = 369.99;
+const G4 = 392.0;
+const A4 = 440.0;
 
-// Gamme de La mineur naturel utilisée par la mélodie générative - couvre le
-// même registre que les accords ci-dessus, pour rester harmoniquement
-// cohérent avec la nappe à tout instant (aucune note de mélodie n'est
-// jamais dissonante avec l'accord tenu, par construction).
-const MELODY_SCALE = [174.61, 196.0, 220.0, 246.94, 261.63, 293.66, 329.63, 349.23, 392.0];
+// Thème principal : contour simple qui monte puis redescend (arche), la
+// forme la plus naturellement mémorisable. Chaque entrée est {freq, beat}
+// où `beat` est sa position (en temps relatifs) - permet un tempo légèrement
+// humanisé sans perdre l'intervalle entre les notes.
+const THEME_MAIN = [A3, C4, E4, FS4, E4, C4, B3, A3];
+// Phrase réponse : plus courte, descendante, volontairement laissée ouverte
+// (ne revient pas jusqu'à la tonique) - alterne avec le thème principal pour
+// que de longues sessions ne rejouent pas exactement la même chose à
+// chaque fois, sans perdre le fil mélodique reconnu (même gamme, même
+// esprit).
+const THEME_ANSWER = [E4, D4, C4, B3, A3, C4];
 
-let chordIndex = -1;
+const NOTE_BEAT_S = 1.15; // tempo de base, lent et posé ("andante")
+// Soutien grave très doux : F#3 (185Hz, 6e degré à l'octave inférieure) -
+// reste dans le registre validé audible sur haut-parleur de téléphone
+// (165-440Hz, voir en-tête de fichier) contrairement à une octave complète
+// sous A3, qui retomberait dans le registre grave déjà identifié comme
+// inaudible en V4.2.
+const SUPPORT_NOTE = 185.0;
 
-function createPad(freqs, startTime) {
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0, startTime);
-  gain.connect(musicFilter);
-  const oscs = freqs.map((freq) => {
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    osc.connect(gain);
-    osc.start(startTime);
-    return osc;
-  });
-  return { gain, oscs };
-}
-
-function stopPad(pad, atTime) {
-  pad.oscs.forEach((osc) => osc.stop(atTime + 0.05));
-}
-
-// Fondu enchaîné entre l'accord actuel et le suivant de la progression -
-// jamais de coupure nette ni de changement audible d'un bloc à l'autre.
-const PAD_PEAK = 0.045; // délibérément plus bas que la mélodie et très en dessous des effets sonores (0.12-0.18)
-const CHORD_CROSSFADE_S = 5;
-
-function crossfadeToNextChord() {
-  if (!musicStarted || !ctx) return;
-  chordIndex = (chordIndex + 1) % CHORDS.length;
-  const now = ctx.currentTime;
-  const nextPad = createPad(CHORDS[chordIndex], now);
-  nextPad.gain.gain.linearRampToValueAtTime(PAD_PEAK, now + CHORD_CROSSFADE_S);
-
-  if (currentPad) {
-    const oldPad = currentPad;
-    oldPad.gain.gain.linearRampToValueAtTime(0, now + CHORD_CROSSFADE_S);
-    stopPad(oldPad, now + CHORD_CROSSFADE_S);
-  }
-  currentPad = nextPad;
-
-  const nextChangeMs = 45000 + Math.random() * 30000; // 45-75s : lent, jamais rythmique
-  chordTimer = setTimeout(crossfadeToNextChord, nextChangeMs);
-}
-
-function playMelodyNote(now, freq) {
-  const type = Math.random() < 0.6 ? 'sine' : 'triangle';
-  const duration = 1.6 + Math.random() * 1.8; // 1.6 à 3.4s : une vraie respiration mélodique
-  const peak = 0.06 + Math.random() * 0.05; // au-dessus de la nappe, sous les effets sonores
+function playMelodyNote(now, freq, isLast) {
+  const type = Math.random() < 0.7 ? 'sine' : 'triangle';
+  // Notes liées (léger chevauchement) pour un rendu legato, jamais saccadé -
+  // la dernière note du thème respire un peu plus longtemps avant le
+  // silence qui suit.
+  const duration = (isLast ? 1.8 : 1.1) + Math.random() * 0.3;
+  const peak = 0.075 + Math.random() * 0.035; // présent (c'est la mélodie, l'élément principal), mais net en dessous des effets sonores (0.12-0.18)
   const osc = ctx.createOscillator();
   osc.type = type;
   osc.frequency.value = freq;
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(peak, now + 0.3); // attaque douce, jamais percussive
+  gain.gain.linearRampToValueAtTime(peak, now + 0.15); // attaque douce, jamais percussive
   gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
   osc.connect(gain);
-  gain.connect(musicFilter);
+  gain.connect(masterMusicGain);
   osc.start(now);
   osc.stop(now + duration + 0.1);
 }
 
-// Mélodie générative éparse (esprit "ambient génératif", à la Brian Eno) :
-// une note (parfois deux, 1 fois sur 4, en petit intervalle mélodique) toutes
-// les 3 à 9 secondes environ - assez fréquent pour former une vraie ligne
-// mélodique continue à l'oreille, jamais des notes isolées noyées dans un
-// grand silence, et jamais deux passages consécutifs identiques (note,
-// timbre, durée et volume varient à chaque fois).
-function scheduleMelodyEvent() {
+function playSupportNote(now, totalDuration) {
+  // Un seul soutien grave et très doux, présent UNIQUEMENT pendant que le
+  // thème joue - jamais de son continu entre deux apparitions (voir
+  // en-tête). Fondu d'entrée/sortie doux pour ne jamais créer de coupure
+  // audible.
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = SUPPORT_NOTE;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.025, now + 1); // très en retrait, un simple ancrage harmonique
+  gain.gain.setValueAtTime(0.025, now + totalDuration - 1.2);
+  gain.gain.linearRampToValueAtTime(0, now + totalDuration);
+  osc.connect(gain);
+  gain.connect(masterMusicGain);
+  osc.start(now);
+  osc.stop(now + totalDuration + 0.1);
+}
+
+// Joue une apparition complète du thème (choisi selon useAlternateTheme) :
+// une note à la fois, légèrement humanisée en tempo/volume/durée à chaque
+// fois pour ne jamais sonner comme un enregistrement figé qui boucle à
+// l'identique - sans jamais perdre le contour mélodique (les intervalles
+// entre les notes restent exacts, seul le tempo global respire un peu).
+function playThemeOnce() {
   if (!musicStarted || !ctx) return;
+  const notes = useAlternateTheme ? THEME_ANSWER : THEME_MAIN;
+  useAlternateTheme = !useAlternateTheme;
+
   const now = ctx.currentTime;
-  const noteIndex = Math.floor(Math.random() * MELODY_SCALE.length);
-  playMelodyNote(now, MELODY_SCALE[noteIndex]);
-  if (Math.random() < 0.25) {
-    // Une deuxième note voisine dans la gamme (petit mouvement mélodique),
-    // jamais un grand saut - reste posé.
-    const step = Math.random() < 0.5 ? 1 : -1;
-    const secondIndex = Math.min(MELODY_SCALE.length - 1, Math.max(0, noteIndex + step));
-    playMelodyNote(now + 0.5 + Math.random() * 0.4, MELODY_SCALE[secondIndex]);
-  }
-  const gapMs = 3000 + Math.random() * 6000; // 3-9s : présence mélodique continue, pas des îlots isolés
-  melodyTimer = setTimeout(scheduleMelodyEvent, gapMs);
+  const tempoVariation = 0.9 + Math.random() * 0.25; // +-12% environ, jamais deux apparitions rigoureusement identiques
+  let cursor = 0;
+  notes.forEach((freq, i) => {
+    playMelodyNote(now + cursor, freq, i === notes.length - 1);
+    cursor += NOTE_BEAT_S * tempoVariation * (0.92 + Math.random() * 0.16);
+  });
+  const totalDuration = cursor + 1.5;
+  playSupportNote(now, totalDuration);
+
+  const gapMs = (35 + Math.random() * 30) * 1000; // 35-65s de vrai silence avant la prochaine apparition
+  themeTimer = setTimeout(playThemeOnce, totalDuration * 1000 + gapMs);
 }
 
 function startMusicGraph() {
@@ -164,54 +165,21 @@ function startMusicGraph() {
   musicStarted = true;
 
   const master = ctx.createGain();
-  master.gain.value = 1; // le volume réel est porté par chaque couche (pad/mélodie), pas par ce gain global
+  master.gain.value = 1; // le volume réel est porté par chaque note (peak), pas par ce gain global
   master.connect(ctx.destination);
   masterMusicGain = master;
 
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 950;
-  filter.connect(master);
-  musicFilter = filter;
-
-  // Légère respiration du filtre (mouvement très lent du timbre, ~28s de
-  // période) pour que la nappe ne sonne jamais complètement statique même
-  // pendant un accord tenu.
-  const lfo = ctx.createOscillator();
-  lfo.frequency.value = 1 / 28;
-  const lfoGain = ctx.createGain();
-  lfoGain.gain.value = 140;
-  lfo.connect(lfoGain);
-  lfoGain.connect(filter.frequency);
-  lfo.start();
-  filterLfo = lfo;
-
-  // Premier accord immédiat (fondu d'entrée doux) puis mélodie après un
-  // court délai, pour ne pas tout faire démarrer d'un coup au clic de
-  // déverrouillage.
-  chordIndex = -1;
-  currentPad = null;
-  crossfadeToNextChord();
-  melodyTimer = setTimeout(scheduleMelodyEvent, 4000 + Math.random() * 3000);
+  // Première apparition après un court délai (pas immédiatement au
+  // déverrouillage, pour ne pas coïncider avec un clic de l'interface).
+  useAlternateTheme = false;
+  themeTimer = setTimeout(playThemeOnce, 3000 + Math.random() * 3000);
 }
 
 function stopMusicGraph() {
   if (!musicStarted) return;
   musicStarted = false;
-  if (melodyTimer) clearTimeout(melodyTimer);
-  if (chordTimer) clearTimeout(chordTimer);
-  melodyTimer = null;
-  chordTimer = null;
-  if (filterLfo) {
-    try {
-      filterLfo.stop();
-    } catch (e) {
-      // déjà arrêté - sans conséquence
-    }
-  }
-  filterLfo = null;
-  currentPad = null;
-  musicFilter = null;
+  if (themeTimer) clearTimeout(themeTimer);
+  themeTimer = null;
   masterMusicGain = null;
 }
 
