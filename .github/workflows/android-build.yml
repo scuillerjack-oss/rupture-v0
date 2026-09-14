@@ -43,7 +43,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Le CLI Capacitor 8.x exige Node >=22 (vérifié : "[fatal] The
+          # Capacitor CLI requires NodeJS >=22.0.0" lors du premier essai en
+          # CI avec Node 20, la même version que deploy.yml - qui n'appelle
+          # jamais le CLI Capacitor et n'a donc pas ce problème).
+          node-version: 22
           cache: npm
 
       - run: npm ci
