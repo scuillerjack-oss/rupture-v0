@@ -1,0 +1,1834 @@
+{
+  "generatedAt": "2026-09-14T21:16:17.673Z",
+  "betaReference": {
+    "victoryDay": 478,
+    "anomalie": "100%",
+    "conscience": "53%",
+    "reponseMondiale": "38%",
+    "regions": "18/18",
+    "build": "Propagation 5 / Danger 9 / Résilience 3 / Discrétion 5",
+    "apparitionConscience": "~jour 398",
+    "apparitionMobilisation": "~jour 445"
+  },
+  "currentStateAudit": [
+    {
+      "strategy": "reactive-coherente",
+      "origin": "arca",
+      "status": "victory",
+      "days": 512,
+      "conscienceDay": 393,
+      "mobilisationDay": 434,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 95.3,
+      "globalAwareness": 70.1,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "boreal",
+      "status": "victory",
+      "days": 494,
+      "conscienceDay": 380,
+      "mobilisationDay": 420,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 88.2,
+      "globalAwareness": 69.1,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "cindra",
+      "status": "victory",
+      "days": 502,
+      "conscienceDay": 382,
+      "mobilisationDay": 423,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 94.1,
+      "globalAwareness": 70,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "delthia",
+      "status": "victory",
+      "days": 511,
+      "conscienceDay": 391,
+      "mobilisationDay": 431,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 97.7,
+      "globalAwareness": 70.6,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "esser",
+      "status": "victory",
+      "days": 503,
+      "conscienceDay": 389,
+      "mobilisationDay": 427,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 94.7,
+      "globalAwareness": 70.8,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "fenwick",
+      "status": "victory",
+      "days": 483,
+      "conscienceDay": 373,
+      "mobilisationDay": 410,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 89,
+      "globalAwareness": 70.2,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "gora",
+      "status": "victory",
+      "days": 492,
+      "conscienceDay": 374,
+      "mobilisationDay": 414,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 94.7,
+      "globalAwareness": 70.7,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "halvern",
+      "status": "defeat",
+      "days": 515,
+      "conscienceDay": 395,
+      "mobilisationDay": 436,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.4,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "ismer",
+      "status": "defeat",
+      "days": 508,
+      "conscienceDay": 390,
+      "mobilisationDay": 429,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.7,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "jotun",
+      "status": "victory",
+      "days": 486,
+      "conscienceDay": 374,
+      "mobilisationDay": 412,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 90.9,
+      "globalAwareness": 70.3,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "kelsor",
+      "status": "victory",
+      "days": 494,
+      "conscienceDay": 372,
+      "mobilisationDay": 413,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 96.6,
+      "globalAwareness": 70.7,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "lyrath",
+      "status": "defeat",
+      "days": 526,
+      "conscienceDay": 408,
+      "mobilisationDay": 448,
+      "dominance": 99.9,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.4,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "meridia",
+      "status": "victory",
+      "days": 512,
+      "conscienceDay": 393,
+      "mobilisationDay": 432,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.2,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "nyxor",
+      "status": "victory",
+      "days": 515,
+      "conscienceDay": 393,
+      "mobilisationDay": 434,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "vantis",
+      "status": "victory",
+      "days": 528,
+      "conscienceDay": 409,
+      "mobilisationDay": 449,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.2,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "ashra",
+      "status": "victory",
+      "days": 518,
+      "conscienceDay": 403,
+      "mobilisationDay": 442,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 95.8,
+      "globalAwareness": 70.5,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "corvel",
+      "status": "victory",
+      "days": 517,
+      "conscienceDay": 399,
+      "mobilisationDay": 437,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.5,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "reactive-coherente",
+      "origin": "tenlow",
+      "status": "defeat",
+      "days": 522,
+      "conscienceDay": 403,
+      "mobilisationDay": 443,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "arca",
+      "status": "victory",
+      "days": 505,
+      "conscienceDay": 394,
+      "mobilisationDay": 428,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.3,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "boreal",
+      "status": "victory",
+      "days": 489,
+      "conscienceDay": 382,
+      "mobilisationDay": 415,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 96.1,
+      "globalAwareness": 71.9,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "cindra",
+      "status": "victory",
+      "days": 495,
+      "conscienceDay": 384,
+      "mobilisationDay": 418,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 99.3,
+      "globalAwareness": 72,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "delthia",
+      "status": "defeat",
+      "days": 502,
+      "conscienceDay": 392,
+      "mobilisationDay": 426,
+      "dominance": 99.8,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "esser",
+      "status": "defeat",
+      "days": 496,
+      "conscienceDay": 390,
+      "mobilisationDay": 422,
+      "dominance": 99.9,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.7,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "fenwick",
+      "status": "defeat",
+      "days": 480,
+      "conscienceDay": 375,
+      "mobilisationDay": 406,
+      "dominance": 93.1,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 73.6,
+      "upgrades": {
+        "propagation": 9,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 7
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "gora",
+      "status": "victory",
+      "days": 486,
+      "conscienceDay": 378,
+      "mobilisationDay": 410,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.9,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "halvern",
+      "status": "defeat",
+      "days": 505,
+      "conscienceDay": 397,
+      "mobilisationDay": 431,
+      "dominance": 95.4,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "ismer",
+      "status": "defeat",
+      "days": 498,
+      "conscienceDay": 392,
+      "mobilisationDay": 424,
+      "dominance": 97.5,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.5,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "jotun",
+      "status": "victory",
+      "days": 481,
+      "conscienceDay": 376,
+      "mobilisationDay": 407,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 98.4,
+      "globalAwareness": 73,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "kelsor",
+      "status": "victory",
+      "days": 487,
+      "conscienceDay": 376,
+      "mobilisationDay": 409,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.8,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "lyrath",
+      "status": "defeat",
+      "days": 515,
+      "conscienceDay": 408,
+      "mobilisationDay": 441,
+      "dominance": 95.4,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.1,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "meridia",
+      "status": "defeat",
+      "days": 501,
+      "conscienceDay": 393,
+      "mobilisationDay": 426,
+      "dominance": 99.8,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.3,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "nyxor",
+      "status": "defeat",
+      "days": 505,
+      "conscienceDay": 394,
+      "mobilisationDay": 428,
+      "dominance": 99.2,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.8,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "vantis",
+      "status": "defeat",
+      "days": 517,
+      "conscienceDay": 410,
+      "mobilisationDay": 443,
+      "dominance": 95.4,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.4,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "ashra",
+      "status": "defeat",
+      "days": 510,
+      "conscienceDay": 402,
+      "mobilisationDay": 435,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.1,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "corvel",
+      "status": "defeat",
+      "days": 507,
+      "conscienceDay": 399,
+      "mobilisationDay": 431,
+      "dominance": 97.5,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "furtive-puis-frappe",
+      "origin": "tenlow",
+      "status": "defeat",
+      "days": 511,
+      "conscienceDay": 403,
+      "mobilisationDay": 436,
+      "dominance": 95.3,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.4,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 8,
+        "discretion": 7,
+        "dangerosity": 8
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "arca",
+      "status": "defeat",
+      "days": 506,
+      "conscienceDay": 374,
+      "mobilisationDay": 419,
+      "dominance": 97.6,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 70.2,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "boreal",
+      "status": "defeat",
+      "days": 491,
+      "conscienceDay": 360,
+      "mobilisationDay": 404,
+      "dominance": 99,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.2,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "cindra",
+      "status": "defeat",
+      "days": 498,
+      "conscienceDay": 362,
+      "mobilisationDay": 407,
+      "dominance": 98.7,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 70.7,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "delthia",
+      "status": "defeat",
+      "days": 503,
+      "conscienceDay": 373,
+      "mobilisationDay": 416,
+      "dominance": 98.1,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 70.6,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "esser",
+      "status": "defeat",
+      "days": 497,
+      "conscienceDay": 370,
+      "mobilisationDay": 413,
+      "dominance": 99.4,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.7,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "fenwick",
+      "status": "victory",
+      "days": 473,
+      "conscienceDay": 352,
+      "mobilisationDay": 394,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 91.9,
+      "globalAwareness": 71.8,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "gora",
+      "status": "defeat",
+      "days": 482,
+      "conscienceDay": 355,
+      "mobilisationDay": 397,
+      "dominance": 98.7,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.6,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 6,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "halvern",
+      "status": "defeat",
+      "days": 507,
+      "conscienceDay": 375,
+      "mobilisationDay": 421,
+      "dominance": 99.1,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.3,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "ismer",
+      "status": "defeat",
+      "days": 499,
+      "conscienceDay": 371,
+      "mobilisationDay": 414,
+      "dominance": 99.1,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.4,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "jotun",
+      "status": "defeat",
+      "days": 478,
+      "conscienceDay": 353,
+      "mobilisationDay": 395,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 73.9,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "kelsor",
+      "status": "defeat",
+      "days": 486,
+      "conscienceDay": 352,
+      "mobilisationDay": 396,
+      "dominance": 98.8,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.3,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "lyrath",
+      "status": "defeat",
+      "days": 521,
+      "conscienceDay": 391,
+      "mobilisationDay": 435,
+      "dominance": 98.5,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 70.6,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "meridia",
+      "status": "defeat",
+      "days": 503,
+      "conscienceDay": 373,
+      "mobilisationDay": 417,
+      "dominance": 99,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.9,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "nyxor",
+      "status": "defeat",
+      "days": 508,
+      "conscienceDay": 373,
+      "mobilisationDay": 418,
+      "dominance": 97.4,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 70.2,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "vantis",
+      "status": "defeat",
+      "days": 520,
+      "conscienceDay": 391,
+      "mobilisationDay": 436,
+      "dominance": 97.3,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 70.4,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 6,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "ashra",
+      "status": "defeat",
+      "days": 513,
+      "conscienceDay": 385,
+      "mobilisationDay": 427,
+      "dominance": 98.7,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "corvel",
+      "status": "defeat",
+      "days": 507,
+      "conscienceDay": 381,
+      "mobilisationDay": 423,
+      "dominance": 98.2,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 71.1,
+      "upgrades": {
+        "propagation": 7,
+        "resilience": 6,
+        "discretion": 6,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "dangerosite-precoce",
+      "origin": "tenlow",
+      "status": "defeat",
+      "days": 516,
+      "conscienceDay": 385,
+      "mobilisationDay": 428,
+      "dominance": 97.9,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 70.3,
+      "upgrades": {
+        "propagation": 8,
+        "resilience": 6,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "arca",
+      "status": "defeat",
+      "days": 509,
+      "conscienceDay": 399,
+      "mobilisationDay": 433,
+      "dominance": 99.4,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.7,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "boreal",
+      "status": "defeat",
+      "days": 495,
+      "conscienceDay": 386,
+      "mobilisationDay": 419,
+      "dominance": 99.9,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 73.9,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "cindra",
+      "status": "defeat",
+      "days": 500,
+      "conscienceDay": 389,
+      "mobilisationDay": 422,
+      "dominance": 99.3,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 73.5,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "delthia",
+      "status": "defeat",
+      "days": 506,
+      "conscienceDay": 397,
+      "mobilisationDay": 430,
+      "dominance": 99.6,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 73.1,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "esser",
+      "status": "victory",
+      "days": 498,
+      "conscienceDay": 395,
+      "mobilisationDay": 427,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 96.1,
+      "globalAwareness": 73.5,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "fenwick",
+      "status": "victory",
+      "days": 462,
+      "conscienceDay": 380,
+      "mobilisationDay": 411,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 63.7,
+      "globalAwareness": 66.1,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "gora",
+      "status": "victory",
+      "days": 487,
+      "conscienceDay": 382,
+      "mobilisationDay": 414,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 97.5,
+      "globalAwareness": 73.9,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "halvern",
+      "status": "victory",
+      "days": 507,
+      "conscienceDay": 402,
+      "mobilisationDay": 435,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 96.4,
+      "globalAwareness": 73,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "ismer",
+      "status": "victory",
+      "days": 501,
+      "conscienceDay": 397,
+      "mobilisationDay": 429,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 98.4,
+      "globalAwareness": 74.2,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "jotun",
+      "status": "victory",
+      "days": 471,
+      "conscienceDay": 381,
+      "mobilisationDay": 412,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 75.2,
+      "globalAwareness": 69.5,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "kelsor",
+      "status": "defeat",
+      "days": 490,
+      "conscienceDay": 381,
+      "mobilisationDay": 413,
+      "dominance": 99.5,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 74.3,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "lyrath",
+      "status": "defeat",
+      "days": 520,
+      "conscienceDay": 413,
+      "mobilisationDay": 446,
+      "dominance": 99.4,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 73.7,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "meridia",
+      "status": "victory",
+      "days": 503,
+      "conscienceDay": 398,
+      "mobilisationDay": 431,
+      "dominance": 100,
+      "reach": 100,
+      "globalContainment": 95.9,
+      "globalAwareness": 73,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "nyxor",
+      "status": "defeat",
+      "days": 509,
+      "conscienceDay": 399,
+      "mobilisationDay": 433,
+      "dominance": 99.1,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.8,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "vantis",
+      "status": "defeat",
+      "days": 522,
+      "conscienceDay": 414,
+      "mobilisationDay": 448,
+      "dominance": 99.2,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.7,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "ashra",
+      "status": "defeat",
+      "days": 515,
+      "conscienceDay": 406,
+      "mobilisationDay": 440,
+      "dominance": 99.3,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 73.1,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "corvel",
+      "status": "defeat",
+      "days": 510,
+      "conscienceDay": 404,
+      "mobilisationDay": 436,
+      "dominance": 99.1,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 73.2,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    },
+    {
+      "strategy": "beta-build-approx",
+      "origin": "tenlow",
+      "status": "defeat",
+      "days": 516,
+      "conscienceDay": 407,
+      "mobilisationDay": 441,
+      "dominance": 99,
+      "reach": 100,
+      "globalContainment": 100,
+      "globalAwareness": 72.9,
+      "upgrades": {
+        "propagation": 5,
+        "resilience": 3,
+        "discretion": 5,
+        "dangerosity": 10
+      }
+    }
+  ],
+  "leverSweep": [
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.1,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 15,
+      "tauxVictoire": "83%",
+      "conscienceDayMoyen": 388,
+      "mobilisationDayMoyen": 428
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.1,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 6,
+      "tauxVictoire": "33%",
+      "conscienceDayMoyen": 382,
+      "mobilisationDayMoyen": 415
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.1,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 353,
+      "mobilisationDayMoyen": 394
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.1,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 7,
+      "tauxVictoire": "39%",
+      "conscienceDayMoyen": 391,
+      "mobilisationDayMoyen": 423
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.13,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.13,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.13,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.13,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 372,
+      "mobilisationDayMoyen": 403
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.16,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.16,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.16,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.16,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 1,
+      "tauxVictoire": "6%",
+      "conscienceDayMoyen": 365,
+      "mobilisationDayMoyen": 396
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.2,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.2,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.2,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.2,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.25,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.25,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.25,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "awarenessCatchupRate",
+      "value": 0.25,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.6,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 14,
+      "tauxVictoire": "78%",
+      "conscienceDayMoyen": 388,
+      "mobilisationDayMoyen": 427
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.6,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 7,
+      "tauxVictoire": "39%",
+      "conscienceDayMoyen": 385,
+      "mobilisationDayMoyen": 417
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.6,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 353,
+      "mobilisationDayMoyen": 395
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.6,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 7,
+      "tauxVictoire": "39%",
+      "conscienceDayMoyen": 391,
+      "mobilisationDayMoyen": 423
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.4,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 9,
+      "tauxVictoire": "50%",
+      "conscienceDayMoyen": 363,
+      "mobilisationDayMoyen": 408
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.4,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 13,
+      "tauxVictoire": "72%",
+      "conscienceDayMoyen": 378,
+      "mobilisationDayMoyen": 414
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.4,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.4,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 368,
+      "mobilisationDayMoyen": 402
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.2,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 11,
+      "tauxVictoire": "61%",
+      "conscienceDayMoyen": 339,
+      "mobilisationDayMoyen": 391
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.2,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 18,
+      "tauxVictoire": "100%",
+      "conscienceDayMoyen": 359,
+      "mobilisationDayMoyen": 399
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.2,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1.2,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 351,
+      "mobilisationDayMoyen": 389
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 9,
+      "tauxVictoire": "50%",
+      "conscienceDayMoyen": 304,
+      "mobilisationDayMoyen": 364
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 18,
+      "tauxVictoire": "100%",
+      "conscienceDayMoyen": 332,
+      "mobilisationDayMoyen": 379
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "humanity.responseCurvePower",
+      "value": 1,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 328,
+      "mobilisationDayMoyen": 371
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 1.6,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 13,
+      "tauxVictoire": "72%",
+      "conscienceDayMoyen": 386,
+      "mobilisationDayMoyen": 425
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 1.6,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 7,
+      "tauxVictoire": "39%",
+      "conscienceDayMoyen": 383,
+      "mobilisationDayMoyen": 416
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 1.6,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 353,
+      "mobilisationDayMoyen": 395
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 1.6,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 7,
+      "tauxVictoire": "39%",
+      "conscienceDayMoyen": 391,
+      "mobilisationDayMoyen": 423
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 1.8,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 10,
+      "tauxVictoire": "56%",
+      "conscienceDayMoyen": 382,
+      "mobilisationDayMoyen": 422
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 1.8,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 378,
+      "mobilisationDayMoyen": 409
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 1.8,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 351,
+      "mobilisationDayMoyen": 393
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 1.8,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 5,
+      "tauxVictoire": "28%",
+      "conscienceDayMoyen": 389,
+      "mobilisationDayMoyen": 422
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 2,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 7,
+      "tauxVictoire": "39%",
+      "conscienceDayMoyen": 380,
+      "mobilisationDayMoyen": 419
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 2,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 1,
+      "tauxVictoire": "6%",
+      "conscienceDayMoyen": 373,
+      "mobilisationDayMoyen": 403
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 2,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 1,
+      "tauxVictoire": "6%",
+      "conscienceDayMoyen": 350,
+      "mobilisationDayMoyen": 391
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 2,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 378,
+      "mobilisationDayMoyen": 409
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 2.4,
+      "strategy": "reactive-coherente",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 373,
+      "mobilisationDayMoyen": 411
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 2.4,
+      "strategy": "furtive-puis-frappe",
+      "runs": 18,
+      "victoires": 0,
+      "tauxVictoire": "0%",
+      "conscienceDayMoyen": null,
+      "mobilisationDayMoyen": null
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 2.4,
+      "strategy": "dangerosite-precoce",
+      "runs": 18,
+      "victoires": 1,
+      "tauxVictoire": "6%",
+      "conscienceDayMoyen": 348,
+      "mobilisationDayMoyen": 389
+    },
+    {
+      "lever": "dangerosityAwarenessBleed",
+      "value": 2.4,
+      "strategy": "beta-build-approx",
+      "runs": 18,
+      "victoires": 2,
+      "tauxVictoire": "11%",
+      "conscienceDayMoyen": 375,
+      "mobilisationDayMoyen": 406
+    }
+  ],
+  "decision": "Aucune modification appliquée aux constantes tension/awareness/réponse : les trois leviers testés reproduisent une falaise (effet négligeable ou effondrement/plafond de taux de victoire), déjà documentée pour des leviers voisins en V4/V4.1/V4.2. Conservé tel quel, décision documentée conformément au §9 du cahier des charges V6."
+}

@@ -21,7 +21,34 @@ export const BALANCE = {
   // le balayage complet (une compensation trop généreuse fait gagner
   // TOUTES les stratégies, y compris les mauvaises, en quelques crans).
   earlyInfluenceTrickle: 1.15,
-  influenceCap: 150,
+  // V6 (chantier A, audit approfondi - voir docs/v6-influence-cap-audit.json
+  // et scripts/audit-influence-cap.mjs) : relevé de 150 à 200. Le
+  // commentaire d'origine (V1->V2) présentait ce plafond comme LA protection
+  // anti-cheese contre "négliger 500 jours puis tout dépenser d'un coup" -
+  // mesuré comme FAUX dans le moteur actuel : ce pattern reste à 0 victoire
+  // sur 90 essais (18 origines x 5 essais) à TOUTE valeur de cap testée, y
+  // compris 300/500/1000/Infinity - la vraie protection est désormais
+  // ailleurs (croissance de crise non proportionnelle au temps déjà passé,
+  // plafond de gravité fermé sans Dangerosité investie, réaction
+  // Conscience/Mobilisation qui rattrape un pic tardif de Dangerosité avant
+  // que la crise n'ait le temps de monter - voir simulation.js). Le cap à
+  // 150 avait en revanche un effet secondaire jamais mesuré jusqu'ici : une
+  // épargne délibérée et raisonnable de 150 jours avant de pivoter vers une
+  // stratégie cohérente tombait à 0% de victoires (contre ~78% pour la même
+  // stratégie sans délai), un résultat directement contraire à l'intention
+  // du design ("épargne légitime puis pivot" doit rester viable). Testé par
+  // pas de 25 de 150 à 300 : le taux de victoire de ce pivot légitime saute
+  // de 0% à ~48-59% dès que le cap dépasse 150, sans gain supplémentaire net
+  // au-delà de 200 (plateau bruité 50-59% jusqu'à 300). 200 est donc la
+  // valeur la plus basse qui corrige la zone morte identifiée, sans changer
+  // la hiérarchie des 14 stratégies déjà validées (batterie complète
+  // rejouée à 150 vs 200, 18 origines x 3 difficultés : tous les écarts
+  // observés sont dans le bruit d'une seule partie par origine, ±1-2
+  // parties sur 18, jamais une bascule "tout le monde gagne" comme les
+  // falaises déjà documentées en V4.1/V4.2) et sans transformer le hoarding
+  // dégénéré en stratégie viable (toujours 0/90 à cap=200, y compris pour un
+  // dump encore plus tardif, jour 700).
+  influenceCap: 200,
   // V3 : course symétrique Anomalie 100 / Humanité 100 (V2 opposait 90 à 100).
   // Voir RUPTURE_V3_Rapport_Technique_Officiel.pdf pour la justification et
   // les simulations qui ont validé le recalibrage qui l'accompagne.

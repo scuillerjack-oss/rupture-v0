@@ -13,6 +13,17 @@ import { simulateTick, buyUpgrade } from '../src/engine/simulation.js';
 import { TERRITORIES } from '../src/engine/territories.js';
 import { BALANCE, upgradeCost } from '../src/engine/balance.js';
 
+// V6 (chantier A, audit du plafond d'Influence) : override optionnel via
+// variable d'environnement, pour rejouer la batterie complète avec une
+// autre valeur de influenceCap SANS dupliquer ce script ni modifier
+// balance.js - comportement par défaut strictement inchangé quand la
+// variable est absente (voir docs/v6-influence-cap-audit.json pour l'audit
+// dédié et son raisonnement complet).
+if (process.env.RUPTURE_INFLUENCE_CAP) {
+  BALANCE.influenceCap = process.env.RUPTURE_INFLUENCE_CAP === 'Infinity' ? Infinity : Number(process.env.RUPTURE_INFLUENCE_CAP);
+}
+const OUTPUT_FILE = process.env.RUPTURE_SIM_OUTPUT || '../docs/v5.2-simulation-results.json';
+
 const MAX_TICKS = 3000;
 const KINDS = ['propagation', 'dangerosity', 'resilience', 'discretion'];
 
@@ -372,8 +383,8 @@ for (const difficulty of DIFFICULTIES_TESTED) {
 console.log('=== TOTAL simulations :', results.length, '===');
 
 writeFileSync(
-  new URL('../docs/v5.2-simulation-results.json', import.meta.url),
-  JSON.stringify({ generatedAt: new Date().toISOString(), totalRuns: results.length, summary, results }, null, 2)
+  new URL(OUTPUT_FILE, import.meta.url),
+  JSON.stringify({ generatedAt: new Date().toISOString(), influenceCap: BALANCE.influenceCap === Infinity ? 'Infinity' : BALANCE.influenceCap, totalRuns: results.length, summary, results }, null, 2)
 );
 
-console.log('Résultats bruts écrits dans docs/v5.2-simulation-results.json');
+console.log(`Résultats bruts écrits dans ${OUTPUT_FILE.replace('../', '')}`);
