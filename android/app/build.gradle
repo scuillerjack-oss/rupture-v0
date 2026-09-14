@@ -1,0 +1,115 @@
+apply plugin: 'com.android.application'
+
+// RUPTURE V5.2 (préparation Android) — versioning et signature.
+//
+// versionCode/versionName sont la source de vérité UNE FOIS l'app publiée
+// (Play Console la refuse si versionCode n'augmente pas à chaque envoi,
+// même en test interne). package.json reste la source de vérité pour la
+// version du jeu web ; ce fichier doit être incrémenté manuellement à
+// chaque nouvelle soumission Android, comme documenté depuis toujours dans
+// docs/SECRETS_ET_PRODUCTION.md.
+//
+// Signature : lit android/keystore.properties (JAMAIS committé — voir
+// .gitignore racine et android/keystore.properties.example pour la forme
+// attendue). Ce fichier n'existe pas encore dans cet environnement (aucun
+// keystore n'a été ni ne peut être inventé ici). Tant qu'il n'existe pas,
+// le buildType release retombe sciemment sur la signature de debug
+// automatique de Gradle : cela permet de vérifier que le projet compile
+// et produit un artefact installable/testable en CI, mais un tel artefact
+// n'est PAS soumissible à Google Play (signature invalide pour une fiche
+// réelle). Voir le rapport technique pour la procédure exacte à suivre
+// (génération du keystore d'upload, Play App Signing) une fois prêt à
+// publier.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasRealKeystore = keystorePropertiesFile.exists()
+if (hasRealKeystore) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace = "com.scuillerjackoss.rupture"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.scuillerjackoss.rupture"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // RUPTURE V5.2 : premier envoi Android préparé. Incrémenter
+        // versionCode à CHAQUE soumission future (Play Console l'exige),
+        // versionName à chaque version notable du jeu.
+        versionCode 1
+        versionName "5.2.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // AdMob exige un ID d'application au chargement du SDK (AndroidManifest,
+        // voir la meta-data com.google.android.gms.ads.APPLICATION_ID). Retombe
+        // sur l'ID de TEST officiel de Google (documenté publiquement par
+        // Google, pas un identifiant inventé ni un vrai compte) tant que la
+        // variable d'environnement ADMOB_APP_ID n'est pas fournie - permet à la
+        // publicité sandbox de fonctionner sans aucun compte AdMob. Voir
+        // docs/SECRETS_ET_PRODUCTION.md.
+        manifestPlaceholders = [
+            admobAppId: (System.getenv("ADMOB_APP_ID") ?: "ca-app-pub-3940256099942544~3347511713")
+        ]
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (hasRealKeystore) {
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Pas de vrai keystore disponible ici (voir en-tête) : on retombe
+            // sur la signature de debug pour que le build reste vérifiable en
+            // CI, jamais sur un build non signé silencieusement.
+            signingConfig = hasRealKeystore ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+    // RUPTURE V5.2 : Google Play Billing Library, pour le plugin natif local
+    // RuptureBillingPlugin (voir src/main/java/.../RuptureBillingPlugin.java).
+    // Aucun plugin Capacitor tiers mûr et complet (achat + restauration +
+    // acquittement) n'a été trouvé lors de l'audit de cette passe - voir le
+    // rapport technique - d'où ce petit plugin local plutôt qu'une dépendance
+    // externe incomplète.
+    implementation "com.android.billingclient:billing:7.1.1"
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

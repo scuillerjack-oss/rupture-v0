@@ -9,19 +9,26 @@ dist
 .env.local
 .env.*.local
 
-# Empaquetage mobile (Capacitor/Android/iOS) - préparé en amont (voir
-# docs/TRAJECTOIRE_COMMERCIALE.md), mais aucun de ces éléments ne doit être
-# committé une fois le projet natif généré :
-# - le projet Android/iOS lui-même est régénérable depuis capacitor.config
-#   et le code web (npx cap add android / ios) - pas une source à versionner
-#   telle quelle tant qu'aucune modification native manuelle n'y est faite ;
-# - le matériel de signature (keystore) et ses mots de passe ne doivent
-#   JAMAIS être committés, quel que soit l'emplacement.
-android/
+# Empaquetage mobile (Capacitor/Android/iOS).
+#
+# V5.2 (préparation Android réelle) : `android/` est désormais généré ET
+# committé délibérément - ce n'est plus une simple possibilité future mais
+# un vrai projet en cours de préparation (versionCode/versionName,
+# configuration de signature, icônes/splash réels - voir le rapport
+# technique correspondant). Sa propre arborescence a son propre
+# .gitignore (android/.gitignore, généré par Capacitor) qui exclut déjà
+# correctement build/, .gradle/, local.properties (chemin du SDK,
+# spécifique à chaque machine) et les assets web copiés (dist/ y est
+# resynchronisé à chaque build via `npx cap sync`, jamais une source à
+# committer en double). `ios/` reste exclu : jamais généré, non demandé.
+#
+# Ce qui ne doit JAMAIS être committé, quel que soit l'emplacement (ceci
+# reste vrai même à l'intérieur de android/) :
 ios/
 *.keystore
 *.jks
 key.properties
+keystore.properties
 google-services.json
 GoogleService-Info.plist
 *.p8

@@ -73,11 +73,17 @@ maintenant.
 ```
 src/engine/*        →  noyau de jeu pur (aucune dépendance externe)
 src/ui/*             →  présentation (reçoit state + services en paramètres)
-src/services/*       →  interfaces + adaptateurs "locaux" (no-op) :
-                          premium.js    statut Premium (indicateur local)
-                          ads.js         publicité (interface, non consommée)
+src/services/*       →  interfaces + adaptateurs :
+                          premium.js    statut Premium (réel sur Android
+                                        natif+commercial, simulé ailleurs)
+                          ads.js         publicité (idem)
                           analytics.js   analytics / erreurs (no-op)
                           index.js       point d'assemblage unique
+                          adapters/      implémentations natives concrètes
+                                        (admob.js, playBilling.js) - chargées
+                                        en import dynamique, jamais par
+                                        engine/ui, uniquement par le fichier
+                                        de service correspondant
 src/config/runtime.js →  configuration centralisée (env, vitesses dispo.)
 src/save.js           →  unique point de contact localStorage
 src/engine/migrations.js → registre de migrations de sauvegarde

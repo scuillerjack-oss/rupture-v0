@@ -1,9 +1,14 @@
 # RUPTURE — Trajectoire commerciale (PWA → bêta → monétisation → Android → publication)
 
-**Avertissement à lire en premier :** ce document décrit une trajectoire et
-prépare le terrain. **RUPTURE n'est pas prêt pour une publication sur Google
-Play.** Rien dans cette passe ne rend le projet publiable — voir la section
-7 pour la distinction stricte entre « préparé » et « publiable ».
+**Avertissement à lire en premier :** ce document décrit une trajectoire.
+**RUPTURE n'est toujours pas prêt pour une publication sur Google Play**,
+mais la préparation technique a réellement avancé depuis la rédaction
+initiale de ce document — voir `docs/SECRETS_ET_PRODUCTION.md` §1 pour
+l'inventaire à jour (projet Android généré, AdMob et Play Billing
+réellement branchés en sandbox) et le rapport technique V5.2 pour le
+détail. Section 7 ci-dessous garde sa distinction stricte entre « préparé »
+et « publiable », toujours valable : rien de ce qui a été branché ne
+dispense des comptes/décisions listés en section 6.
 
 ## 0. Où en est RUPTURE aujourd'hui
 

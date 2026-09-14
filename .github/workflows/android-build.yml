@@ -1,0 +1,93 @@
+name: Build Android app
+
+# RUPTURE V5.2 (préparation Google Play) : construit réellement le projet
+# Android natif (android/, committé - voir .gitignore) depuis le build web
+# existant, sans jamais toucher au déploiement de la bêta web permanente
+# (workflow séparé, deploy.yml, non modifié par ce fichier).
+#
+# Pourquoi en CI et pas en local : cet environnement de développement n'a
+# pas de SDK Android installé, et sa politique réseau bloque dl.google.com
+# (dépôt Maven officiel d'Android) - `./gradlew` y échoue donc dès la
+# résolution du plugin Android Gradle lui-même (vérifié : "403 Forbidden"
+# sur dl.google.com). Les runners GitHub Actions, eux, ont le SDK Android
+# préinstallé et un accès réseau normal (machines différentes, hors de la
+# politique réseau de l'environnement de développement) : c'est donc là,
+# et seulement là, que ce projet peut être réellement compilé "dans le
+# cloud" comme demandé, sans dépendre du téléphone/de la machine de
+# l'utilisateur.
+#
+# Aucun keystore réel n'existe (voir android/keystore.properties.example) :
+# le build "release" retombe donc sur la signature de debug
+# (android/app/build.gradle) - les artefacts produits ici sont de vraies
+# preuves que le projet compile, PAS des artefacts soumissibles à Google
+# Play tels quels.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'src/**'
+      - 'public/**'
+      - 'capacitor.config.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/android-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+      # Resynchronise les assets web + la config Capacitor dans le projet
+      # natif committé (jamais l'inverse - android/ ne contient aucune
+      # source web dupliquée, voir android/.gitignore).
+      - run: npx cap sync android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Vérifier le SDK Android disponible sur le runner
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" || true
+          ls "$ANDROID_HOME/build-tools" || true
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Build debug AAB (App Bundle)
+        working-directory: android
+        run: ./gradlew bundleDebug --stacktrace
+
+      - name: Build release AAB (signature de debug tant qu'aucun keystore réel n'existe)
+        working-directory: android
+        run: ./gradlew bundleRelease --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rupture-android-debug
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/app/build/outputs/bundle/debug/*.aab
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rupture-android-release-unsigned-for-play
+          path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error

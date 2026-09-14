@@ -15,12 +15,18 @@
 //    Store n'existe). En dev/bêta, elles accordent un entitlement marqué
 //    'simulated-test' - jamais confondu avec un achat réel (voir
 //    getEntitlementSource()).
-//  - PRÉPARÉ, PAS CONNECTÉ : en environnement 'commercial', ces deux
-//    fonctions refusent explicitement d'agir (result 'not-connected')
-//    plutôt que de simuler un achat gratuit qui déclencherait une
-//    interface Premium sans qu'aucune vraie transaction n'ait eu lieu -
-//    voir docs/TRAJECTOIRE_COMMERCIALE.md pour le plugin Play Billing à
-//    brancher ici le moment venu (seul ce fichier serait réécrit).
+//  - PRÉPARÉ, PAS CONNECTÉ (web/PWA) ou RÉELLEMENT BRANCHÉ (Android natif) :
+//    en environnement 'commercial', sur une build Android native
+//    (Capacitor.isNativePlatform()), ces deux fonctions appellent
+//    désormais le vrai plugin Play Billing local (voir
+//    src/services/adapters/playBilling.js et
+//    android/.../RuptureBillingPlugin.java) - un achat y déclenche le vrai
+//    flux Play (utilisable en sandbox via un compte "license tester" Play
+//    Console, sans frais réel). Sur web/PWA (aucun Play Billing possible)
+//    ou si VITE_PLAY_PRODUCT_ID n'est pas configuré, ces fonctions
+//    continuent de refuser explicitement d'agir ('not-connected') plutôt
+//    que de simuler un achat gratuit qui déclencherait une interface
+//    Premium sans transaction réelle.
 //
 // Sécurité assumée et documentée (§6/§7 de la demande) : un flag
 // localStorage, même nommé "vérifié", reste modifiable par un utilisateur
@@ -32,6 +38,7 @@
 // rapide) de getEntitlementSource() (d'où vient cette valeur), pour qu'un
 // futur code de vérification n'ait qu'à écrire 'store-verified' au bon
 // endroit sans réécrire le reste du jeu.
+import { Capacitor } from '@capacitor/core';
 import {
   getPremiumFlag,
   setPremiumFlag,
@@ -39,6 +46,8 @@ import {
   logSecurityEvent
 } from '../save.js';
 import { RUNTIME_CONFIG } from '../config/runtime.js';
+// Import dynamique (voir ads.js) : le pont vers RuptureBillingPlugin n'a
+// aucune raison d'alourdir le bundle de la bêta web/PWA.
 
 export function createPremiumService(config = RUNTIME_CONFIG) {
   // Garde de cohérence : un Premium actif dont la source n'est ni
@@ -64,6 +73,12 @@ export function createPremiumService(config = RUNTIME_CONFIG) {
 
     async purchasePremium() {
       if (config.env === 'commercial') {
+        if (Capacitor.isNativePlatform()) {
+          const { createNativePlayBillingAdapter } = await import('./adapters/playBilling.js');
+          const result = await createNativePlayBillingAdapter().purchasePremium();
+          if (result.granted) setPremiumFlag(true, 'store-verified');
+          return result;
+        }
         return { granted: false, resultKind: 'not-connected', reason: 'Aucun module Google Play Billing / App Store connecté - voir docs/TRAJECTOIRE_COMMERCIALE.md' };
       }
       await new Promise((resolve) => setTimeout(resolve, 300)); // simule un court délai, pas un vrai réseau de paiement
@@ -73,6 +88,12 @@ export function createPremiumService(config = RUNTIME_CONFIG) {
 
     async restorePurchases() {
       if (config.env === 'commercial') {
+        if (Capacitor.isNativePlatform()) {
+          const { createNativePlayBillingAdapter } = await import('./adapters/playBilling.js');
+          const result = await createNativePlayBillingAdapter().restorePurchases();
+          if (result.restored) setPremiumFlag(true, 'store-verified');
+          return result;
+        }
         return { restored: false, resultKind: 'not-connected', reason: 'Aucun module de restauration d\'achats connecté - voir docs/TRAJECTOIRE_COMMERCIALE.md' };
       }
       return { restored: isPremium(), resultKind: 'simulated' };

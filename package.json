@@ -12,10 +12,12 @@
     "simulate": "node scripts/simulate-balance.mjs"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.5.2",
     "vite": "^5.4.10"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^8.1.0",
     "@capacitor/android": "^8.5.2",
     "@capacitor/core": "^8.5.2"
   }

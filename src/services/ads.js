@@ -18,14 +18,22 @@
 //    elle simule un délai + un événement "vu", clairement marqué comme tel
 //    (resultKind: 'simulated'). Ne JAMAIS confondre ce résultat avec un
 //    véritable affichage publicitaire facturable.
-//  - PRÉPARÉ, PAS CONNECTÉ : en environnement 'commercial' (le futur build
-//    empaqueté), cette même fonction refuse explicitement de simuler quoi
-//    que ce soit (resultKind: 'not-connected') plutôt que de faire croire à
-//    un affichage réel - voir docs/TRAJECTOIRE_COMMERCIALE.md pour le plugin
-//    Capacitor AdMob à brancher ici le moment venu, sans toucher au reste du
-//    jeu (seul ce fichier serait réécrit).
+//  - PRÉPARÉ, PAS CONNECTÉ (web/PWA) ou RÉELLEMENT BRANCHÉ (Android natif) :
+//    en environnement 'commercial', sur une build Android native
+//    (Capacitor.isNativePlatform()), cette fonction appelle désormais le
+//    vrai plugin AdMob (@capacitor-community/admob - voir
+//    src/services/adapters/admob.js), avec l'unité publicitaire de TEST
+//    officielle de Google par défaut (aucun compte requis, jamais un vrai
+//    identifiant inventé) tant que VITE_ADMOB_INTERSTITIAL_UNIT_ID n'est
+//    pas configurée. Sur web/PWA (aucun SDK AdMob natif possible), continue
+//    de refuser explicitement d'agir ('not-connected').
+import { Capacitor } from '@capacitor/core';
 import { RUNTIME_CONFIG } from '../config/runtime.js';
 import { logSecurityEvent } from '../save.js';
+// Import dynamique : le SDK AdMob (@capacitor-community/admob) n'a aucune
+// raison d'alourdir le bundle de la bêta web/PWA (environnement 'beta',
+// jamais natif) - chargé uniquement si on atteint réellement la branche
+// Android native + 'commercial' ci-dessous.
 
 export function createAdsService(config = RUNTIME_CONFIG) {
   // Jeton anti-rejeu minimal : même si aucune publicité du modèle actuel ne
@@ -92,6 +100,10 @@ export function createAdsService(config = RUNTIME_CONFIG) {
     // réellement produit.
     async showInterstitialAd() {
       if (config.env === 'commercial') {
+        if (Capacitor.isNativePlatform()) {
+          const { createNativeAdMobAdapter } = await import('./adapters/admob.js');
+          return createNativeAdMobAdapter().showInterstitialAd();
+        }
         return { shown: false, resultKind: 'not-connected', reason: 'Aucun SDK AdMob connecté - voir docs/TRAJECTOIRE_COMMERCIALE.md' };
       }
       await new Promise((resolve) => setTimeout(resolve, 350)); // simule un court délai de chargement, pas un vrai réseau
@@ -103,6 +115,16 @@ export function createAdsService(config = RUNTIME_CONFIG) {
     // modèle retenu). Conservé comme interface prête, pas comme
     // fonctionnalité active - isRewardedAdAvailable() renvoie donc toujours
     // false tant qu'aucune décision produit ne crée cette mécanique.
+    //
+    // Ré-audité en V5.2 (demande explicite de tester "les publicités
+    // récompensées et l'attribution exacte de leur récompense lorsqu'elles
+    // sont prévues") : elles ne le sont PAS dans le modèle économique
+    // actuellement retenu (interstitiel uniquement, voir l'audit
+    // économique) - rien n'a donc été branché ici pour ne pas fabriquer une
+    // mécanique de jeu qui n'a pas été décidée. Le jour où une mécanique de
+    // récompense serait décidée (ex. bonus d'Influence), seul ce fichier
+    // serait à réécrire (même plugin AdMob, méthodes reward-interstitial
+    // déjà exposées par @capacitor-community/admob).
     isRewardedAdAvailable: () => false,
     async showRewardedAd() {
       return { shown: false, resultKind: 'not-implemented', reason: 'Aucune mécanique de publicité récompensée définie dans le modèle économique retenu' };
