@@ -346,25 +346,107 @@ test('V3.1: the world response curve is smoothed at low/mid awareness but unchan
 });
 
 // V3 : une fois la Réponse mondiale mobilisée (au-delà du seuil), l'Humanité
-// repousse activement l'Anomalie ; la Résilience atténue cette érosion.
-// Vérifié directement sur un tick isolé, à état initial identique, pour
-// mesurer le mécanisme lui-même plutôt qu'une partie entière.
-test('V3: once the world response is mobilized, zero Résilience erodes crisis faster than high Résilience', () => {
-  function tickWithResilience(resilienceLevel) {
+// resserre le plafond de crise atteignable ; la Résilience atténue ce
+// resserrement. Vérifié en régime établi (suppressionPressure déjà monté à
+// 1 - voir V5.2 ci-dessous pour la dynamique de montée elle-même, testée
+// séparément) et avec un plafond de Dangerosité largement au-dessus de la
+// crise (dangerosity=max) pour isoler l'effet de suppressionRate seul, sans
+// que le plafond brut de Dangerosité n'interfère.
+test('V3: once fully mobilized, zero Résilience caps crisis lower than high Résilience', () => {
+  function crisisCapWithResilience(resilienceLevel) {
     const state = freshGame('fenwick');
     state.upgrades.resilience = resilienceLevel;
+    state.upgrades.dangerosity = BALANCE.upgrades.dangerosity.maxLevel;
     state.territories.fenwick.crisis = 80;
     // V4.1 : la pression de suppression dépend désormais de l'accumulateur
     // interne globalMobilization, plus de la Réponse affichée (plafonnée par
-    // la Conscience) - voir simulation.js.
+    // la Conscience) - voir simulation.js. V5.2 : suppressionPressure est
+    // réglé directement à 1 (régime établi) pour isoler l'effet de la
+    // Résilience de la dynamique d'inertie elle-même.
     state.globalMobilization = BALANCE.humanity.mobilizationThreshold + 30; // clairement mobilisé
-    const before = state.territories.fenwick.crisis;
-    simulateTick(state);
-    return before - state.territories.fenwick.crisis; // perte nette de crise ce tick
+    state.suppressionPressure = 1;
+    for (let i = 0; i < 5; i++) simulateTick(state);
+    return state.territories.fenwick.crisis;
   }
-  const lossAtZero = tickWithResilience(0);
-  const lossAtMax = tickWithResilience(BALANCE.upgrades.resilience.maxLevel);
-  assert.ok(lossAtZero > lossAtMax, `zero Résilience should erode faster (${lossAtZero}) than max Résilience (${lossAtMax}) once mobilized`);
+  const capAtZero = crisisCapWithResilience(0);
+  const capAtMax = crisisCapWithResilience(BALANCE.upgrades.resilience.maxLevel);
+  assert.ok(capAtZero < capAtMax, `zero Résilience should cap crisis lower (${capAtZero}) than max Résilience (${capAtMax}) once fully mobilized`);
+});
+
+// V5.2 (audit bêta post-V5.1, Progression bloquée sous 100% pour une
+// Anomalie déjà implantée mondialement) : une bascule tardive et brutale de
+// la mobilisation (typiquement une flambée de Dangerosité en fin de partie)
+// ne doit pas se traduire en suppression immédiate et maximale - la pression
+// EFFECTIVE doit avoir une vraie inertie face à la pression INSTANTANÉE.
+test('V5.2: a sudden spike in mobilization does not translate into full suppression on the very next tick (inertia)', () => {
+  const state = freshGame('fenwick');
+  state.upgrades.dangerosity = BALANCE.upgrades.dangerosity.maxLevel;
+  state.territories.fenwick.crisis = 90;
+  // Bascule brutale : la mobilisation interne saute d'un coup à un niveau
+  // largement mobilisé, comme le ferait une flambée tardive de Dangerosité.
+  state.globalMobilization = 100;
+  assert.equal(state.suppressionPressure, 0, 'a fresh game must start with no suppression pressure at all');
+  simulateTick(state);
+  assert.ok(
+    state.suppressionPressure < 0.1,
+    `suppressionPressure (${state.suppressionPressure.toFixed(3)}) must still be close to its pre-tick value after a single tick, not jump straight to the new mobilizationProgress`
+  );
+});
+
+// V5.2 : un plafond qui se resserre APRÈS COUP (mobilisation qui continue de
+// progresser) ne doit jamais reprendre la crise déjà acquise (c'était le bug
+// réel : l'intention documentée depuis V3.1 - "une réduction du plafond,
+// jamais une érosion de la crise déjà acquise" - ne correspondait pas au
+// comportement observé, voir le rapport V5.2 pour la mesure d'origine).
+// Vérifié sur plusieurs ticks consécutifs, avec une mobilisation qui
+// continue de progresser (donc une suppression qui ne peut que se
+// renforcer sur cette fenêtre).
+test('V5.2: the crisis cap never erodes crisis already achieved, even as suppression keeps tightening afterwards', () => {
+  const state = freshGame('fenwick');
+  state.day = 500;
+  state.upgrades.dangerosity = BALANCE.upgrades.dangerosity.maxLevel;
+  state.upgrades.resilience = 0;
+  state.territories.fenwick.crisis = 95;
+  state.crisisCapHighWater = 95; // déjà acquis via le moteur, comme en jeu réel
+  state.globalMobilization = BALANCE.humanity.mobilizationThreshold + 5;
+  state.suppressionPressure = 0.05;
+  let previous = state.territories.fenwick.crisis;
+  for (let i = 0; i < 60; i++) {
+    simulateTick(state);
+    assert.ok(
+      state.territories.fenwick.crisis >= previous - 1e-9,
+      `crisis must never decrease tick over tick as suppression tightens (was ${previous}, now ${state.territories.fenwick.crisis} at tick ${i})`
+    );
+    previous = state.territories.fenwick.crisis;
+  }
+});
+
+// Limite honnête et assumée de ce correctif (documentée dans le rapport
+// V5.2) : le cliquet protège aussi un plafond atteint AVANT que la
+// mobilisation ne soit réellement engagée (suppressionRate encore nul à ce
+// moment-là) - une implantation qui atteint son plafond de Dangerosité
+// pendant cette fenêtre voit ce gain protégé pour le reste de la partie.
+// Ce test documente ce comportement explicitement plutôt que de le laisser
+// être une surprise non testée.
+test('V5.2: a crisis cap reached before mobilization meaningfully engages is protected by the ratchet for the rest of the game', () => {
+  const state = freshGame('fenwick');
+  state.day = 500;
+  state.upgrades.dangerosity = BALANCE.upgrades.dangerosity.maxLevel; // plafond brut = 100, atteint AVANT toute mobilisation
+  state.upgrades.resilience = 0;
+  state.territories.fenwick.crisis = 99.5;
+  state.globalMobilization = 0; // mobilisation pas encore engagée : suppressionRate nul à cet instant
+  state.suppressionPressure = 0;
+  simulateTick(state); // le cliquet capture ~100 (plafond brut, non suppimé) ici
+  // La mobilisation s'engage ensuite fortement, mais le cliquet déjà posé
+  // protège la crise acquise pour le reste de la partie.
+  state.globalMobilization = 100;
+  state.suppressionPressure = 1;
+  let previous = state.territories.fenwick.crisis;
+  for (let i = 0; i < 100; i++) {
+    simulateTick(state);
+    assert.ok(state.territories.fenwick.crisis >= previous - 1e-9, 'the ratcheted cap must keep protecting this pre-mobilization gain');
+    previous = state.territories.fenwick.crisis;
+  }
 });
 
 test('V3: below the mobilization threshold, Résilience level has no active-suppression effect yet', () => {

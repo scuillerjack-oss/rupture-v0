@@ -69,3 +69,34 @@ test('the real V3->V4 migration never lets globalContainment exceed the live res
   assert.equal(migrated.globalContainment, responseCapAt(10 / 100));
   assert.ok(migrated.globalContainment < 100, 'a low reconstructed Conscience must keep the migrated Réponse well under 100');
 });
+
+// V5.2 : la migration réelle V5->V6 (voir migrations.js) doit reconstituer
+// suppressionPressure et crisisCapHighWater sans jamais offrir un répit
+// (suppressionPressure trop bas) ni reprendre une crise déjà acquise
+// (crisisCapHighWater trop bas) par rapport à une partie qui aurait
+// continué de tourner sans jamais être sauvegardée.
+test('the real V5->V6 migration reconstructs suppressionPressure from globalMobilization and crisisCapHighWater from the highest territory crisis', () => {
+  const oldSave = {
+    version: 5,
+    globalMobilization: 100, // pleinement mobilisé
+    territories: {
+      a: { id: 'a', crisis: 72, awareness: 60, containment: 40, closedRoutes: [] },
+      b: { id: 'b', crisis: 88, awareness: 70, containment: 50, closedRoutes: [] }
+    }
+  };
+  const migrated = migrateSave(oldSave, 6);
+  assert.equal(migrated.version, 6);
+  assert.equal(migrated.suppressionPressure, 1, 'fully mobilized (100) must reconstruct to a fully caught-up suppression pressure (1)');
+  assert.equal(migrated.crisisCapHighWater, 88, 'must floor at the highest crisis actually observed across territories (b), never lower');
+});
+
+test('the real V5->V6 migration keeps suppressionPressure at 0 for a save that never reached the mobilization threshold', () => {
+  const oldSave = {
+    version: 5,
+    globalMobilization: 5, // sous mobilizationThreshold (15)
+    territories: { a: { id: 'a', crisis: 20, awareness: 15, containment: 5, closedRoutes: [] } }
+  };
+  const migrated = migrateSave(oldSave, 6);
+  assert.equal(migrated.suppressionPressure, 0);
+  assert.equal(migrated.crisisCapHighWater, 20);
+});

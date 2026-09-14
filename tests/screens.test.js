@@ -61,6 +61,30 @@ test('renderEnd shows a non-empty phaseLog timeline once the world has reacted, 
   assert.ok(state.maxDominance >= state.dominance - 0.001);
 });
 
+// V5.2 (audit bêta) : bug réel trouvé et corrigé - le récapitulatif
+// affirmait "alarmer le monde très vite" dès que Dangerosité était le niveau
+// final le plus élevé, sans jamais vérifier QUAND elle avait été investie.
+// Une implantation longue (Discrétion/Propagation d'abord) suivie d'une
+// bascule tardive sur Dangerosité maximale se retrouvait donc décrite comme
+// "très vite" alors que la Conscience mondiale n'apparaissait qu'après des
+// centaines de jours - exactement le cas rapporté en bêta (Conscience jour
+// 406). Ce test reproduit fidèlement ce cas via le moteur réel.
+test('renderEnd never claims the world was alarmed "very fast" when Dangerosity was actually invested late', () => {
+  const state = createInitialState();
+  beginNewGame(state);
+  confirmOrigin(state, 'jotun');
+  playUntilEnd(state, (s) => {
+    if (s.upgrades.discretion < 5) { if (s.influence >= 20) buyUpgrade(s, 'discretion'); return; }
+    if (s.upgrades.propagation < 5) { if (s.influence >= 18) buyUpgrade(s, 'propagation'); return; }
+    if (s.upgrades.dangerosity < 10 && s.influence >= 0) buyUpgrade(s, 'dangerosity');
+  });
+  const awarenessEntry = state.phaseLog.find((p) => p.key === 'conscience');
+  assert.ok(awarenessEntry, 'this scenario must actually reach the Conscience phase for the test to be meaningful');
+  assert.ok(awarenessEntry.day > 200, `this late-Dangerosity scenario must genuinely alarm the world late (was day ${awarenessEntry.day})`);
+  const html = renderEnd(state);
+  assert.doesNotMatch(html, /alarmer le monde très vite/, `the recap must not claim a fast alarm when Conscience only appeared at day ${awarenessEntry.day}`);
+});
+
 test('renderGameMenu settings view reflects music/sfx enabled state via active class and label', () => {
   const html = renderGameMenu('settings', null, { pendingDifficulty: 'normal', musicEnabled: true, sfxEnabled: false });
   assert.match(html, /toggle-btn active"[^>]*>Activée/);

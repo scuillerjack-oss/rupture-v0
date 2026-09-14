@@ -54,18 +54,41 @@ export function simulateTick(state) {
     1
   );
   const mobilizationThreshold = BALANCE.humanity.mobilizationThreshold;
+  // Cible INSTANTANÉE de la pression de suppression, dérivée de
+  // globalMobilization (état avant ce tick, même convention que le reste de
+  // cette fonction). `state.suppressionPressure` (mis à jour en bas de
+  // cette fonction) la RATTRAPE avec inertie plutôt que de la refléter tout
+  // de suite - voir BALANCE.humanity.suppressionInertiaRate.
   const mobilizationProgress = clamp(
     (state.globalMobilization - mobilizationThreshold) / (100 - mobilizationThreshold),
     0,
     1
   );
   const suppressionRate =
-    BALANCE.humanity.maxSuppressionPerTick * mobilizationProgress * (1 - resilienceEffectForSuppression) * tension;
+    BALANCE.humanity.maxSuppressionPerTick * state.suppressionPressure * (1 - resilienceEffectForSuppression) * tension;
   // Plafond de crise partagé par tous les territoires ce tick : d'abord fixé
   // par la Dangerosité (dangerosityCapAt), puis resserré par la Réponse
   // mondiale mobilisée - jamais annulé (voir suppressionRate), la Résilience
   // atténuant ce resserrement sans jamais l'annuler complètement.
-  const crisisCap = dangerosityCapAt(state.upgrades.dangerosity) * (1 - suppressionRate);
+  const dangerosityCap = dangerosityCapAt(state.upgrades.dangerosity);
+  const instantCrisisCap = dangerosityCap * (1 - suppressionRate);
+  // V5.2 : plafond effectif à cliquet - ne redescend jamais une fois monté
+  // (voir state.js/migrations.js pour son historique). crisisCap est une
+  // grandeur GLOBALE (aucune de ses composantes n'est spécifique à un
+  // territoire), donc un seul cliquet suffit pour tous. Corrige un vrai
+  // écart entre l'intention documentée depuis V3.1 ("une réduction du
+  // plafond, jamais une érosion de la crise déjà acquise") et le
+  // comportement réel observé (Math.min seul reprenait quand même de la
+  // crise déjà gagnée dès que la mobilisation continuait de progresser après
+  // coup). Limite honnête documentée dans le rapport V5.2 : ce cliquet
+  // protège aussi les gains obtenus AVANT que la mobilisation ne soit
+  // réellement engagée (suppressionRate encore nul) - une implantation qui
+  // atteint son plafond de Dangerosité pendant cette fenêtre voit ce gain
+  // protégé pour le reste de la partie, ce qui réduit la marge que la
+  // Résilience peut encore reprendre UNE FOIS cette fenêtre passée pour ce
+  // cas précis (voir le rapport pour la mesure et l'explication complètes).
+  state.crisisCapHighWater = Math.max(state.crisisCapHighWater, instantCrisisCap);
+  const crisisCap = state.crisisCapHighWater;
 
   for (const t of TERRITORIES) {
     const ts = state.territories[t.id];
@@ -101,6 +124,9 @@ export function simulateTick(state) {
     // reste bien en dessous du plafond) mais jamais réellement grave : sa
     // crise ne peut pas dépasser crisisCap (Active, jamais Sévère/Critique -
     // resserré au fil de la mobilisation de l'Humanité, voir plus haut).
+    // crisisCap est désormais un plafond à cliquet (jamais redescendu, voir
+    // sa définition plus haut) : un Math.min simple suffit ici, il ne peut
+    // plus jamais reprendre de la crise déjà acquise.
     newCrisis = Math.min(newCrisis, crisisCap);
 
     // Propagation ET Dangerosité rendent l'Anomalie plus visible ; une
@@ -183,6 +209,18 @@ export function simulateTick(state) {
     state.globalMobilization + shapedAwareness * containmentGainFactor * tension,
     0,
     100
+  );
+
+  // V5.2 : la pression de suppression EFFECTIVE rattrape mobilizationProgress
+  // (calculé en haut de tick, avant la mise à jour ci-dessus) avec inertie -
+  // même mécanique que ts.containment qui rattrape ts.awareness (voir plus
+  // haut) - plutôt que de le refléter instantanément. C'est cette valeur,
+  // pas mobilizationProgress brut, qui gouverne suppressionRate (voir le
+  // calcul de crisisCap en haut de tick, au tick SUIVANT).
+  state.suppressionPressure = clamp(
+    state.suppressionPressure + (mobilizationProgress - state.suppressionPressure) * BALANCE.humanity.suppressionInertiaRate * tension,
+    0,
+    1
   );
 
   // V4.1 (§2) : la Réponse mondiale AFFICHÉE - et seule condition de défaite -

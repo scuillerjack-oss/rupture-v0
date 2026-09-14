@@ -27,7 +27,27 @@ import { BALANCE, DIFFICULTIES } from './balance.js';
 // à la Progression actuelle (minoration honnête plutôt qu'une valeur
 // inventée) et phaseLog à vide plutôt que de reconstituer un historique
 // qui n'a jamais été enregistré.
-export const SAVE_VERSION = 5;
+//
+// V5.2 (bêta manuelle post-V5.1, audit Progression/Résilience) ajoute deux
+// champs liés au plafond de crise (voir simulation.js) :
+//  - suppressionPressure : accumulateur interne à inertie qui lisse la
+//    pression de suppression - une Anomalie qui bascule tardivement en
+//    Dangerosité maximale ne se retrouve plus suppimée du jour au lendemain
+//    simplement parce que la mobilisation interne a bondi d'un coup. Une
+//    sauvegarde V5 en cours n'a pas cet historique : la migration le
+//    reconstitue à la valeur qu'il aurait "en régime établi" à cet instant
+//    précis (mobilizationProgress courant), pas à zéro - repartir de zéro
+//    offrirait un répit à une partie déjà mobilisée, jamais gagné en jouant.
+//  - crisisCapHighWater : plafond de crise à cliquet (ne redescend jamais) -
+//    corrige un écart entre l'intention documentée depuis V3.1 ("une
+//    réduction du plafond, jamais une érosion de la crise déjà acquise") et
+//    le comportement réel observé (une crise déjà gagnée pouvait être
+//    reprise si la suppression continuait de progresser après coup). Une
+//    sauvegarde V5 en cours n'a pas cet historique : reconstitué à la plus
+//    haute crise déjà atteinte par un territoire (plancher honnête - ce
+//    plafond n'a certainement jamais été inférieur à une crise déjà
+//    observée).
+export const SAVE_VERSION = 6;
 
 export function createTerritoryStates() {
   const map = {};
@@ -64,6 +84,14 @@ export function createInitialState() {
     // de globalContainment depuis V4.1 : voir simulation.js pour pourquoi
     // les deux ne peuvent plus être la même valeur.
     globalMobilization: 0,
+    // Pression de suppression EFFECTIVE (0-1), avec inertie - distincte de
+    // mobilizationProgress (calculée instantanément à partir de
+    // globalMobilization) : voir simulation.js pour pourquoi cette
+    // distinction existe.
+    suppressionPressure: 0,
+    // Plafond de crise à cliquet (0-100) - voir simulation.js. Grandeur
+    // globale (aucune de ses composantes n'est spécifique à un territoire).
+    crisisCapHighWater: 0,
     // Conscience mondiale moyenne (0-100) : à quel point l'Humanité comprend
     // la menace, suivie séparément de la Réponse - voir simulation.js.
     globalAwareness: 0,
@@ -100,6 +128,8 @@ export function beginNewGame(state, difficulty = 'normal') {
   state.influence = 0;
   state.globalContainment = 0;
   state.globalMobilization = 0;
+  state.suppressionPressure = 0;
+  state.crisisCapHighWater = 0;
   state.globalAwareness = 0;
   state.dominance = 0;
   state.maxDominance = 0;

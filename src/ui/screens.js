@@ -142,14 +142,24 @@ function computeStyleAnalysis(state) {
   const total = upgrades.propagation + upgrades.dangerosity + upgrades.resilience + upgrades.discretion || 1;
   const dominant = Object.entries(upgrades).sort((a, b) => b[1] - a[1])[0];
   const isBalanced = Object.values(upgrades).every((v) => Math.abs(v / total - 0.25) < 0.12);
+  const awarenessEntry = phaseLog.find((p) => p.key === 'conscience');
   const mobilizedEntry = phaseLog.find((p) => p.key === 'mobilisation');
   const advancedEntry = phaseLog.find((p) => p.key === 'mesures' || p.key === 'maitrise');
+  // V5.2 (audit bêta) : "alarmer le monde très vite" ne doit être affirmé que
+  // si le monde a RÉELLEMENT réagi tôt (phase Conscience atteinte tôt dans
+  // la partie) - le niveau final de Dangerosité seul ne dit rien du moment
+  // où elle a été investie. Bug réel corrigé : une Dangerosité tardive
+  // (implantation longue puis bascule tardive) affichait quand même "très
+  // vite" simplement parce qu'elle finissait au niveau le plus élevé.
+  const alarmedEarly = Boolean(awarenessEntry) && awarenessEntry.day < 200;
 
   const parts = [];
   if (reach - maxDominance > 30) {
     parts.push("Expansion très rapide, mais adaptation tardive à la transformer en réelle menace");
-  } else if (dominant[0] === 'dangerosity' && dominant[1] >= 6) {
+  } else if (dominant[0] === 'dangerosity' && dominant[1] >= 6 && alarmedEarly) {
     parts.push('Une progression volontairement dangereuse, quitte à alarmer le monde très vite');
+  } else if (dominant[0] === 'dangerosity' && dominant[1] >= 6 && awarenessEntry) {
+    parts.push(`Une progression rendue dangereuse à un stade avancé (jour ${awarenessEntry.day}), une fois solidement implantée`);
   } else if (isBalanced) {
     parts.push('Une approche équilibrée entre toutes les orientations');
   } else {

@@ -1,11 +1,11 @@
-// Batterie de simulations de pré-équilibrage pour RUPTURE (V3, V3.1, V4, V4.1, V4.2...).
+// Batterie de simulations de pré-équilibrage pour RUPTURE (V3, V3.1, V4, V4.1, V4.2, V5.2...).
 // Ne truque pas les résultats : chaque stratégie est un heuristique honnête,
 // exécuté tel quel contre le moteur réel (src/engine), sans connaissance
 // privilégiée de l'issue. Sert à révéler les faiblesses du moteur, pas à les
 // cacher. Depuis V4.1, chaque stratégie est rejouée sur les trois difficultés
 // (easy/normal/hard) : Facile/Normal/Difficile doivent avoir des rôles
 // réellement distincts, ce qui se vérifie et ne se décrète pas. Résultats
-// bruts écrits dans docs/v4.2-simulation-results.json.
+// bruts écrits dans docs/v5.2-simulation-results.json.
 
 import { writeFileSync } from 'node:fs';
 import { createInitialState, beginNewGame, confirmOrigin } from '../src/engine/state.js';
@@ -182,6 +182,62 @@ const STRATEGIES = {
       return;
     }
     buyFirstAffordable(state, isMobilized(state) ? ['resilience', 'dangerosity'] : ['dangerosity', 'resilience']);
+  },
+
+  // --- Famille "implantation puis bascule tardive" (V5.2, audit bêta) ---
+  // Stratégie exacte jouée par l'utilisateur lors de la bêta manuelle V5.1
+  // qui a motivé cette passe (défaite jour 532, Progression bloquée à 98%
+  // max, Résilience 0) : Discrétion et Propagation à un niveau modéré (5),
+  // implantation mondiale, PUIS bascule complète sur Dangerosité jusqu'au
+  // maximum. Résilience jamais investie - le pari "all-in" le plus risqué de
+  // cette famille : aucune protection une fois la Réponse mondiale mobilisée.
+  'furtive-bascule-resilience0': (state) => {
+    if (state.upgrades.discretion < 5) {
+      if (affordable(state, 'discretion')) buyUpgrade(state, 'discretion');
+      return;
+    }
+    if (state.upgrades.propagation < 5) {
+      if (affordable(state, 'propagation')) buyUpgrade(state, 'propagation');
+      return;
+    }
+    if (affordable(state, 'dangerosity')) buyUpgrade(state, 'dangerosity');
+  },
+
+  // Même bascule tardive, mais une Résilience FAIBLE (jusqu'à 3) est achetée
+  // une fois la Réponse mondiale mobilisée - le pari reste risqué mais n'est
+  // plus un renoncement total à toute protection.
+  'furtive-bascule-resilience-faible': (state) => {
+    if (state.upgrades.discretion < 5) {
+      if (affordable(state, 'discretion')) buyUpgrade(state, 'discretion');
+      return;
+    }
+    if (state.upgrades.propagation < 5) {
+      if (affordable(state, 'propagation')) buyUpgrade(state, 'propagation');
+      return;
+    }
+    if (isMobilized(state) && state.upgrades.resilience < 3) {
+      if (affordable(state, 'resilience')) buyUpgrade(state, 'resilience');
+      return;
+    }
+    if (affordable(state, 'dangerosity')) buyUpgrade(state, 'dangerosity');
+  },
+
+  // Même bascule tardive, avec une Résilience MOYENNE (jusqu'à 6) une fois
+  // mobilisé - toujours un pari offensif, mais nettement plus prudent.
+  'furtive-bascule-resilience-moyenne': (state) => {
+    if (state.upgrades.discretion < 5) {
+      if (affordable(state, 'discretion')) buyUpgrade(state, 'discretion');
+      return;
+    }
+    if (state.upgrades.propagation < 5) {
+      if (affordable(state, 'propagation')) buyUpgrade(state, 'propagation');
+      return;
+    }
+    if (isMobilized(state) && state.upgrades.resilience < 6) {
+      if (affordable(state, 'resilience')) buyUpgrade(state, 'resilience');
+      return;
+    }
+    if (affordable(state, 'dangerosity')) buyUpgrade(state, 'dangerosity');
   }
 };
 
@@ -316,8 +372,8 @@ for (const difficulty of DIFFICULTIES_TESTED) {
 console.log('=== TOTAL simulations :', results.length, '===');
 
 writeFileSync(
-  new URL('../docs/v4.2-simulation-results.json', import.meta.url),
+  new URL('../docs/v5.2-simulation-results.json', import.meta.url),
   JSON.stringify({ generatedAt: new Date().toISOString(), totalRuns: results.length, summary, results }, null, 2)
 );
 
-console.log('Résultats bruts écrits dans docs/v4.2-simulation-results.json');
+console.log('Résultats bruts écrits dans docs/v5.2-simulation-results.json');

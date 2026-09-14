@@ -125,6 +125,27 @@ export const BALANCE = {
     maxSuppressionPerTick: 0.25,
     resilienceImmunityLevel: 8,
     responseCurvePower: 1.6,
+    // V5.2 (audit bêta post-V5.1, défaite jour 532, Dangerosité 10, Résilience
+    // 0, Progression bloquée à 98% max) : suppressionRate dépendait de
+    // mobilizationProgress de façon INSTANTANÉE - une bascule tardive vers
+    // Dangerosité maximale (dangerosityAwarenessBleed=1.6) fait bondir la
+    // Conscience puis `globalMobilization` en quelques dizaines de jours,
+    // convertissant la pression de suppression en plafond fermé presque
+    // aussi vite que le nouveau plafond ouvert par Dangerosité, sans jamais
+    // laisser de fenêtre réelle pour que la crise grimpe jusqu'à ce plafond.
+    // suppressionInertiaRate donne à la pression EFFECTIVE (state.
+    // suppressionPressure) une vraie inertie face à mobilizationProgress
+    // (calculé instantanément) - même principe que ts.containment qui
+    // rattrape ts.awareness progressivement (voir simulation.js), pas une
+    // nouvelle mécanique inventée. Calibré par simulation (pas choisi a
+    // priori) : suffisamment lent pour laisser une fenêtre réelle à une
+    // implantation mondiale déjà massive (18/18 critiques) de convertir un
+    // pic de Dangerosité tardif en victoire AVANT que la suppression ne
+    // referme le plafond, mais pas au point de rendre la Résilience
+    // superflue ni de garantir la victoire - voir le rapport V5.2 pour le
+    // balayage de valeurs testées.
+    suppressionInertiaRate: 0.015,
+
     // responseCapBaseline/fullConscienceLevel/responseCapPower : calibrés par
     // simulation (234+ runs, plusieurs familles de stratégies), pas choisis a
     // priori. La Conscience moyenne réelle n'atteint jamais littéralement

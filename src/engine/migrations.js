@@ -46,7 +46,24 @@ const MIGRATIONS = {
     version: 5,
     maxDominance: Number(old.dominance) || 0,
     phaseLog: []
-  })
+  }),
+  // V5.2 ajoute suppressionPressure et crisisCapHighWater (voir state.js et
+  // simulation.js). Une sauvegarde V5 en cours n'a ni l'un ni l'autre :
+  // suppressionPressure est reconstitué à la pression "en régime établi"
+  // pour l'état actuel (mobilizationProgress courant, calculé à partir de
+  // globalMobilization déjà enregistré) plutôt qu'à zéro - repartir de zéro
+  // offrirait un répit à une partie déjà mobilisée qui n'a jamais été gagné
+  // en jouant. crisisCapHighWater est reconstitué à la plus haute crise déjà
+  // atteinte par un territoire de la sauvegarde - plancher honnête, ce
+  // plafond n'a certainement jamais été inférieur à une crise déjà observée.
+  5: (old) => {
+    const { mobilizationThreshold } = BALANCE.humanity;
+    const globalMobilization = Number(old.globalMobilization) || 0;
+    const suppressionPressure = Math.max(0, Math.min(1, (globalMobilization - mobilizationThreshold) / (100 - mobilizationThreshold)));
+    const territories = old.territories && typeof old.territories === 'object' ? Object.values(old.territories) : [];
+    const crisisCapHighWater = territories.reduce((max, t) => Math.max(max, Number(t?.crisis) || 0), 0);
+    return { ...old, version: 6, suppressionPressure, crisisCapHighWater };
+  }
 };
 
 // Applique la chaîne de migrations nécessaire pour amener `raw` à
