@@ -77,6 +77,46 @@ export function markFirstGameCompleted() {
   }
 }
 
+// Conseils contextuels (onboarding progressif, voir ui/tips.js et main.js) :
+// chaque conseil n'est affiché QU'UNE SEULE FOIS, la première fois que le
+// joueur rencontre réellement la mécanique concernée - mémorisé
+// indépendamment de la sauvegarde de partie, comme hasSeenTutorial ci-dessus
+// (une nouvelle partie ne doit jamais refaire découvrir un conseil déjà vu).
+// resetTips() permet volontairement de tout redéclencher (bouton
+// Paramètres), pour un joueur qui voudrait revoir la progression complète.
+const TIPS_SEEN_KEY = 'rupture-v0-tips-seen';
+
+function readSeenTips() {
+  try {
+    const raw = localStorage.getItem(TIPS_SEEN_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+export function hasSeenTip(id) {
+  return Boolean(readSeenTips()[id]);
+}
+
+export function markTipSeen(id) {
+  try {
+    const seen = readSeenTips();
+    seen[id] = true;
+    localStorage.setItem(TIPS_SEEN_KEY, JSON.stringify(seen));
+  } catch (e) {
+    console.warn('Impossible de mémoriser le conseil vu', e);
+  }
+}
+
+export function resetTips() {
+  try {
+    localStorage.removeItem(TIPS_SEEN_KEY);
+  } catch (e) {
+    console.warn('Impossible de réinitialiser les conseils', e);
+  }
+}
+
 const DIFFICULTY_KEY = 'rupture-v0-difficulty';
 
 export function getDifficultySetting() {

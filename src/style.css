@@ -133,6 +133,61 @@ button {
   line-height: 1.4;
 }
 
+.tutorial-screen h2 {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+/* Onboarding contextuel : popup de conseil affichée une seule fois (voir
+   renderTipPopup, main.js:queueTip). Recouvre tout l'écran pour bloquer les
+   clics sous-jacents pendant que la simulation est en pause (voir la boucle
+   de simulation dans main.js), mais la carte visible reste petite et ancrée
+   en bas - un "toast" de mobile game, pas une interruption pleine page. */
+.tip-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(11, 15, 20, 0.55);
+  padding: 0 16px calc(16px + env(safe-area-inset-bottom));
+}
+
+.tip-popup-card {
+  width: 100%;
+  max-width: 420px;
+  background: #171e27;
+  border: 1px solid #2a323d;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.tip-popup-card h4 {
+  margin: 0;
+  color: #e06b2d;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tip-popup-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #e8ecf1;
+}
+
+.tip-popup-card .tip-btn {
+  margin-top: 4px;
+  padding: 12px;
+}
+
 .origin-screen {
   gap: 12px;
 }
