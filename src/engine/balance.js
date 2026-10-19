@@ -93,7 +93,12 @@ export const BALANCE = {
     min: 0.005,
     max: 1.2,
     rampDays: 1800,
-    power: 1.3
+    power: 1.3,
+    // V7 (rythme, §3.B) : part de la tension liée à l'escalade (Conscience
+    // mondiale) plutôt qu'au seul calendrier. 0 = comportement V6 strict.
+    // Mesuré par scripts/simulate-balance.mjs (voir docs/v7-simulation-results.json,
+    // section « rythme ») avant toute activation.
+    escalationWeight: 0
   },
   // Trade-offs (V2, conservés) : les branches ne sont plus des bonus "gratuits".
   propagationAwarenessBleed: 0.4,
@@ -118,7 +123,14 @@ export const BALANCE = {
     // (10) : les tout derniers niveaux de Dangerosité servent alors à
     // libérer de l'Influence pour les trois autres branches plutôt qu'à
     // rester un palier obligatoire supplémentaire avant de pouvoir gagner.
-    fullSeverityLevel: 8
+    fullSeverityLevel: 8,
+    // V7 : « mur des 93 % » remplacé par une montée progressive. Tant que le
+    // plafond de gravité est sous 100 (Dangerosité < fullSeverityLevel), la
+    // croissance ralentit progressivement dans les softZone derniers points
+    // sous ce plafond (jamais sous softFloor de sa vitesse normale) au lieu
+    // de buter d'un coup - et progressBlockers() (forecast.js) l'explique.
+    softZone: 10,
+    softFloor: 0.35
   },
   // Une fois la Réponse mondiale sérieusement engagée (au-delà de
   // mobilizationThreshold), l'Humanité referme le plafond de gravité que
@@ -191,6 +203,51 @@ export const BALANCE = {
     responseCapBaseline: 25,
     fullConscienceLevel: 0.7,
     responseCapPower: 2
+  },
+  // V7 : bulles à toucher sur la carte (voir bubbles.js).
+  bubbles: {
+    // Part du revenu passif (crise + filet de début de partie) qui ne tombe
+    // plus directement dans la réserve d'Influence mais alimente les bulles.
+    incomeShare: 0.35,
+    // Taux de collecte de référence : la valeur d'une bulle est calculée pour
+    // qu'un joueur qui touche cette proportion de bulles retrouve exactement
+    // le revenu V6 (direct + bulles touchées = 100 %).
+    referenceCollectRate: 0.7,
+    lifetimeDays: 8,
+    influenceIntervalMin: 3,
+    influenceIntervalMax: 6,
+    maxInfluenceBubbles: 3,
+    researchIntervalMin: 12,
+    researchIntervalMax: 18,
+    researchAwarenessThreshold: 50,
+    researchValue: 1,
+    // Dette de Réponse créée par une bulle « recherche » : se résorbe de 1 %
+    // par jour (demi-vie ~70 jours) - un vrai répit, pas un effacement.
+    researchDebtDecay: 0.01,
+    maxResearchBubbles: 1
+  },
+  // V7 : capacités actives ciblées (voir abilities.js).
+  abilities: {
+    surge: { cost: 25, cooldownDays: 35, crisisGain: 15 },
+    jam: { cost: 30, cooldownDays: 45, durationDays: 25 },
+    breach: { cost: 30, cooldownDays: 40, shieldDays: 40 }
+  },
+  // V7 : événements à choix (voir events.js).
+  events: {
+    firstMin: 30,
+    firstMax: 40,
+    intervalMin: 30,
+    intervalMax: 45
+  },
+  // V7 : l'Humanité s'adapte (voir simulation.js).
+  adaptation: {
+    factor: 0.75,
+    durationDays: 60
+  },
+  // V7 : défaite anticipée quand la course est jouée (plus de partie figée).
+  stall: {
+    days: 150,
+    epsilon: 0.25
   },
   upgrades: {
     propagation: {
@@ -308,10 +365,15 @@ export function upgradeCost(kind, currentLevel) {
   return Math.round(cfg.baseCost * Math.pow(cfg.costGrowth, currentLevel));
 }
 
-export function tensionAt(day) {
-  const { min, max, rampDays, power } = BALANCE.tension;
+export function tensionAt(day, globalAwareness = 0) {
+  const { min, max, rampDays, power, escalationWeight = 0 } = BALANCE.tension;
   const progress = Math.max(0, Math.min(1, day / rampDays));
-  return min + (max - min) * Math.pow(progress, power);
+  const calendar = min + (max - min) * Math.pow(progress, power);
+  if (!escalationWeight) return calendar;
+  // V7 (option mesurée) : l'escalade (Conscience mondiale) peut avancer la
+  // tension, jamais la faire reculer sous le calendrier.
+  const escalation = min + (max - min) * Math.max(0, Math.min(1, globalAwareness / 100));
+  return Math.max(calendar, calendar + (escalation - calendar) * escalationWeight);
 }
 
 // Plafond de crise atteignable par un territoire pour un niveau de

@@ -1,5 +1,7 @@
-import { TERRITORIES, buildAdjacency } from './territories.js';
+import { TERRITORIES, buildAdjacency, getTerritory } from './territories.js';
 import { BALANCE, DIFFICULTIES } from './balance.js';
+import { autoSeed, randomInt } from './rng.js';
+import { STRAINS } from './strains.js';
 
 // V3 change la forme de la sauvegarde de façon non réinterprétable pour une
 // partie V2 en cours : nouvelle branche Dangerosité (upgrades.dangerosity),
@@ -47,7 +49,52 @@ import { BALANCE, DIFFICULTIES } from './balance.js';
 //    haute crise déjà atteinte par un territoire (plancher honnête - ce
 //    plafond n'a certainement jamais été inférieur à une crise déjà
 //    observée).
-export const SAVE_VERSION = 6;
+//
+// V7 : hasard à graine (seed, rngCounter), bulles, capacités, événements,
+// adaptation de l'Humanité, fin de partie expliquée (outcome), souches.
+// Migration 6 -> 7 dans migrations.js (identifiants et clés inchangés).
+export const SAVE_VERSION = 7;
+
+// V7 : mécaniques nouvelles activables une à une. Toutes actives dans une
+// vraie partie ; `classic` (toutes coupées) rejoue exactement les règles V6
+// (tests historiques, projection de course).
+export function defaultFeatures() {
+  return { bubbles: true, events: true, adaptation: true, stall: true, softCap: true };
+}
+
+export function classicFeatures() {
+  return { bubbles: false, events: false, adaptation: false, stall: false, softCap: false };
+}
+
+// Champs V7 d'une partie neuve (aussi utilisés par la migration 6 -> 7).
+export function createV7Fields(day = 0) {
+  return {
+    seed: '',
+    rngCounter: 0,
+    strain: 'standard',
+    dailyChallenge: false,
+    features: defaultFeatures(),
+    bubbles: [],
+    bubbleSeq: 0,
+    bubblePool: 0,
+    nextInfluenceBubbleDay: day + BALANCE.bubbles.influenceIntervalMin,
+    nextResearchBubbleDay: day + BALANCE.bubbles.researchIntervalMin,
+    bubblesSpawned: 0,
+    bubblesCollected: 0,
+    abilityCooldowns: {},
+    abilityUses: 0,
+    jams: {},
+    routeShields: {},
+    pendingEvent: null,
+    nextEventDay: day + BALANCE.events.firstMin,
+    seenEvents: [],
+    eventHistory: [],
+    eventMods: {},
+    adaptation: null,
+    stall: { bestDominance: 0, sinceDay: day },
+    outcome: null
+  };
+}
 
 export function createTerritoryStates() {
   const map = {};
@@ -115,11 +162,13 @@ export function createInitialState() {
     endReason: null,
     difficulty: 'normal',
     rules: { ...DIFFICULTIES.normal },
-    log: []
+    log: [],
+    ...createV7Fields(0)
   };
 }
 
-export function beginNewGame(state, difficulty = 'normal') {
+export function beginNewGame(state, difficulty = 'normal', options) {
+  const opts = options && typeof options === 'object' ? options : {};
   const resolvedDifficulty = DIFFICULTIES[difficulty] ? difficulty : 'normal';
   state.status = 'selecting-origin';
   state.day = 0;
@@ -140,18 +189,37 @@ export function beginNewGame(state, difficulty = 'normal') {
   state.upgrades = createInitialUpgrades();
   state.territories = createTerritoryStates();
   state.selectedId = null;
+  state.endReason = null;
   state.difficulty = resolvedDifficulty;
   state.rules = { ...DIFFICULTIES[resolvedDifficulty] };
   state.log = ['Choisissez un territoire de départ pour votre anomalie.'];
+  Object.assign(state, createV7Fields(0));
+  state.seed = typeof opts.seed === 'string' && opts.seed ? opts.seed : opts.seed != null && opts.seed !== '' ? String(opts.seed) : autoSeed();
+  state.strain = STRAINS.some((s) => s.id === opts.strain) ? opts.strain : 'standard';
+  state.dailyChallenge = opts.daily === true;
+  // Appel « V6 » sans 3e argument (anciens tests, ancien main.js) = règles V6
+  // (seul le hasard à graine change). Appel du contrat V7 avec un objet
+  // d'options = toutes les mécaniques V7 (sauf `classic: true` explicite).
+  const legacyCall = options === undefined || options === null;
+  state.features = legacyCall || opts.classic === true ? classicFeatures() : { ...defaultFeatures(), ...(opts.features || {}) };
+  // Premier événement et premières bulles tirés à la graine : deux parties
+  // de graines différentes ne démarrent pas au même rythme.
+  state.nextEventDay = randomInt(state, BALANCE.events.firstMin, BALANCE.events.firstMax);
+  state.nextInfluenceBubbleDay = randomInt(state, BALANCE.bubbles.influenceIntervalMin, BALANCE.bubbles.influenceIntervalMax);
+  state.nextResearchBubbleDay = randomInt(state, BALANCE.bubbles.researchIntervalMin, BALANCE.bubbles.researchIntervalMax);
 }
 
 export function confirmOrigin(state, originId) {
-  if (state.status !== 'selecting-origin') return;
+  if (state.status !== 'selecting-origin') return { ok: false, error: 'not-selecting-origin' };
+  const territory = getTerritory(originId);
+  if (!territory || !state.territories[originId]) return { ok: false, error: 'unknown-territory' };
   state.originId = originId;
   state.territories[originId].crisis = BALANCE.startingCrisis;
   state.selectedId = originId;
   state.status = 'playing';
-  pushLog(state, `Point de départ : ${originId}. L'anomalie commence à se répandre.`);
+  // V7 : nom lisible au lieu de l'identifiant (bug signalé : « Commencer à fenwick »).
+  pushLog(state, `Point de départ : ${territory.name}. L'anomalie commence à se répandre.`);
+  return { ok: true };
 }
 
 export const adjacency = buildAdjacency();
