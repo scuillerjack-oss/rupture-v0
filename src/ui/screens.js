@@ -2,6 +2,7 @@ import { renderMap, renderMapLegend } from './map.js';
 import { renderHud } from './hud.js';
 import { BALANCE, DIFFICULTIES } from '../engine/balance.js';
 import { TERRITORIES } from '../engine/territories.js';
+import { TIPS, TIP_ORDER } from './tips.js';
 
 export function renderMenu(hasSave) {
   return `
@@ -12,7 +13,7 @@ export function renderMenu(hasSave) {
       <div class="menu-actions">
         <button class="primary-btn" data-action="new-game">Nouvelle partie</button>
         ${hasSave ? '<button class="secondary-btn" data-action="resume-game">Reprendre la partie</button>' : ''}
-        <button class="link-btn" data-action="show-tutorial">Comment jouer ?</button>
+        <button class="link-btn" data-action="show-help">Comment jouer ?</button>
         <button class="link-btn" data-action="open-settings">Paramètres</button>
       </div>
       <p class="version-tag">V5 — build bêta finale</p>
@@ -41,6 +42,14 @@ export function renderDifficultyPicker(pendingDifficulty) {
     </div>`;
 }
 
+// Volontairement minimal (voir "Onboarding contextuel" dans la demande de
+// finition UX) : présenter qui est l'Anomalie et l'objectif suffit avant de
+// jouer. Chaque mécanique concrète (Influence, les quatre orientations, la
+// Réponse mondiale...) n'est plus expliquée ici mais au moment où le joueur
+// la rencontre réellement pour la première fois (voir renderTipPopup et
+// main.js) - un vrai tutoriel de 40 pages avant la première partie serait
+// exactement le problème que ce système corrige, pas une solution. Le texte
+// complet reste consultable à tout moment via "Comment jouer ?" (renderHelp).
 export function renderTutorial() {
   return `
     <div class="screen tutorial-screen">
@@ -54,18 +63,57 @@ export function renderTutorial() {
           <p>Rendre ta progression réelle avant que l'Humanité ne parvienne à te maîtriser : une course à 100% des deux côtés.</p>
         </div>
         <div class="tutorial-block">
-          <h3>MA RESSOURCE</h3>
-          <p>Tu gagnes de l'Influence, à investir pour faire évoluer l'Anomalie.</p>
-        </div>
-        <div class="tutorial-block">
-          <h3>MES QUATRE ORIENTATIONS</h3>
-          <p><strong>Propagation</strong> → étend ta portée, mais te rend plus visible.</p>
-          <p><strong>Dangerosité</strong> → transforme ta portée en réelle progression, mais alarme fortement le monde.</p>
-          <p><strong>Résilience</strong> → indispensable pour résister une fois que l'Humanité mobilise sa réponse.</p>
-          <p><strong>Discrétion</strong> → retarde la réaction du monde, au prix d'un peu d'Influence.</p>
+          <h3>ET ENSUITE ?</h3>
+          <p>Chaque mécanique s'explique en une phrase la première fois que tu la rencontres. Retrouvable à tout moment depuis "Comment jouer ?".</p>
         </div>
       </div>
       <button class="primary-btn" data-action="tutorial-continue">JOUER</button>
+    </div>`;
+}
+
+// Popup de conseil contextuel : affichée automatiquement une seule fois (voir
+// hasSeenTip/markTipSeen dans save.js et les déclencheurs dans main.js),
+// jamais réaffichée ensuite sauf réinitialisation volontaire depuis
+// Paramètres. Contenu partagé avec renderHelp ci-dessous (ui/tips.js) - un
+// conseil dit toujours la même chose qu'il apparaisse tout seul ou relu
+// depuis l'aide.
+export function renderTipPopup(tipId) {
+  const tip = TIPS[tipId];
+  if (!tip) return '';
+  return `
+    <div class="tip-popup" role="dialog" aria-live="polite" aria-label="${tip.title}">
+      <div class="tip-popup-card">
+        <h4>${tip.title}</h4>
+        <p>${tip.body}</p>
+        <button class="primary-btn tip-btn" data-action="dismiss-tip" data-tip="${tipId}">Compris</button>
+      </div>
+    </div>`;
+}
+
+// Aide permanente ("Comment jouer ?", accessible depuis le menu principal et
+// le menu en partie) : rassemble volontairement TOUT ce que les popups
+// contextuelles expliquent une à une, pour qu'un joueur qui a oublié un
+// détail puisse le relire sans que le jeu ne lui réimpose rien.
+export function renderHelp() {
+  return `
+    <div class="screen tutorial-screen help-screen">
+      <h2>Comment jouer</h2>
+      <div class="tutorial-card">
+        <div class="tutorial-block">
+          <h3>QUI JE SUIS</h3>
+          <p>Tu contrôles une Anomalie apparue dans le réseau.</p>
+        </div>
+        <div class="tutorial-block">
+          <h3>MON OBJECTIF</h3>
+          <p>Rendre ta progression réelle avant que l'Humanité ne parvienne à te maîtriser : une course à 100% des deux côtés.</p>
+        </div>
+        ${TIP_ORDER.map((id) => `
+          <div class="tutorial-block">
+            <h3>${TIPS[id].title.toUpperCase()}</h3>
+            <p>${TIPS[id].body}</p>
+          </div>`).join('')}
+      </div>
+      <button class="primary-btn" data-action="close-help">Fermer</button>
     </div>`;
 }
 
@@ -273,6 +321,8 @@ export function renderGameMenu(view, state, options) {
           <span>Effets sonores</span>
           <button class="toggle-btn${options.sfxEnabled ? ' active' : ''}" data-action="toggle-sfx">${options.sfxEnabled ? 'Activés' : 'Coupés'}</button>
         </div>
+        <h3 class="settings-subhead">Aide</h3>
+        <button class="secondary-btn" data-action="reset-tips">Réafficher tous les conseils</button>
         <button class="secondary-btn" data-action="close-settings">Retour</button>
       </div>`;
   }
@@ -296,6 +346,7 @@ export function renderGameMenu(view, state, options) {
       <div class="menu-actions">
         <button class="primary-btn" data-action="close-menu">Reprendre la partie</button>
         <button class="secondary-btn" data-action="request-restart">Nouvelle partie</button>
+        <button class="secondary-btn" data-action="show-help">Comment jouer ?</button>
         <button class="secondary-btn" data-action="open-settings">Paramètres</button>
       </div>
     </div>`;

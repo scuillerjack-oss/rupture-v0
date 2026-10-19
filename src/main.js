@@ -4,9 +4,10 @@ import {
   saveState, loadState, clearSave,
   hasSeenTutorial, markTutorialSeen,
   getDifficultySetting, setDifficultySetting,
-  hasCompletedFirstGame, markFirstGameCompleted
+  hasCompletedFirstGame, markFirstGameCompleted,
+  hasSeenTip, markTipSeen, resetTips
 } from './save.js';
-import { renderMenu, renderDifficultyPicker, renderTutorial, renderSelectingOrigin, renderPlaying, renderEnd, renderGameMenu, renderInterstitialAd } from './ui/screens.js';
+import { renderMenu, renderDifficultyPicker, renderTutorial, renderHelp, renderTipPopup, renderSelectingOrigin, renderPlaying, renderEnd, renderGameMenu, renderInterstitialAd } from './ui/screens.js';
 import { createServices } from './services/index.js';
 import { createAudio } from './audio/audio.js';
 
@@ -43,7 +44,20 @@ let state = createInitialState();
 let showTutorial = false;
 let tutorialPendingNewGame = false;
 let showDifficultyPicker = false;
+let showHelp = false;
 let statsView = 'territory';
+
+// Onboarding contextuel : file d'attente de conseils pas encore vus (voir
+// ui/tips.js et save.js:hasSeenTip/markTipSeen). Une file plutôt qu'un seul
+// "pendingTip" : plusieurs mécaniques peuvent en théorie devenir vraies au
+// même tick (typiquement en reprenant une sauvegarde déjà avancée d'un
+// joueur existant) - jamais empilées à l'écran, montrées une par une.
+let tipQueue = [];
+
+function queueTip(id) {
+  if (hasSeenTip(id) || tipQueue.includes(id)) return;
+  tipQueue.push(id);
+}
 
 // menuView: null | 'menu' | 'settings' | 'confirm-restart'
 let menuView = null;
@@ -120,6 +134,10 @@ function render() {
     app.innerHTML = renderInterstitialAd();
     return;
   }
+  if (showHelp) {
+    app.innerHTML = renderHelp();
+    return;
+  }
   if (showDifficultyPicker) {
     app.innerHTML = renderDifficultyPicker(pendingDifficulty);
     return;
@@ -143,7 +161,8 @@ function render() {
       app.innerHTML = renderSelectingOrigin(state);
       break;
     case 'playing':
-      app.innerHTML = renderPlaying(state, statsView, services);
+      app.innerHTML = renderPlaying(state, statsView, services)
+        + (tipQueue.length ? renderTipPopup(tipQueue[0]) : '');
       break;
     case 'victory':
     case 'defeat':
@@ -174,9 +193,21 @@ app.addEventListener('click', (event) => {
     case 'cancel-difficulty-picker':
       showDifficultyPicker = false;
       break;
-    case 'show-tutorial':
-      showTutorial = true;
-      tutorialPendingNewGame = false;
+    case 'show-help':
+      showHelp = true;
+      break;
+    case 'close-help':
+      showHelp = false;
+      break;
+    case 'dismiss-tip': {
+      const id = target.dataset.tip;
+      markTipSeen(id);
+      tipQueue.shift();
+      break;
+    }
+    case 'reset-tips':
+      resetTips();
+      tipQueue = [];
       break;
     case 'tutorial-continue':
       markTutorialSeen();
@@ -198,9 +229,15 @@ app.addEventListener('click', (event) => {
       confirmOrigin(state, target.dataset.id);
       gameStartedAt = Date.now();
       break;
-    case 'buy-upgrade':
-      if (buyUpgrade(state, target.dataset.kind)) audio.playPurchase();
+    case 'buy-upgrade': {
+      const kind = target.dataset.kind;
+      const levelBefore = state.upgrades[kind];
+      if (buyUpgrade(state, kind)) {
+        audio.playPurchase();
+        if (levelBefore === 0) queueTip(kind);
+      }
       break;
+    }
     case 'set-speed':
       setSpeed(state, Number(target.dataset.speed));
       break;
@@ -272,7 +309,7 @@ app.addEventListener('click', (event) => {
 const TICK_MS = 1000;
 setInterval(() => {
   if (document.hidden) return;
-  if (showTutorial || showDifficultyPicker || menuView || showInterstitial) return;
+  if (showTutorial || showDifficultyPicker || showHelp || menuView || showInterstitial || tipQueue.length) return;
   if (state.status !== 'playing' || state.speed <= 0) return;
   const phaseBefore = state.responsePhase;
   for (let i = 0; i < state.speed; i += 1) {
@@ -283,6 +320,11 @@ setInterval(() => {
   // la phase en une seule boucle : la Réponse mondiale ne peut que
   // progresser (jamais reculer), comparer avant/après la boucle suffit.
   if (state.responsePhase !== phaseBefore) audio.playPhaseChange();
+  // Onboarding contextuel (voir plus haut) : Influence et Réponse mondiale
+  // ne se "débloquent" pas par un clic mais émergent naturellement de la
+  // simulation - déclenchées ici plutôt qu'à l'achat d'une amélioration.
+  if (phaseBefore === 'ignorance' && state.responsePhase !== 'ignorance') queueTip('worldResponse');
+  if (state.influence > 0) queueTip('influence');
   if (state.status === 'victory' || state.status === 'defeat') {
     if (state.status === 'victory') audio.playVictory();
     else audio.playDefeat();
