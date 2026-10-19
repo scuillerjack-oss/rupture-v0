@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f14" />
+  <title>RUPTURE — démo carte V7</title>
+  <link rel="stylesheet" href="worldMap.css" />
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b0f14; color: #e8ecf1; font-family: system-ui, sans-serif; }
+    body { display: flex; flex-direction: column; }
+    #map { height: 60vh; flex: none; }
+    #panel { flex: 1; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; }
+    button { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #2a3542; background: #16202b; color: #e8ecf1; font-size: 14px; }
+    button.on { background: #3a2020; border-color: #e0573a; }
+    #log { color: #9aa5b1; min-height: 2.6em; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="panel">
+    <div class="row">
+      <button data-mode="play" class="on">Jeu</button>
+      <button data-mode="origin">Origine</button>
+      <button data-target="surge">Cibler région</button>
+      <button data-target="breach">Cibler route</button>
+      <button data-run>Pause</button>
+    </div>
+    <div id="log">Touchez une région, une bulle, ou pincez pour zoomer.</div>
+  </div>
+  <script type="module" src="demo-bundle.js"></script>
+</body>
+</html>
