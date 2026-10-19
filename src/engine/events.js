@@ -458,6 +458,26 @@ function applyEffect(state, effect, territoryId) {
   }
 }
 
+// Met à jour disabled/reason des options en attente selon l'Influence
+// actuelle (elle peut changer pendant la pause : bulle, achat).
+export function refreshPendingEvent(state) {
+  const pending = state?.pendingEvent;
+  if (!pending) return;
+  const event = EVENTS_BY_ID.get(pending.id);
+  if (!event) return;
+  for (const shown of pending.options) {
+    const option = event.options.find((o) => o.id === shown.id);
+    const disabled = typeof option?.cost === 'number' && state.influence < option.cost;
+    if (disabled) {
+      shown.disabled = true;
+      shown.reason = `Il faut ${option.cost} d’Influence.`;
+    } else {
+      delete shown.disabled;
+      delete shown.reason;
+    }
+  }
+}
+
 export function chooseEventOption(state, optionId) {
   const pending = state?.pendingEvent;
   if (!pending) return { ok: false, error: 'Aucun événement en attente.' };

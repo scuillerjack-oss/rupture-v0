@@ -4,7 +4,7 @@ import { BALANCE, upgradeCost, tensionAt, responsePhaseAt, dangerosityCapAt, res
 import { nextRandom } from './rng.js';
 import { strainMod } from './strains.js';
 import { tickBubbles, splitIncome } from './bubbles.js';
-import { maybeTriggerEvent, eventMod } from './events.js';
+import { maybeTriggerEvent, eventMod, refreshPendingEvent } from './events.js';
 import { routeKey } from './routes.js';
 import { starsFor } from './meta.js';
 
@@ -65,7 +65,10 @@ export function simulateTick(state) {
   if (state.status !== 'playing') return;
   ensureV7Fields(state);
   // V7 : un événement à choix met la partie en pause (voir events.js).
-  if (state.pendingEvent) return;
+  if (state.pendingEvent) {
+    refreshPendingEvent(state);
+    return;
+  }
   const features = state.features;
 
   const snapshot = {};
@@ -359,7 +362,8 @@ export function simulateTick(state) {
   // economy takes over (tension rising toward 1), so it never inflates the mid/late game.
   const earlyTrickle = BALANCE.earlyInfluenceTrickle * clamp(1 - tension, 0, 1);
   // Discretion trades away some of the Influence a hidden Anomaly could otherwise extract.
-  const incomeFactor = (1 - discretionEffect * BALANCE.discretionIncomePenalty) * strainMod(state, 'income') * eventMod(state, 'income');
+  const incomeFactor =
+    (1 - discretionEffect * BALANCE.discretionIncomePenalty) * strainMod(state, 'income') * eventMod(state, 'income') * (state.rules?.incomeMultiplier ?? 1);
   const income = influenceGain * BALANCE.influenceGainFactor * incomeFactor + earlyTrickle;
   // V7 : une part du revenu passif alimente les bulles à toucher (bubbles.js) ;
   // le reste tombe directement dans la réserve, comme en V6.
@@ -433,6 +437,7 @@ export function buyUpgrade(state, kind) {
   if (state.influence < cost) return false;
   state.influence -= cost;
   state.upgrades[kind] = level + 1;
+  refreshPendingEvent(state);
   return true;
 }
 

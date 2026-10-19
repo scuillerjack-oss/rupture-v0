@@ -1,4 +1,6 @@
 import { BALANCE } from './balance.js';
+import { createV7Fields, defaultFeatures } from './state.js';
+import { starsFor } from './meta.js';
 
 // Registre des migrations de sauvegarde, indexé par la version DE DÉPART
 // qu'elles savent transformer. Un futur incrément de SAVE_VERSION qui peut
@@ -63,6 +65,30 @@ const MIGRATIONS = {
     const territories = old.territories && typeof old.territories === 'object' ? Object.values(old.territories) : [];
     const crisisCapHighWater = territories.reduce((max, t) => Math.max(max, Number(t?.crisis) || 0), 0);
     return { ...old, version: 6, suppressionPressure, crisisCapHighWater };
+  },
+  // V7 : ajoute le hasard à graine, les bulles, capacités, événements,
+  // l'adaptation, la fin de partie expliquée (outcome) et la souche. Aucune
+  // clé ni identifiant de territoire n'est renommé : on AJOUTE seulement les
+  // champs manquants. Une partie V6 en cours continue avec les règles V7 (le
+  // premier événement et les premières bulles arrivent quelques jours après
+  // la reprise, jamais immédiatement). La graine est dérivée de la partie
+  // (origine + jour) : stable, sans Math.random. Une partie V6 déjà terminée
+  // reçoit un `outcome` reconstitué depuis endReason.
+  6: (old) => {
+    const day = Number(old.day) || 0;
+    const fields = createV7Fields(day);
+    const migrated = { ...fields, ...old, version: 7 };
+    migrated.seed = typeof old.seed === 'string' && old.seed ? old.seed : `v6-${old.originId || 'x'}-${day}`;
+    migrated.rngCounter = Number.isInteger(old.rngCounter) ? old.rngCounter : 0;
+    migrated.features = defaultFeatures();
+    migrated.stall = { bestDominance: Number(old.maxDominance) || 0, sinceDay: day };
+    if ((old.status === 'victory' || old.status === 'defeat') && !old.outcome) {
+      const reasonByEnd = { dominance: 'rupture', containment: 'control', timeout: 'stalled' };
+      const reason = reasonByEnd[old.endReason] ?? (old.status === 'victory' ? 'rupture' : 'control');
+      migrated.outcome = { result: old.status, reason, day, stars: 0 };
+      migrated.outcome.stars = starsFor(migrated);
+    }
+    return migrated;
   }
 };
 

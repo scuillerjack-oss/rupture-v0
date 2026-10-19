@@ -22,7 +22,7 @@ function clamp(v, min, max) {
 // Sépare le revenu d'un tick : renvoie la part versée directement, met le
 // reste dans la cagnotte des bulles.
 export function splitIncome(state, income) {
-  const share = BALANCE.bubbles.incomeShare;
+  const share = state.rules?.bubbleIncomeShare ?? BALANCE.bubbles.incomeShare;
   state.bubblePool = (state.bubblePool || 0) + income * share;
   return income * (1 - share);
 }
@@ -71,7 +71,7 @@ export function tickBubbles(state) {
   if (state.day >= state.nextResearchBubbleDay) {
     const count = state.bubbles.filter((b) => b.kind === 'research').length;
     const aware = TERRITORIES.filter((t) => state.territories[t.id].awareness >= cfg.researchAwarenessThreshold);
-    if (count < cfg.maxResearchBubbles && aware.length && state.globalContainment > 0) {
+    if (count < cfg.maxResearchBubbles && aware.length && state.globalContainment > 0 && state.globalContainment < cfg.researchMaxResponse) {
       const target = pickWeighted(state, freeTerritory(state, aware), (t) => state.territories[t.id].awareness);
       if (target) spawn(state, 'research', target.id, cfg.researchValue);
     }

@@ -9,7 +9,11 @@ export const BALANCE = {
   routeCloseAwarenessThreshold: 40,
   routeCloseCheckChance: 0.05,
   globalContainmentGainFactor: 0.135,
-  influenceGainFactor: 0.035,
+  // V7 : 0.035 -> 0.0365 (avec earlyInfluenceTrickle 1.15 -> 1.2 et
+  // tension.rampDays 1800 -> 1500) pour ramener une partie gagnée à ~7,5 min
+  // en ×1 (1 jour = 1 s) au lieu de ~8,3 min, sans changer la hiérarchie des
+  // stratégies. Mesuré : docs/v7-simulation-results.json.
+  influenceGainFactor: 0.0365,
   // V4 (§1) : relevé de 0.62 à 1.15 pour compenser la tension qui monte plus
   // vite (voir tension.power ci-dessus) - cette source fond d'elle-même à
   // mesure que la tension augmente (clamp(1-tension,0,1)), donc l'augmenter
@@ -20,7 +24,7 @@ export const BALANCE = {
   // délibérément mauvaise en stratégie gagnante - voir le rapport V4 pour
   // le balayage complet (une compensation trop généreuse fait gagner
   // TOUTES les stratégies, y compris les mauvaises, en quelques crans).
-  earlyInfluenceTrickle: 1.15,
+  earlyInfluenceTrickle: 1.2,
   // V6 (chantier A, audit approfondi - voir docs/v6-influence-cap-audit.json
   // et scripts/audit-influence-cap.mjs) : relevé de 150 à 200. Le
   // commentaire d'origine (V1->V2) présentait ce plafond comme LA protection
@@ -92,7 +96,8 @@ export const BALANCE = {
   tension: {
     min: 0.005,
     max: 1.2,
-    rampDays: 1800,
+    // V7 : 1800 -> 1500 (durée 6-8 min en ×1, voir influenceGainFactor).
+    rampDays: 1500,
     power: 1.3,
     // V7 (rythme, §3.B) : part de la tension liée à l'escalade (Conscience
     // mondiale) plutôt qu'au seul calendrier. 0 = comportement V6 strict.
@@ -221,9 +226,15 @@ export const BALANCE = {
     researchIntervalMax: 18,
     researchAwarenessThreshold: 50,
     researchValue: 1,
-    // Dette de Réponse créée par une bulle « recherche » : se résorbe de 1 %
-    // par jour (demi-vie ~70 jours) - un vrai répit, pas un effacement.
-    researchDebtDecay: 0.01,
+    // V7 : n'apparaissent que tant que la Réponse est sous ce seuil. Mesuré :
+    // sans seuil, un joueur qui touche les bulles bleues gagne ~100 % en
+    // Normal (chaque point retiré tranche une fin de course à 99-100) ; à 50,
+    // elles restent une vraie aide en milieu de partie sans décider la fin.
+    researchMaxResponse: 50,
+    // Dette de Réponse créée par une bulle « recherche » : se résorbe de 35 %
+    // par jour (quelques jours) - un répit, pas un effacement. Mesuré : une
+    // dette lente (1 %/jour) rend les bulles bleues décisives à elles seules.
+    researchDebtDecay: 0.35,
     maxResearchBubbles: 1
   },
   // V7 : capacités actives ciblées (voir abilities.js).
@@ -346,9 +357,16 @@ export const BALANCE = {
 // une vraie chance). Aucune des trois difficultés ne produit de résultats
 // quasi identiques aux deux autres.
 export const DIFFICULTIES = {
+  // V7 : Facile ne différait plus assez de Normal (la Réponse plafonnée par la
+  // Conscience rend globalContainmentGainFactor peu influent seul). Facile
+  // ralentit davantage la Réponse, donne +20 % de revenu et ne fait passer
+  // que 10 % du revenu par les bulles (un joueur qui ne touche pas la carte
+  // garde une chance réelle). Difficile : −8 % de revenu.
   easy: {
     label: 'Facile',
-    globalContainmentGainFactor: 0.115
+    globalContainmentGainFactor: 0.1,
+    incomeMultiplier: 1.2,
+    bubbleIncomeShare: 0.1
   },
   normal: {
     label: 'Normal',
@@ -356,7 +374,8 @@ export const DIFFICULTIES = {
   },
   hard: {
     label: 'Difficile',
-    globalContainmentGainFactor: 0.155
+    globalContainmentGainFactor: 0.155,
+    incomeMultiplier: 0.92
   }
 };
 
