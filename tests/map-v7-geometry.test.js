@@ -179,6 +179,6 @@ test('chaque territoire propose plusieurs emplacements de bulle', () => {
   for (const t of TERRITORIES) {
     const spots = TERRITORY_SHAPES[t.id].bubbleSpots;
     assert.ok(Array.isArray(spots) && spots.length >= 3, t.id);
-    for (const [dx, dy] of spots) assert.ok(Math.hypot(dx, dy) >= 30, `bulle de ${t.id} collée au nom`);
+    for (const [dx, dy] of spots) assert.ok(Math.hypot(dx, dy) >= 26, `bulle de ${t.id} collée au nom`);
   }
 });

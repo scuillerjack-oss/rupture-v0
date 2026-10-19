@@ -12,7 +12,9 @@ export function renderMap(state, selectable = true) {
   return `<div class="wm-root wm-static${state?.status === 'selecting-origin' ? ' wm-mode-origin' : ''}">${buildWorldMarkup({
     state,
     legacyActions: Boolean(selectable),
-    idPrefix: 'wmlegacy'
+    idPrefix: 'wmlegacy',
+    // ≈ 1000 unités affichées sur ~370 px : noms à ~12 px réels sur téléphone.
+    staticScale: 2.6
   })}</div>`;
 }
 

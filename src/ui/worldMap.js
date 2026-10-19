@@ -39,7 +39,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 export const CRITICAL_CRISIS = 75; // même seuil que la légende V6 (« Critique »)
 export const STRONG_CONTAINMENT = 30; // containment plafonne vers 60 (= 0,6 × conscience) : 30 = confinement fort
 const LABEL_FONT_PX = 12;
-const BUBBLE_RADIUS_PX = 25; // diamètre 50 px réels (≥ 44 px demandés)
+const BUBBLE_RADIUS_PX = 20; // disque visible de 40 px ; zone tactile de 56 px (≥ 44 px demandés)
+const BUBBLE_HIT_PX = 28;
 const MAX_ZOOM_FACTOR = 6; // par rapport à la vue d'ensemble
 const TAP_SLOP_PX = 9;
 
@@ -216,7 +217,10 @@ export function buildWorldMarkup({ state = null, legacyActions = false, idPrefix
   // Contour de sélection / ciblage (au-dessus du liseré).
   parts.push('<g class="wm-outlines">');
   for (const t of TERRITORIES) {
-    parts.push(`<path d="${TERRITORY_SHAPES[t.id].path}" data-outline="${t.id}"/>`);
+    const ocls = [state?.selectedId === t.id && 'wm-selected', state?.status === 'playing' && state.originId === t.id && 'wm-origin']
+      .filter(Boolean)
+      .join(' ');
+    parts.push(`<path${ocls ? ` class="${ocls}"` : ''} d="${TERRITORY_SHAPES[t.id].path}" data-outline="${t.id}"/>`);
   }
   parts.push('</g>');
 
@@ -547,8 +551,8 @@ export function createWorldMap(container, callbacks = {}) {
   svg.addEventListener('click', swallowClick);
 
   // ------------------------------------------------ bulles
-  const bubbles = new Map(); // id -> { el, x, y, slot, ring, popping }
-  const RING_LEN = 2 * Math.PI * (BUBBLE_RADIUS_PX + 4);
+  const bubbles = new Map(); // id -> { el, x, y, dx, dy, ring, popping, rawId }
+  const RING_LEN = 2 * Math.PI * (BUBBLE_RADIUS_PX + 3.5);
   function bubbleTransform(b) {
     const k = 1 / view.scale;
     return `translate(${b.x} ${b.y}) scale(${k.toFixed(5)}) translate(${b.dx} ${b.dy})`;
@@ -558,7 +562,7 @@ export function createWorldMap(container, callbacks = {}) {
   function pickSpot(sh) {
     const spots = sh.bubbleSpots && sh.bubbleSpots.length ? sh.bubbleSpots : [[0, -38]];
     const s = fit.scale;
-    const minD = BUBBLE_RADIUS_PX * 2 + 4;
+    const minD = BUBBLE_RADIUS_PX * 2 + 8;
     let best = spots[0];
     let bestOverlap = Infinity;
     for (const [dx, dy] of spots) {
@@ -590,11 +594,12 @@ export function createWorldMap(container, callbacks = {}) {
     const sign = kind === 'research' ? '−' : '+';
     const glyph = kind === 'research' ? '🔬' : '⚡';
     g.innerHTML =
-      `<circle class="wm-bubble-hit" r="${r + 6}"/>` +
-      `<circle class="wm-bubble-ring" r="${r + 4}" stroke-dasharray="${RING_LEN.toFixed(1)}"/>` +
+      `<path class="wm-bubble-tether" d="M0 0L${-dx} ${-dy + 6}"/>` +
+      `<circle class="wm-bubble-hit" r="${BUBBLE_HIT_PX}"/>` +
+      `<circle class="wm-bubble-ring" r="${r + 3.5}" stroke-dasharray="${RING_LEN.toFixed(1)}"/>` +
       `<circle class="wm-bubble-body" r="${r}" fill="url(#${idPrefix}-bub-${kind})"/>` +
-      `<text class="wm-bubble-glyph" y="-6">${glyph}</text>` +
-      `<text class="wm-bubble-value" y="12">${sign}${esc(formatValue(b.value))}</text>`;
+      `<text class="wm-bubble-glyph" y="-5">${glyph}</text>` +
+      `<text class="wm-bubble-value" y="9">${sign}${esc(formatValue(b.value))}</text>`;
     const entry = { el: g, x: sh.labelX, y: sh.labelY, dx, dy, ring: g.querySelector('.wm-bubble-ring'), popping: false, rawId: b.id };
     g.setAttribute('transform', bubbleTransform(entry));
     bubbleLayer.appendChild(g);
@@ -667,12 +672,7 @@ export function createWorldMap(container, callbacks = {}) {
       setClass(labelEls[id], 'wm-selected', state.selectedId === id);
       setClass(outlineEls[id], 'wm-origin', mode === 'play' && state.originId === id);
 
-      let icons = '';
-      if (mode === 'play') {
-        if (state.originId === id) icons += '◉';
-        if ((ts.containment || 0) >= STRONG_CONTAINMENT) icons += (icons ? ' ' : '') + '🛡';
-      }
-      setText(iconEls[id], icons);
+      setText(iconEls[id], mode === 'play' ? territoryIcons(state, id) : '');
       setClass(labelEls[id], 'wm-critical', mode === 'play' && crisis >= CRITICAL_CRISIS);
     }
 

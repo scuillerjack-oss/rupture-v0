@@ -440,24 +440,26 @@ for (const t of TERRITORIES) {
 // Bulles : décalage (px écran) depuis le nom, choisi pour ne recouvrir aucun autre nom ni badge de route
 // à la vue d'ensemble. Appelé après le calcul des routes.
 function placeBubbles(routeMids) {
-  const BUBBLE_R = 27;
-  const OFFSETS = [[0, -38], [0, 46], [-52, -16], [52, -16], [-52, 22], [52, 22], [-40, -40], [40, -40], [-40, 46], [40, 46], [-88, 0], [88, 0]];
+  const BUBBLE_R = 23; // disque visible 20 px + anneau
+  const OFFSETS = [];
+  for (const r of [32, 42, 54]) for (let a = 0; a < 16; a++) OFFSETS.push([Math.round(Math.cos((a * Math.PI) / 8) * r * 1.5), Math.round(Math.sin((a * Math.PI) / 8) * r - 4)]);
   for (const t of TERRITORIES) {
     const label = labels[t.id];
     const scored = OFFSETS.map((off, i) => {
       const p = [label[0] + off[0] / FIT_SCALE, label[1] + off[1] / FIT_SCALE];
-      let s = i * 0.3;
+      let s = Math.hypot(off[0], off[1]) * 0.02;
+      s += boxIntrusion(p, BUBBLE_R / FIT_SCALE, labelBox(t.id, label, FIT_SCALE, 1)) * 4;
       for (const o of TERRITORIES) {
         if (o.id === t.id) continue;
         s += boxIntrusion(p, BUBBLE_R / FIT_SCALE, labelBox(o.id, labels[o.id], FIT_SCALE, 2)) * 4;
       }
       for (const m of routeMids) s += Math.max(0, (BUBBLE_R + 12) / FIT_SCALE - dist(p, m)) * 3;
       if (p[0] < 28 / FIT_SCALE || p[0] > 1000 - 28 / FIT_SCALE || p[1] < 30 / FIT_SCALE || p[1] > 1000 - 28 / FIT_SCALE) s += 500;
-      if (!pointInPoly(p, cells[t.id].ring)) s += 40;
+      if (!pointInPoly(p, cells[t.id].ring)) s += 120;
       return { off, s };
     });
     scored.sort((x, y) => x.s - y.s);
-    shapes[t.id].bubbles = scored.slice(0, 6).map((x) => x.off);
+    shapes[t.id].bubbles = scored.slice(0, 8).map((x) => x.off);
   }
 }
 function isCoastPoint(p, c) {

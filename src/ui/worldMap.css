@@ -180,6 +180,8 @@
   to { opacity: 1; }
 }
 .wm-bubble-hit { fill: transparent; }
+/* Fil qui relie une bulle au nom de sa région. */
+.wm-bubble-tether { fill: none; stroke: rgba(255, 255, 255, 0.6); stroke-width: 1.5; stroke-dasharray: 2 3; pointer-events: none; }
 .wm-bubble-body { stroke: rgba(255, 255, 255, 0.9); stroke-width: 2; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55)); }
 .wm-bubble-ring {
   fill: none;
@@ -189,7 +191,7 @@
 }
 .wm-bubble-influence .wm-bubble-ring { stroke: #ffb199; }
 .wm-bubble-research .wm-bubble-ring { stroke: #b7dcff; }
-.wm-bubble-glyph { font-size: 14px; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.wm-bubble-glyph { font-size: 12px; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
 .wm-bubble-value {
   font-size: 12px;
   font-weight: 800;
