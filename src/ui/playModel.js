@@ -273,7 +273,8 @@ export function endModel(state) {
     victory,
     reason: outcome.reason,
     title,
-    text: END_TEXTS[outcome.reason] ?? (victory ? END_TEXTS.rupture : END_TEXTS.control),
+    // Le moteur V7 fournit l'explication prête à afficher (outcome.text).
+    text: outcome.text || END_TEXTS[outcome.reason] || (victory ? END_TEXTS.rupture : END_TEXTS.control),
     day: outcome.day ?? state.day,
     stars: starsOf(state)
   };
