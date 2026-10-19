@@ -1,22 +1,50 @@
-import { createInitialState, beginNewGame, confirmOrigin } from './engine/state.js';
-import { simulateTick, buyUpgrade, selectTerritory, setSpeed } from './engine/simulation.js';
+// RUPTURE V7 — point d'entrée de l'interface.
+//
+// Changements V7 (cahier des charges §3.C) :
+//  - Rendu INCRÉMENTAL : l'écran de jeu et le choix d'origine sont construits
+//    une seule fois (ui/playScreen.js, ui/originScreen.js) puis mis à jour ;
+//    plus aucun innerHTML de tout l'écran à chaque seconde, donc plus aucun
+//    tap perdu. Les écrans statiques (menu, réglages, fin…) ne sont réécrits
+//    que lorsque leur contenu change réellement.
+//  - Boucle à 250 ms (≈ 4 mises à jour/s, contrat de la carte) : ×1 = 1 jour/s,
+//    ×2 = 2 jours/s, ×4 = 4 jours/s, comme en V6, mais plus fluide.
+//  - Toutes les fonctions moteur V7 passent par ui/engineV7.js (replis sûrs
+//    tant que le moteur V7 n'est pas intégré).
+//
+// Rappel V-finale (correctif bêta §1) : NE JAMAIS charger la sauvegarde
+// directement au démarrage ; le menu propose « Reprendre la partie ».
+import {
+  engineReady, createInitialState, beginNewGame, confirmOrigin, simulateTick,
+  buyUpgrade, selectTerritory, setSpeed, collectBubble, abilityStatus, useAbility,
+  chooseEventOption, getAbilities, dailySeed, randomSeed, createMeta, recordGame,
+  isUnlocked, strainLabel, territoryName, registerEngine
+} from './ui/engineV7.js';
+import { upgradeCost, DIFFICULTIES } from './engine/balance.js';
 import {
   saveState, loadState, clearSave,
   hasSeenTutorial, markTutorialSeen,
   getDifficultySetting, setDifficultySetting,
-  hasCompletedFirstGame, markFirstGameCompleted
+  hasCompletedFirstGame, markFirstGameCompleted,
+  hasSeenTip, markTipSeen, resetTips,
+  loadMeta, saveMeta, getStrainSetting, setStrainSetting,
+  getDailyRecord, recordDailyResult
 } from './save.js';
-import { renderMenu, renderDifficultyPicker, renderTutorial, renderSelectingOrigin, renderPlaying, renderEnd, renderGameMenu, renderInterstitialAd } from './ui/screens.js';
+import {
+  renderMenu, renderDifficultyPicker, renderTutorial, renderHelp, renderTipPopup,
+  renderEnd, renderGameMenu, renderInterstitialAd
+} from './ui/screens.js';
+import { createPlayScreen, targetingFor } from './ui/playScreen.js';
+import { createOriginScreen } from './ui/originScreen.js';
+import { isGameOver, outcomeOf, starsOf, blockerModel } from './ui/playModel.js';
+import { playSpeeds, nextSpeed } from './ui/hud.js';
 import { createServices } from './services/index.js';
+import { RUNTIME_CONFIG, BUILD_ENV } from './config/runtime.js';
 import { createAudio } from './audio/audio.js';
 
 const app = document.getElementById('app');
 const services = createServices();
 const audio = createAudio();
 
-// Aucun fournisseur analytics réel n'est branché (adaptateur no-op) : ce
-// n'est qu'un point d'entrée déjà en place pour une future remontée
-// d'erreurs, sans effet observable aujourd'hui.
 window.addEventListener('error', (event) => {
   services.analytics.logError(event.error ?? event.message, { type: 'window-error' });
 });
@@ -24,69 +52,76 @@ window.addEventListener('unhandledrejection', (event) => {
   services.analytics.logError(event.reason, { type: 'unhandled-rejection' });
 });
 
-// V-finale (correctif bêta §1) : NE JAMAIS charger la sauvegarde directement
-// en mémoire au démarrage. Un rechargement de page (fermeture complète de
-// l'app, ou simple éviction de la WebView par l'OS mobile en arrière-plan -
-// les deux sont indiscernables d'un point de vue web) déclenche un nouveau
-// chargement de ce module ; démarrer directement en 'playing' ici court-
-// circuitait le menu et donnait l'impression que RUPTURE "ne fermait
-// jamais" la partie précédente. Le menu (état initial, toujours affiché en
-// premier) propose déjà "Reprendre la partie" quand une sauvegarde existe
-// (voir renderMenu/l'action 'resume-game' ci-dessous) : c'est desormais
-// l'UNIQUE façon d'y revenir. Rien n'est perdu (la sauvegarde elle-même
-// n'est pas touchée) - seule la reprise automatique et silencieuse est
-// supprimée. Le cycle premier-plan/arrière-plan PENDANT une session normale
-// (verrouillage de l'écran, changement d'app bref) ne recharge pas ce
-// module (voir document.hidden dans la boucle de simulation plus bas) : ce
-// correctif ne l'affecte donc pas.
+// Deux conteneurs permanents : écrans statiques (gabarits HTML) et écrans
+// vivants (jeu / origine), jamais détruits à chaque tick.
+const staticRoot = document.createElement('div');
+staticRoot.className = 'static-root';
+const liveRoot = document.createElement('div');
+liveRoot.className = 'live-root';
+app.append(staticRoot, liveRoot);
+let lastStaticHtml = null;
+
 let state = createInitialState();
+// view : 'main' (menu principal) | 'game' (partie, quel que soit son statut)
+let view = 'main';
 let showTutorial = false;
 let tutorialPendingNewGame = false;
 let showDifficultyPicker = false;
-let statsView = 'territory';
-
-// menuView: null | 'menu' | 'settings' | 'confirm-restart'
-let menuView = null;
-let settingsReturnTo = null; // where "Retour" from Paramètres should go: null (main menu) or 'menu' (in-game)
+let showHelp = false;
+let menuView = null; // null | 'menu' | 'settings' | 'confirm-restart'
+let settingsReturnTo = null;
 let pendingDifficulty = getDifficultySetting();
+let pendingStrain = getStrainSetting();
+let pendingSeed = null; // graine imposée (défi du jour) pour la prochaine partie
+let meta = loadMeta(createMeta);
+let lastSpeed = 1;
+let targeting = null;
+let endInfo = null; // { record, starsGained, daily } calculé une fois à la fin
 
-// Monétisation (voir services/ads.js, services/premium.js) : horloge murale
-// réelle de la partie en cours (pas des jours simulés) pour appliquer la
-// règle de fréquence publicitaire exacte de l'audit économique. Volontairement
-// en mémoire seulement - un redémarrage complet de l'app perd la trace d'une
-// partie non terminée, ce qui ne peut jamais déclencher une publicité en
-// trop (voir services/ads.js pour le raisonnement complet).
+let tipQueue = [];
+function queueTip(id) {
+  if (hasSeenTip(id) || tipQueue.includes(id)) return;
+  tipQueue.push(id);
+}
+
+// Monétisation (services/ads.js) : horloge murale de la partie en cours.
 let gameStartedAt = null;
 let lastCompletedGameDurationMs = null;
 let lastCompletedGameWasFirst = false;
 let showInterstitial = false;
 let afterInterstitial = null;
 
+const isDailySeed = (seed) => typeof seed === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(seed);
+
+function hasResumableSave() {
+  const saved = loadState();
+  return Boolean(saved) && !isGameOver(saved) && saved.status !== 'menu';
+}
+
 function startNewGame() {
   clearSave();
   state = createInitialState();
-  beginNewGame(state, getDifficultySetting());
+  const seed = pendingSeed ?? randomSeed();
+  const strain = isUnlocked(meta, pendingStrain) ? pendingStrain : 'standard';
+  beginNewGame(state, getDifficultySetting(), { seed, strain, daily: isDailySeed(seed) });
+  pendingSeed = null;
+  targeting = null;
+  endInfo = null;
+  lastSpeed = 1;
+  view = 'game';
+  playScreen?.closeDrawer();
 }
 
 function actuallyBeginNewGameFlow() {
   pendingDifficulty = getDifficultySetting();
+  pendingStrain = getStrainSetting();
   showDifficultyPicker = true;
 }
 
-// La difficulté est désormais choisie explicitement avant CHAQUE nouvelle
-// partie (nouvelle ou redémarrage) plutôt que silencieusement héritée d'un
-// éventuel passage antérieur par Paramètres - voir renderDifficultyPicker.
-// Rien n'est détruit tant que "Continuer" n'a pas été cliqué : une ancienne
-// partie en cours reste intacte si le joueur fait "Retour" depuis cet écran.
-//
-// Monétisation : évalue ici, une seule fois par partie réellement terminée,
-// si une publicité interstitielle (simulée, voir services/ads.js) doit
-// s'intercaler avant de proposer la partie suivante - jamais pendant une
-// partie, jamais autour de la toute première. Un redémarrage en cours de
-// partie (partie jamais terminée) ne consomme ni ne déclenche cette
-// vérification : seule une victoire/défaite réelle alimente
-// lastCompletedGameDurationMs (voir la boucle de simulation plus bas).
-function beginNewGameFlow() {
+// Une seule vérification publicitaire par partie réellement terminée, avant
+// la partie suivante (jamais pendant une partie, jamais autour de la toute
+// première) — inchangé depuis V6.
+function withInterstitial(next) {
   if (lastCompletedGameDurationMs !== null) {
     const context = {
       isFirstGameEver: lastCompletedGameWasFirst,
@@ -97,12 +132,16 @@ function beginNewGameFlow() {
     lastCompletedGameWasFirst = false;
     if (services.ads.shouldShowInterstitial(context)) {
       showInterstitial = true;
-      services.ads.showInterstitialAd(); // simulation - voir renderInterstitialAd()/le bouton "Continuer"
-      afterInterstitial = actuallyBeginNewGameFlow;
+      services.ads.showInterstitialAd();
+      afterInterstitial = next;
       return;
     }
   }
-  actuallyBeginNewGameFlow();
+  next();
+}
+
+function beginNewGameFlow() {
+  withInterstitial(actuallyBeginNewGameFlow);
 }
 
 function proceedAfterDifficultyPicked() {
@@ -115,68 +154,300 @@ function proceedAfterDifficultyPicked() {
   }
 }
 
-function render() {
-  if (showInterstitial) {
-    app.innerHTML = renderInterstitialAd();
+// --- Écrans vivants ---------------------------------------------------------
+let playScreen = null;
+let originScreen = null;
+
+function toast(text) {
+  playScreen?.showToast(text);
+}
+
+const playActions = {
+  openMenu() {
+    targeting = null;
+    menuView = 'menu';
+    refresh(true);
+  },
+  togglePause() {
+    if (state.speed > 0) {
+      lastSpeed = state.speed;
+      setSpeed(state, 0);
+    } else {
+      setSpeed(state, lastSpeed || 1);
+    }
+    refresh(true);
+  },
+  cycleSpeed() {
+    const speeds = playSpeeds(services);
+    const from = state.speed > 0 ? state.speed : lastSpeed;
+    const next = state.speed > 0 ? nextSpeed(from, speeds) : from || 1;
+    lastSpeed = next;
+    setSpeed(state, next);
+    refresh(true);
+  },
+  buy(kind) {
+    const level = state.upgrades[kind];
+    const cost = upgradeCost(kind, level);
+    if (buyUpgrade(state, kind)) {
+      audio.playPurchase();
+      playScreen?.pulseUpgrade(kind, cost);
+      if (level === 0) queueTip(kind);
+      refresh(true);
+    }
+  },
+  openDrawer(kind) {
+    playScreen?.openDrawer(kind);
+    refresh(true);
+  },
+  closeDrawer() {
+    playScreen?.closeDrawer();
+    refresh(true);
+  },
+  abilityTap(id) {
+    if (targeting?.abilityId === id) {
+      targeting = null;
+      refresh(true);
+      return;
+    }
+    const ability = getAbilities().find((a) => a.id === id);
+    if (!ability) return;
+    const status = abilityStatus(state, id);
+    if (!status.available) {
+      toast(status.reason || `${ability.label} n'est pas prête.`);
+      return;
+    }
+    targeting = targetingFor(state, ability);
+    if (!targeting.validTargets.length) {
+      toast(`${ability.label} : aucune cible valide pour l'instant.`);
+      targeting = null;
+    }
+    refresh(true);
+  },
+  cancelTargeting() {
+    targeting = null;
+    refresh(true);
+  },
+  territoryTap(id) {
+    if (targeting && targeting.kind === 'territory') {
+      applyAbility(id);
+      return;
+    }
+    if (targeting) return; // ciblage de route : un tap de région ne fait rien
+    selectTerritory(state, id);
+    refresh(true);
+  },
+  routeTap(key) {
+    if (targeting && targeting.kind === 'route') applyAbility(key);
+  },
+  bubbleTap(bubbleId, pointer) {
+    const bubble = (state.bubbles ?? []).find((b) => b.id === bubbleId);
+    const result = collectBubble(state, bubbleId);
+    if (!result?.ok) return;
+    const kind = result.kind ?? bubble?.kind;
+    const gain = Math.round(Number(result.gain) || 0);
+    if (kind === 'research') playScreen?.floatGain(`Réponse −${gain || 1}`, pointer, 'research');
+    else playScreen?.floatGain(`+${gain}`, pointer, 'gain');
+    audio.playPurchase();
+    refresh(true);
+  },
+  chooseOption(optionId) {
+    const result = chooseEventOption(state, optionId);
+    if (result?.ok === false) {
+      toast(result.error || 'Choix impossible.');
+      return;
+    }
+    if (result?.resultText) toast(result.resultText);
+    saveState(state);
+    refresh(true);
+  }
+};
+
+function applyAbility(target) {
+  if (!targeting) return;
+  const { abilityId, label, validTargets } = targeting;
+  if (!validTargets.includes(target)) {
+    toast(`${label} : cible non valide.`);
     return;
   }
-  if (showDifficultyPicker) {
-    app.innerHTML = renderDifficultyPicker(pendingDifficulty);
-    return;
+  const result = useAbility(state, abilityId, target);
+  if (result?.ok) {
+    targeting = null;
+    playScreen?.pulseAbility(abilityId);
+    audio.playPurchase();
+    toast(result.message || result.resultText || `${label} : ${target.includes('|') ? target.split('|').map(territoryName).join('–') : territoryName(target)}`);
+    saveState(state);
+  } else {
+    toast(result?.error || `${label} impossible.`);
   }
-  if (showTutorial) {
-    app.innerHTML = renderTutorial();
-    return;
+  refresh(true);
+}
+
+const originActions = {
+  select(id) {
+    selectTerritory(state, id);
+    refresh(true);
+  },
+  confirm(id) {
+    const result = confirmOrigin(state, id);
+    if (result && result.ok === false) {
+      console.warn('Origine refusée', result.error);
+      return;
+    }
+    gameStartedAt = Date.now();
+    saveState(state);
+    refresh(true);
+  },
+  back() {
+    view = 'main';
+    refresh(true);
   }
+};
+
+function ensurePlayScreen() {
+  if (!playScreen) {
+    playScreen = createPlayScreen(playActions);
+    liveRoot.appendChild(playScreen.el);
+  }
+  return playScreen;
+}
+
+function ensureOriginScreen() {
+  if (!originScreen) {
+    originScreen = createOriginScreen(originActions);
+    liveRoot.appendChild(originScreen.el);
+  }
+  return originScreen;
+}
+
+function originSubtitle() {
+  const parts = [DIFFICULTIES[state.difficulty]?.label ?? 'Normal'];
+  if (state.strain && state.strain !== 'standard') parts.push(`souche ${strainLabel(state.strain)}`);
+  if (isDailySeed(state.seed)) parts.push(`défi du jour ${state.seed}`);
+  return parts.join(' · ');
+}
+
+// --- Rendu -------------------------------------------------------------------
+function staticHtml() {
+  if (showInterstitial) return renderInterstitialAd();
+  if (showHelp) return renderHelp();
+  if (showDifficultyPicker) return renderDifficultyPicker(pendingDifficulty, { meta, pendingStrain });
+  if (showTutorial) return renderTutorial();
   if (menuView) {
-    app.innerHTML = renderGameMenu(menuView, state, {
+    return renderGameMenu(menuView, view === 'game' ? state : null, {
       pendingDifficulty,
       musicEnabled: audio.isMusicEnabled(),
       sfxEnabled: audio.isSfxEnabled(),
       isPremium: services.premium.isPremium(),
-      premiumSource: services.premium.getEntitlementSource()
+      premiumSource: services.premium.getEntitlementSource(),
+      purchaseAvailable: services.premium.isPurchaseAvailable?.() ?? false,
+      env: RUNTIME_CONFIG.env
     });
-    return;
   }
-  switch (state.status) {
-    case 'selecting-origin':
-      app.innerHTML = renderSelectingOrigin(state);
-      break;
-    case 'playing':
-      app.innerHTML = renderPlaying(state, statsView, services);
-      break;
-    case 'victory':
-    case 'defeat':
-      app.innerHTML = renderEnd(state);
-      break;
-    default:
-      app.innerHTML = renderMenu(Boolean(loadState()));
+  if (view === 'main') {
+    const seed = dailySeed();
+    return renderMenu({ hasSave: hasResumableSave(), meta, daily: { seed, record: getDailyRecord(seed) } });
+  }
+  if (isGameOver(state)) {
+    return renderEnd(state, { ...(endInfo ?? {}), daily: isDailySeed(state.seed) ? state.seed : null });
+  }
+  return null;
+}
+
+function currentTipHtml() {
+  return tipQueue.length ? renderTipPopup(tipQueue[0]) : null;
+}
+
+function refresh() {
+  const html = staticHtml();
+  const live = html === null ? (state.status === 'selecting-origin' ? 'origin' : state.status === 'playing' ? 'play' : null) : null;
+
+  if (html !== null) {
+    if (html !== lastStaticHtml) {
+      staticRoot.innerHTML = html;
+      lastStaticHtml = html;
+    }
+  } else if (lastStaticHtml !== null) {
+    staticRoot.innerHTML = '';
+    lastStaticHtml = null;
+  }
+  staticRoot.hidden = html === null;
+  liveRoot.hidden = live === null;
+
+  if (live === 'origin') {
+    const screen = ensureOriginScreen();
+    screen.el.hidden = false;
+    if (playScreen) playScreen.el.hidden = true;
+    screen.update(state, { subtitle: originSubtitle() });
+  } else if (live === 'play') {
+    const screen = ensurePlayScreen();
+    screen.el.hidden = false;
+    // L'écran d'origine ne sert plus pendant la partie : libéré (sa carte
+    // n'a pas à rester en mémoire ni à recevoir des mises à jour).
+    if (originScreen) {
+      originScreen.destroy();
+      originScreen = null;
+    }
+    screen.update(state, { targeting, lastSpeed, tipHtml: currentTipHtml() });
   }
 }
 
+const render = () => refresh();
+
+// --- Actions des écrans statiques (délégation) -------------------------------
 app.addEventListener('click', (event) => {
   const target = event.target.closest('[data-action]');
-  if (!target) return;
+  if (!target || !app.contains(target)) return;
   const action = target.dataset.action;
-
-  // Les navigateurs bloquent l'audio tant qu'aucun geste utilisateur n'a eu
-  // lieu : ce clic (quel qu'il soit) sert aussi de déverrouillage, sans
-  // effet perceptible si déjà fait.
   audio.unlock();
 
   switch (action) {
     case 'new-game':
       beginNewGameFlow();
       break;
+    case 'daily-challenge':
+      pendingSeed = dailySeed();
+      beginNewGameFlow();
+      break;
+    case 'replay': {
+      // Rejouer : même difficulté et souche ; le défi du jour se rejoue avec
+      // la même graine (c'est le principe du record du jour).
+      const seed = isDailySeed(state.seed) ? state.seed : null;
+      withInterstitial(() => {
+        pendingSeed = seed;
+        if (state.strain) pendingStrain = state.strain;
+        if (state.difficulty) setDifficultySetting(state.difficulty);
+        startNewGame();
+        render();
+      });
+      break;
+    }
+    case 'go-menu':
+      menuView = null;
+      targeting = null;
+      if (view === 'game' && !isGameOver(state)) saveState(state);
+      view = 'main';
+      break;
     case 'confirm-difficulty-and-start':
       proceedAfterDifficultyPicked();
       break;
     case 'cancel-difficulty-picker':
       showDifficultyPicker = false;
+      pendingSeed = null;
       break;
-    case 'show-tutorial':
-      showTutorial = true;
-      tutorialPendingNewGame = false;
+    case 'show-help':
+      showHelp = true;
+      break;
+    case 'close-help':
+      showHelp = false;
+      break;
+    case 'dismiss-tip': {
+      markTipSeen(target.dataset.tip);
+      tipQueue.shift();
+      break;
+    }
+    case 'reset-tips':
+      resetTips();
+      tipQueue = [];
       break;
     case 'tutorial-continue':
       markTutorialSeen();
@@ -188,27 +459,27 @@ app.addEventListener('click', (event) => {
       break;
     case 'resume-game': {
       const saved = loadState();
-      if (saved) state = saved;
+      if (saved && !isGameOver(saved)) {
+        state = saved;
+        view = 'game';
+        targeting = null;
+        endInfo = null;
+        if (state.status === 'playing' && !gameStartedAt) gameStartedAt = Date.now();
+      }
       break;
     }
-    case 'select-territory':
-      selectTerritory(state, target.dataset.id);
+    case 'set-difficulty':
+      pendingDifficulty = target.dataset.difficulty;
+      setDifficultySetting(pendingDifficulty);
       break;
-    case 'confirm-origin':
-      confirmOrigin(state, target.dataset.id);
-      gameStartedAt = Date.now();
-      break;
-    case 'buy-upgrade':
-      if (buyUpgrade(state, target.dataset.kind)) audio.playPurchase();
-      break;
-    case 'set-speed':
-      setSpeed(state, Number(target.dataset.speed));
-      break;
-    case 'set-stats-view':
-      statsView = target.dataset.view;
+    case 'set-strain':
+      if (isUnlocked(meta, target.dataset.strain)) {
+        pendingStrain = target.dataset.strain;
+        setStrainSetting(pendingStrain);
+      }
       break;
 
-    // --- in-game menu / settings ---
+    // --- menu en partie / réglages ---
     case 'open-game-menu':
       menuView = 'menu';
       break;
@@ -222,10 +493,6 @@ app.addEventListener('click', (event) => {
       break;
     case 'close-settings':
       menuView = settingsReturnTo;
-      break;
-    case 'set-difficulty':
-      pendingDifficulty = target.dataset.difficulty;
-      setDifficultySetting(pendingDifficulty);
       break;
     case 'toggle-music':
       audio.setMusicEnabled(!audio.isMusicEnabled());
@@ -244,7 +511,7 @@ app.addEventListener('click', (event) => {
       beginNewGameFlow();
       break;
 
-    // --- monétisation (voir services/ads.js, services/premium.js) ---
+    // --- monétisation (Premium = « sans pub » uniquement) ---
     case 'interstitial-continue': {
       showInterstitial = false;
       const resume = afterInterstitial;
@@ -252,9 +519,11 @@ app.addEventListener('click', (event) => {
       if (resume) resume();
       break;
     }
+    case 'premium-purchase':
     case 'premium-purchase-test':
       services.premium.purchasePremium().then(render);
       break;
+    case 'premium-restore':
     case 'premium-restore-test':
       services.premium.restorePurchases().then(render);
       break;
@@ -265,41 +534,111 @@ app.addEventListener('click', (event) => {
       return;
   }
 
-  saveState(state);
+  if (view === 'game' && state.status !== 'menu') saveState(state);
   render();
 });
 
-const TICK_MS = 1000;
-setInterval(() => {
-  if (document.hidden) return;
-  if (showTutorial || showDifficultyPicker || menuView || showInterstitial) return;
-  if (state.status !== 'playing' || state.speed <= 0) return;
-  const phaseBefore = state.responsePhase;
-  for (let i = 0; i < state.speed; i += 1) {
-    simulateTick(state);
-    if (state.status !== 'playing') break;
-  }
-  // Un seul son même si plusieurs ticks (vitesse x2/x4) ont fait progresser
-  // la phase en une seule boucle : la Réponse mondiale ne peut que
-  // progresser (jamais reculer), comparer avant/après la boucle suffit.
-  if (state.responsePhase !== phaseBefore) audio.playPhaseChange();
-  if (state.status === 'victory' || state.status === 'defeat') {
-    if (state.status === 'victory') audio.playVictory();
-    else audio.playDefeat();
-    // Monétisation : n'alimente la décision publicitaire qu'à partir d'une
-    // partie réellement terminée (jamais un abandon/redémarrage en cours de
-    // partie, jamais plusieurs fois pour la même partie - voir
-    // beginNewGameFlow, seul consommateur de ces deux variables).
-    lastCompletedGameWasFirst = !hasCompletedFirstGame();
-    if (lastCompletedGameWasFirst) markFirstGameCompleted();
-    lastCompletedGameDurationMs = gameStartedAt ? Date.now() - gameStartedAt : 0;
-    gameStartedAt = null;
-  }
-  saveState(state);
-  render();
-}, TICK_MS);
+// --- Fin de partie -----------------------------------------------------------
+function handleGameOver() {
+  const outcome = outcomeOf(state);
+  const victory = outcome?.result === 'victory';
+  if (victory) audio.playVictory();
+  else audio.playDefeat();
+  targeting = null;
+  playScreen?.closeDrawer();
 
-render();
+  const result = recordGame(meta, state);
+  if (result?.meta) {
+    meta = result.meta;
+    saveMeta(meta);
+  }
+  const stars = starsOf(state);
+  let record = { newRecord: Boolean(result?.newRecord) };
+  if (isDailySeed(state.seed)) {
+    const daily = recordDailyResult(state.seed, { won: victory, stars, day: outcome?.day ?? state.day });
+    record = { newRecord: daily.newRecord, bestDay: daily.record.bestDay, bestStars: daily.record.bestStars };
+  }
+  endInfo = { record, starsGained: result?.starsGained ?? 0 };
+
+  lastCompletedGameWasFirst = !hasCompletedFirstGame();
+  if (lastCompletedGameWasFirst) markFirstGameCompleted();
+  lastCompletedGameDurationMs = gameStartedAt ? Date.now() - gameStartedAt : 0;
+  gameStartedAt = null;
+}
+
+// --- Boucle de simulation ----------------------------------------------------
+const FRAME_MS = 250;
+let tickBudget = 0;
+let lastSaveAt = 0;
+
+function isTimeFrozen() {
+  return document.hidden || view !== 'game' || showTutorial || showDifficultyPicker || showHelp
+    || menuView || showInterstitial || tipQueue.length > 0 || Boolean(targeting)
+    || Boolean(state.pendingEvent) || state.status !== 'playing' || !(state.speed > 0);
+}
+
+function frame() {
+  // Fin de partie décidée hors d'un tick (choix d'événement, capacité…) :
+  // l'écran de fin doit quand même apparaître, une seule fois.
+  if (view === 'game' && isGameOver(state) && !endInfo) {
+    handleGameOver();
+    saveState(state);
+    render();
+    return;
+  }
+  if (isTimeFrozen()) {
+    tickBudget = 0;
+    return;
+  }
+  tickBudget += (state.speed * FRAME_MS) / 1000;
+  const phaseBefore = state.responsePhase;
+  let ran = 0;
+  while (tickBudget >= 1 && ran < 8) {
+    tickBudget -= 1;
+    ran += 1;
+    simulateTick(state);
+    if (state.status !== 'playing' || state.pendingEvent || isGameOver(state)) {
+      tickBudget = 0;
+      break;
+    }
+  }
+  if (!ran) return;
+
+  if (state.responsePhase !== phaseBefore) audio.playPhaseChange();
+  if (phaseBefore === 'ignorance' && state.responsePhase !== 'ignorance') queueTip('worldResponse');
+  if (state.influence > 0) queueTip('influence');
+  if ((state.bubbles ?? []).length) queueTip('bubbles');
+  if (getAbilities().some((a) => abilityStatus(state, a.id).available)) queueTip('abilities');
+  if (state.pendingEvent) queueTip('events');
+  if (blockerModel(state)?.kind === 'gravity-cap') queueTip('gravityWall');
+
+  if (isGameOver(state)) {
+    handleGameOver();
+    saveState(state);
+  } else {
+    const now = Date.now();
+    if (now - lastSaveAt > 1000 || state.pendingEvent) {
+      saveState(state);
+      lastSaveAt = now;
+    }
+  }
+  render();
+}
+
+engineReady.then(() => {
+  render();
+  setInterval(frame, FRAME_MS);
+});
+
+// Aide aux tests de bout en bout (Playwright) : lecture de l'état, et
+// injection d'un faux moteur V7 (registerEngine) pour vérifier l'interface
+// avant l'intégration du vrai moteur. Sans effet en jeu normal.
+if (BUILD_ENV !== 'commercial') window.__rupture = {
+  get state() { return state; },
+  get view() { return view; },
+  registerEngine,
+  refresh: () => refresh()
+};
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

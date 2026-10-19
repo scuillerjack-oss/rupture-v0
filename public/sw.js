@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rupture-v0-cache-v1';
+const CACHE_NAME = 'rupture-v7-cache-v1';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

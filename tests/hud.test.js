@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { installFakeDom } from './helpers/fakeDom.js';
 
 function installMemoryStorage() {
   const data = new Map();
@@ -11,24 +12,33 @@ function installMemoryStorage() {
 }
 
 installMemoryStorage();
+installFakeDom();
 
 const { createInitialState, beginNewGame, confirmOrigin } = await import('../src/engine/state.js');
-const { renderHud } = await import('../src/ui/hud.js');
+const { createHud, playSpeeds } = await import('../src/ui/hud.js');
 const { createServices } = await import('../src/services/index.js');
 
-test('renderHud exposes exactly the four speed controls (pause/1x/2x/4x) during beta, regardless of services', () => {
-  const state = createInitialState();
-  beginNewGame(state);
-  confirmOrigin(state, 'jotun');
-  const html = renderHud(state, 'territory', createServices());
-  for (const speed of [0, 1, 2, 4]) {
-    assert.match(html, new RegExp(`data-speed="${speed}"`));
-  }
+// V7 : HUD en une ligne, ×4 gratuit pour tous (pause = bouton séparé).
+test('the HUD offers ×1/×2/×4 to everyone, with or without services', () => {
+  assert.deepEqual(playSpeeds(createServices()), [1, 2, 4]);
+  assert.deepEqual(playSpeeds(undefined), [1, 2, 4]);
 });
 
-test('renderHud still works when no services object is passed (defensive, backward-compatible)', () => {
+test('the one-line HUD shows Progression / Réponse / Influence / jour / vitesse and updates in place', () => {
   const state = createInitialState();
   beginNewGame(state);
   confirmOrigin(state, 'jotun');
-  assert.doesNotThrow(() => renderHud(state, 'territory', undefined));
+  const hud = createHud({});
+  hud.update(state, { lastSpeed: 1 });
+  const first = hud.el.byClass('m-day');
+  state.day = 42;
+  state.influence = 17.8;
+  state.speed = 4;
+  hud.update(state, { lastSpeed: 1 });
+  assert.equal(hud.el.byClass('m-day'), first, 'same element reused');
+  assert.match(hud.el.textContent, /Progression/);
+  assert.match(hud.el.textContent, /Réponse/);
+  assert.match(hud.el.textContent, /Influence17/);
+  assert.match(hud.el.textContent, /Jour42/);
+  assert.match(hud.el.byClass('hud-speed').textContent, /×4/);
 });

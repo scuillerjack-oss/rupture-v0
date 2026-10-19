@@ -1,0 +1,100 @@
+name: APK Android de bêta
+
+# V7 (cahier des charges §3.D), sur le modèle de FRONTIÈRES: ARKEN.
+# À chaque fusion dans main : fabrique un APK Android signé avec la clé de bêta STABLE
+# (android-debug/, clé de débogage publique) et le publie à une adresse FIXE :
+#   https://github.com/scuillerjack-oss/rupture-v0/releases/download/beta/rupture-beta.apk
+# L'APK de bêta charge le jeu depuis GitHub Pages (scripts/apk-beta-config.js -> server.url) :
+# chaque fusion met à jour l'appli déjà installée au lancement suivant, sans retélécharger.
+# L'AAB Google Play (android-build.yml) garde, lui, le jeu embarqué.
+# Sur une branche mission/** : compile pour vérifier, sans rien publier.
+# Rien de payant : AdMob reste sur l'ID de test Google, aucun produit Play.
+on:
+  push:
+    branches: [main, 'mission/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # Capacitor CLI 8 exige Node >= 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      # Build bêta (étiquettes « test » visibles) : c'est le même jeu que GitHub Pages.
+      - run: npm run build
+
+      - name: Configurer l'APK de bêta (jeu chargé depuis GitHub Pages)
+        run: |
+          node scripts/apk-beta-config.js
+          npx cap sync android
+          chmod +x android/gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Version automatique depuis package.json
+        run: |
+          read CODE NAME < <(node scripts/android-version.js "${{ github.run_number }}")
+          echo "RUPTURE_VERSION_CODE=$CODE" >> "$GITHUB_ENV"
+          echo "RUPTURE_VERSION_NAME=$NAME-beta" >> "$GITHUB_ENV"
+          echo "Version Android : $NAME-beta (code $CODE)"
+
+      - name: Compiler l'APK (clé de bêta stable)
+        working-directory: android
+        env:
+          RUPTURE_BETA_SIGNING: '1'
+        run: ./gradlew assembleRelease --stacktrace --no-daemon
+
+      - name: Vérifier la signature et renommer
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          test -f "$APK"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)"
+          "$APKSIGNER" verify --print-certs "$APK" | tee signature.txt
+          # Empreinte attendue de android-debug/rupture-debug.keystore (alias rupturedebug).
+          grep -qi "b5dd561830a2317abfc7577e5235cdcd2d2959478f414ac9a7ca17918e146206" signature.txt
+          cp "$APK" rupture-beta.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rupture-beta-apk
+          path: rupture-beta.apk
+          if-no-files-found: error
+
+      - name: Publier dans la pré-version « beta » (adresse fixe)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NOTES="Bêta Android ${RUPTURE_VERSION_NAME} (commit ${GITHUB_SHA}).
+          Télécharger sur le téléphone : https://github.com/${GITHUB_REPOSITORY}/releases/download/beta/rupture-beta.apk
+          S'installe par-dessus la bêta précédente (même signature) : les parties sont conservées.
+          Le jeu se met ensuite à jour tout seul depuis https://scuillerjack-oss.github.io/rupture-v0/"
+          if gh release view beta >/dev/null 2>&1; then
+            gh release upload beta rupture-beta.apk --clobber
+            gh release edit beta --prerelease --title "Bêta Android ${RUPTURE_VERSION_NAME}" --notes "$NOTES"
+          else
+            gh release create beta rupture-beta.apk --prerelease --target "$GITHUB_SHA" \
+              --title "Bêta Android ${RUPTURE_VERSION_NAME}" --notes "$NOTES"
+          fi
+          {
+            echo "### APK de bêta publié : ${RUPTURE_VERSION_NAME}"
+            echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/beta/rupture-beta.apk"
+          } >> "$GITHUB_STEP_SUMMARY"

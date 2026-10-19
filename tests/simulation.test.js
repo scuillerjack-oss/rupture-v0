@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialState, beginNewGame, confirmOrigin } from '../src/engine/state.js';
-import { simulateTick, buyUpgrade } from '../src/engine/simulation.js';
+import { simulateTick, buyUpgrade, collectBubble, chooseEventOption } from '../src/engine/simulation.js';
+import { randomAt } from '../src/engine/rng.js';
 import { TERRITORIES, buildAdjacency } from '../src/engine/territories.js';
 import { BALANCE, upgradeCost, tensionAt, responseCapAt } from '../src/engine/balance.js';
 
@@ -12,6 +13,35 @@ function freshGame(originId = 'fenwick') {
   const state = createInitialState();
   beginNewGame(state);
   confirmOrigin(state, originId);
+  return state;
+}
+
+// V7 : une partie avec toutes les règles V7 (bulles, événements, adaptation,
+// fin anticipée), graine fixe, et un joueur qui touche ~70 % des bulles et
+// prend la première option des événements. Depuis V7, une part du revenu
+// passe par les bulles : les tests « une stratégie réactive gagne » de V3/V4
+// supposaient un joueur V6 qui reçoit tout son revenu sans toucher la carte -
+// changement de règle volontaire, ces tests vérifient désormais la même
+// intention (l'ordre d'achat réactif fait gagner) avec les règles V7.
+function playV7(originId, decide, { seed = `t-${originId}`, collectRate = 0.7, difficulty = 'normal' } = {}) {
+  const state = createInitialState();
+  beginNewGame(state, difficulty, { seed });
+  confirmOrigin(state, originId);
+  const seen = new Set();
+  let n = 0;
+  for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
+    if (state.pendingEvent) {
+      const opt = state.pendingEvent.options.find((o) => !o.disabled) ?? state.pendingEvent.options[0];
+      chooseEventOption(state, opt.id);
+    }
+    simulateTick(state);
+    for (const b of state.bubbles) {
+      if (seen.has(b.id)) continue;
+      seen.add(b.id);
+      if (randomAt(`player-${seed}`, n++) < collectRate) collectBubble(state, b.id);
+    }
+    decide(state);
+  }
   return state;
 }
 
@@ -256,13 +286,12 @@ test('Monte-Carlo: a state-aware reactive strategy wins meaningfully more often 
   let roundRobinWins = 0;
   let reactiveWins = 0;
   for (const origin of TERRITORIES.map((t) => t.id)) {
-    const roundRobinState = freshGame(origin);
-    runUntilEnd(roundRobinState, buyRoundRobin);
+    // V7 : même joueur (bulles touchées à ~70 %), seul l'ordre d'achat change.
+    const roundRobinState = playV7(origin, buyRoundRobin);
     if (roundRobinState.status === 'victory') roundRobinWins += 1;
     assert.ok(roundRobinState.day > 100, `origin ${origin} ended suspiciously fast even with active upgrades (day ${roundRobinState.day})`);
 
-    const reactiveState = freshGame(origin);
-    runUntilEnd(reactiveState, buyReactively);
+    const reactiveState = playV7(origin, buyReactively);
     if (reactiveState.status === 'victory') reactiveWins += 1;
   }
   assert.ok(
@@ -649,11 +678,7 @@ test('V3: a reactive spending order (Résilience once mobilized, offense otherwi
   let wins = 0;
   const days = [];
   for (const originId of TERRITORIES.map((t) => t.id)) {
-    const state = freshGame(originId);
-    for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
-      simulateTick(state);
-      buyReactively(state);
-    }
+    const state = playV7(originId, buyReactively);
     if (state.status === 'victory') {
       wins += 1;
       days.push(state.day);
@@ -681,11 +706,7 @@ test('V3: a reactive spending order (Résilience once mobilized, offense otherwi
 test('V4: a well-executed reactive strategy now wins in a duration order-of-magnitude closer to the ~450-550 day design target', () => {
   const winDays = [];
   for (const originId of TERRITORIES.map((t) => t.id)) {
-    const state = freshGame(originId);
-    for (let i = 0; i < MAX_TICKS && state.status === 'playing'; i++) {
-      simulateTick(state);
-      buyReactively(state);
-    }
+    const state = playV7(originId, buyReactively);
     if (state.status === 'victory') winDays.push(state.day);
   }
   assert.ok(winDays.length > 0, 'test setup error: the reactive strategy should still win from at least one origin');

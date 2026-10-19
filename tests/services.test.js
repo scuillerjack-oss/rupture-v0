@@ -39,15 +39,14 @@ test('the real runtime config is beta/dev: every speed stays available regardles
   assert.deepEqual(getAvailableSpeeds(services), [0, 1, 2, 4]);
 });
 
-test('a hypothetical future commercial build could gate specific speeds for non-Premium players', () => {
-  // N'affecte jamais le RUNTIME_CONFIG réel (qui doit rester 'beta') : ce
-  // test injecte une config alternative pour prouver que le mécanisme de
-  // restriction fonctionnerait, sans l'activer.
-  const commercialConfig = { env: 'commercial', premiumOnlySpeeds: [4] };
+// V7 (cahier des charges §3.D) : ×4 gratuit pour tous, Premium = « sans pub ».
+test('V7: ×4 is free for everyone, even in a commercial build without Premium', () => {
+  const commercialConfig = { ...RUNTIME_CONFIG, env: 'commercial' };
   const freeServices = { premium: { isPremium: () => false } };
   const premiumServices = { premium: { isPremium: () => true } };
-  assert.deepEqual(getAvailableSpeeds(freeServices, commercialConfig), [0, 1, 2]);
+  assert.deepEqual(getAvailableSpeeds(freeServices, commercialConfig), [0, 1, 2, 4]);
   assert.deepEqual(getAvailableSpeeds(premiumServices, commercialConfig), [0, 1, 2, 4]);
+  assert.deepEqual(RUNTIME_CONFIG.premiumOnlySpeeds, []);
 });
 
 // --- Monétisation V-finale : modèle réel de l'audit économique ---
