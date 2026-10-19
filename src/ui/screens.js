@@ -1,22 +1,46 @@
-import { renderMap, renderMapLegend } from './map.js';
-import { renderHud } from './hud.js';
+// V7 : les écrans statiques (menu, réglages, fin…) restent des gabarits HTML,
+// mais ne sont affichés qu'à un changement d'écran, JAMAIS à chaque tick.
+// L'écran de jeu et le choix d'origine sont construits une fois puis mis à
+// jour (voir playScreen.js / originScreen.js).
 import { BALANCE, DIFFICULTIES } from '../engine/balance.js';
 import { TERRITORIES } from '../engine/territories.js';
 import { TIPS, TIP_ORDER } from './tips.js';
+import { escapeHtml } from './dom.js';
+import { APP_VERSION, versionLabel } from '../config/version.js';
+import { RUNTIME_CONFIG } from '../config/runtime.js';
+import { endModel, starsString } from './playModel.js';
+import { getStrains, isUnlocked, metaStars, territoryName } from './engineV7.js';
 
-export function renderMenu(hasSave) {
+// options : { hasSave, meta, daily: { seed, record }, version, env }
+export function renderMenu(hasSaveOrOptions = false) {
+  const o = typeof hasSaveOrOptions === 'object' && hasSaveOrOptions !== null ? hasSaveOrOptions : { hasSave: Boolean(hasSaveOrOptions) };
+  const stars = metaStars(o.meta);
+  const daily = o.daily;
+  const record = daily?.record;
+  const dailyStatus = !record
+    ? 'Pas encore joué aujourd’hui'
+    : record.won
+      ? `Record : ${starsString(record.bestStars)} · jour ${record.bestDay}`
+      : `${record.played} essai${record.played > 1 ? 's' : ''}, pas encore gagné`;
   return `
     <div class="screen menu-screen">
       <h1>RUPTURE</h1>
       <p class="tagline">Une anomalie s'éveille. L'Humanité n'est pas encore prête.</p>
-      <p class="hint">Choisissez un territoire, propagez l'anomalie, rendez-la réellement dangereuse avant que le monde ne se referme.</p>
       <div class="menu-actions">
-        <button class="primary-btn" data-action="new-game">Nouvelle partie</button>
-        ${hasSave ? '<button class="secondary-btn" data-action="resume-game">Reprendre la partie</button>' : ''}
-        <button class="link-btn" data-action="show-help">Comment jouer ?</button>
-        <button class="link-btn" data-action="open-settings">Paramètres</button>
+        ${o.hasSave ? '<button class="primary-btn" data-action="resume-game">Reprendre la partie</button>' : ''}
+        <button class="${o.hasSave ? 'secondary-btn' : 'primary-btn'}" data-action="new-game">Nouvelle partie</button>
+        ${daily ? `
+        <button class="daily-btn" data-action="daily-challenge">
+          <span class="daily-title">Défi du jour <small>${escapeHtml(daily.seed)}</small></span>
+          <span class="daily-sub">Même monde pour tous aujourd’hui · ${escapeHtml(dailyStatus)}</span>
+        </button>` : ''}
+        <div class="menu-stars" data-testid="menu-stars">${stars} ★ gagnée${stars > 1 ? 's' : ''}</div>
+        <div class="menu-links">
+          <button class="link-btn" data-action="show-help">Comment jouer ?</button>
+          <button class="link-btn" data-action="open-settings">Paramètres</button>
+        </div>
       </div>
-      <p class="version-tag">V5 — build bêta finale</p>
+      <p class="version-tag" data-testid="version">${escapeHtml(versionLabel(o.version ?? APP_VERSION, o.env ?? RUNTIME_CONFIG.env))}</p>
     </div>`;
 }
 
@@ -24,19 +48,37 @@ export function renderMenu(hasSave) {
 // redémarrage) : en V2, la difficulté existait mais n'était accessible que
 // via Paramètres, jamais proposée pendant le lancement lui-même - la bêta ne
 // l'a jamais trouvée (voir RUPTURE_V3_Rapport_Technique_Officiel.pdf).
-export function renderDifficultyPicker(pendingDifficulty) {
+// V7 : on y choisit aussi la souche (débloquée par les étoiles).
+export function renderDifficultyPicker(pendingDifficulty, options = {}) {
+  const strains = getStrains();
+  const meta = options.meta;
+  const pendingStrain = options.pendingStrain ?? 'standard';
+  const stars = metaStars(meta);
   return `
-    <div class="screen menu-screen">
-      <h2>Choisissez la difficulté</h2>
-      <p class="hint">Détermine la vitesse à laquelle l'Humanité construit sa Réponse mondiale. Elle reste fixée pour toute la partie, mais vous pouvez consulter la difficulté en cours depuis la vue Monde.</p>
+    <div class="screen menu-screen picker-screen">
+      <h2>Nouvelle partie</h2>
+      <h3 class="settings-subhead">Difficulté</h3>
       <div class="difficulty-options">
         ${Object.entries(DIFFICULTIES).map(([id, cfg]) => `
           <button class="difficulty-btn${pendingDifficulty === id ? ' active' : ''}" data-action="set-difficulty" data-difficulty="${id}">
             ${cfg.label}
           </button>`).join('')}
       </div>
+      <p class="hint">Vitesse à laquelle l'Humanité construit sa Réponse mondiale. Fixée pour toute la partie.</p>
+      ${strains.length > 1 ? `
+      <h3 class="settings-subhead">Souche <small class="stars-owned">${stars} ★</small></h3>
+      <div class="strain-options" data-testid="strains">
+        ${strains.map((s) => {
+          const unlocked = isUnlocked(meta, s.id);
+          return `
+          <button class="strain-btn${pendingStrain === s.id ? ' active' : ''}${unlocked ? '' : ' locked'}" data-action="set-strain" data-strain="${escapeHtml(s.id)}" ${unlocked ? '' : 'disabled'}>
+            <strong>${unlocked ? '' : '🔒 '}${escapeHtml(s.label)}</strong>
+            <span>${unlocked ? escapeHtml(s.description ?? '') : `Débloquée à ${s.unlockStars} ★`}</span>
+          </button>`;
+        }).join('')}
+      </div>` : ''}
       <div class="menu-actions">
-        <button class="primary-btn" data-action="confirm-difficulty-and-start">Continuer</button>
+        <button class="primary-btn" data-action="confirm-difficulty-and-start">Choisir l’origine</button>
         <button class="link-btn" data-action="cancel-difficulty-picker">Retour</button>
       </div>
     </div>`;
@@ -117,45 +159,6 @@ export function renderHelp() {
     </div>`;
 }
 
-export function renderSelectingOrigin(state) {
-  return `
-    <div class="screen origin-screen">
-      <div class="origin-header">
-        <h2>Choisissez votre point de départ</h2>
-        <p>Touchez un territoire sur la carte pour y implanter l'anomalie.</p>
-      </div>
-      <div class="map-container">${renderMap(state, true)}</div>
-      ${renderMapLegend()}
-      ${state.selectedId ? `<button class="primary-btn confirm-origin" data-action="confirm-origin" data-id="${state.selectedId}">Commencer à ${state.selectedId}</button>` : ''}
-    </div>`;
-}
-
-export function renderPlaying(state, statsView, services) {
-  return `
-    <div class="screen play-screen">
-      <div class="map-container">
-        <button class="menu-fab" data-action="open-game-menu" aria-label="Menu">☰</button>
-        ${renderMap(state, true)}${renderMapLegend()}
-      </div>
-      ${renderHud(state, statsView, services)}
-    </div>`;
-}
-
-const END_EXPLANATIONS = {
-  dominance: {
-    victory: "Votre progression a atteint 100% avant que l'Humanité n'achève sa maîtrise.",
-    defeat: ''
-  },
-  containment: {
-    victory: '',
-    defeat: "La Réponse mondiale a atteint la maîtrise complète avant votre progression. Défaite."
-  },
-  timeout: {
-    victory: '',
-    defeat: "Ni l'anomalie ni le monde n'ont pris le dessus à temps : par défaut, la crise est considérée comme contenue."
-  }
-};
-
 const UPGRADE_RECAP_LABELS = {
   propagation: 'Propagation',
   dangerosity: 'Dangerosité',
@@ -185,8 +188,9 @@ function computeSpreadStats(state) {
 // suivis par le moteur, jamais inventée. Peut produire des combinaisons
 // différentes selon la partie, mais toujours honnête vis-à-vis des données.
 function computeStyleAnalysis(state) {
-  const { upgrades, reach, maxDominance, phaseLog, endReason } = state;
-  const isVictory = state.status === 'victory';
+  const { upgrades, reach = 0, maxDominance = 0, endReason } = state;
+  const phaseLog = state.phaseLog ?? [];
+  const isVictory = state.outcome ? state.outcome.result === 'victory' : state.status === 'victory';
   const total = upgrades.propagation + upgrades.dangerosity + upgrades.resilience + upgrades.discretion || 1;
   const dominant = Object.entries(upgrades).sort((a, b) => b[1] - a[1])[0];
   const isBalanced = Object.values(upgrades).every((v) => Math.abs(v / total - 0.25) < 0.12);
@@ -220,7 +224,7 @@ function computeStyleAnalysis(state) {
     parts.push('sans discrétion pour ralentir la réaction du monde');
   }
 
-  if (!isVictory && endReason === 'containment') {
+  if (!isVictory && (endReason === 'containment' || state.outcome?.reason === 'control')) {
     parts.push(
       upgrades.resilience <= 3
         ? 'une résilience trop faible pour résister à la Réponse mondiale mobilisée'
@@ -233,66 +237,108 @@ function computeStyleAnalysis(state) {
   return `${parts.join(', ')}.`;
 }
 
-export function renderEnd(state) {
-  const isVictory = state.status === 'victory';
-  const explanation = END_EXPLANATIONS[state.endReason]?.[isVictory ? 'victory' : 'defeat']
-    || (isVictory ? "L'anomalie a durablement déstabilisé le monde." : 'Le monde a fini par contenir la crise.');
+// Chronologie de la partie : phases de la Réponse + jalons du journal
+// (origine, événements choisis…) quand le moteur les fournit.
+function timelineRows(state) {
+  const rows = [];
+  if (state.originId) rows.push({ day: 0, label: `Éveil à ${territoryName(state.originId)}` });
+  for (const p of state.phaseLog ?? []) rows.push({ day: p.day, label: `Réponse : ${p.label}` });
+  for (const e of state.eventLog ?? state.eventHistory ?? []) {
+    if (e && Number.isFinite(e.day) && (e.title || e.label)) rows.push({ day: e.day, label: e.title ?? e.label });
+  }
+  const outcome = state.outcome;
+  const endDay = outcome?.day ?? state.day;
+  rows.push({ day: endDay, label: outcome?.result === 'victory' || state.status === 'victory' ? 'Rupture' : 'Fin de partie' });
+  return rows.sort((a, b) => a.day - b.day).slice(0, 10);
+}
+
+// options : { record: { newRecord, bestDay, bestStars }, starsGained, daily }
+export function renderEnd(state, options = {}) {
+  const m = endModel(state) ?? { victory: false, title: 'DÉFAITE', text: '', day: state.day, stars: 0, reason: 'control' };
   const spread = computeSpreadStats(state);
   const style = computeStyleAnalysis(state);
+  const rec = options.record ?? {};
+  const recordLine = rec.newRecord
+    ? '<div class="end-record new" data-testid="record">Nouveau record !</div>'
+    : rec.bestDay
+      ? `<div class="end-record" data-testid="record">Record : jour ${rec.bestDay}${rec.bestStars ? ` · ${starsString(rec.bestStars)}` : ''}</div>`
+      : '';
   return `
-    <div class="screen end-screen ${isVictory ? 'end-victory' : 'end-defeat'}">
-      <h1>${isVictory ? 'VICTOIRE' : 'DÉFAITE'}</h1>
-      <p>${explanation}</p>
+    <div class="screen end-screen ${m.victory ? 'end-victory' : 'end-defeat'}" data-screen="end">
+      <h1>${m.title}</h1>
+      ${m.victory ? `<div class="end-stars" aria-label="${m.stars} étoile${m.stars > 1 ? 's' : ''} sur 3" data-testid="stars">${starsString(m.stars)}</div>` : ''}
+      <p class="end-text" data-testid="end-text">${escapeHtml(m.text)}</p>
+      ${options.daily ? `<p class="end-daily">Défi du jour ${escapeHtml(options.daily)}</p>` : ''}
+      ${recordLine}
+      ${options.starsGained ? `<div class="end-gain">+${options.starsGained} ★ pour débloquer les souches</div>` : ''}
       <div class="end-recap">
         <div class="end-stats">
-          <div>Jours écoulés : ${state.day}</div>
-          <div>Progression finale de l'Anomalie : ${state.dominance.toFixed(0)}% <span class="end-stat-hint">(max atteint : ${state.maxDominance.toFixed(0)}%, victoire à ${BALANCE.victoryDominanceThreshold}%)</span></div>
-          <div>Conscience mondiale : ${state.globalAwareness.toFixed(0)}%</div>
-          <div>Réponse mondiale : ${state.globalContainment.toFixed(0)}% <span class="end-stat-hint">(défaite à ${BALANCE.defeatContainmentThreshold}%)</span></div>
-          <div>Portée (régions touchées) : ${spread.touched}/${spread.total} <span class="end-stat-hint">(sévères : ${spread.severe}, critiques : ${spread.critical})</span></div>
+          <div>Jour ${m.day} · Progression ${Math.floor(state.dominance ?? 0)}% · Réponse ${Math.floor(state.globalContainment ?? 0)}%</div>
+          <div class="end-stat-hint">Victoire à ${BALANCE.victoryDominanceThreshold}% de Progression · défaite à ${BALANCE.defeatContainmentThreshold}% de Réponse</div>
+          <div>Régions touchées : ${spread.touched}/${spread.total} <span class="end-stat-hint">(sévères : ${spread.severe}, critiques : ${spread.critical})</span></div>
         </div>
         <div class="end-upgrades">
-          ${Object.entries(UPGRADE_RECAP_LABELS).map(([kind, label]) => `<div class="end-upgrade-chip">${label} <strong>Niv. ${state.upgrades[kind]}</strong></div>`).join('')}
+          ${Object.entries(UPGRADE_RECAP_LABELS).map(([kind, label]) => `<div class="end-upgrade-chip">${label} <strong>Niv. ${state.upgrades?.[kind] ?? 0}</strong></div>`).join('')}
         </div>
-        ${state.phaseLog.length ? `
-          <div class="end-timeline">
-            ${state.phaseLog.map((p) => `<div class="end-timeline-row"><span>${p.label}</span><span>Jour ${p.day}</span></div>`).join('')}
-          </div>` : ''}
+        <div class="end-timeline" data-testid="timeline">
+          ${timelineRows(state).map((r) => `<div class="end-timeline-row"><span>${escapeHtml(r.label)}</span><span>Jour ${r.day}</span></div>`).join('')}
+        </div>
         <p class="end-style">${style}</p>
       </div>
-      <button class="primary-btn" data-action="new-game">Recommencer</button>
+      <div class="end-actions">
+        <button class="primary-btn" data-action="replay">Rejouer</button>
+        <button class="secondary-btn" data-action="go-menu">Menu</button>
+      </div>
     </div>`;
 }
 
-// Premium : cf. src/services/premium.js. TOUJOURS étiqueté "simulation" /
-// "test" dans l'interface tant qu'aucun module Google Play Billing / App
-// Store réel n'est connecté - conformément à la demande explicite de ne
-// jamais créer un faux sentiment de finalisation. `options.premiumSource`
-// vaut 'simulated-test' (seule valeur possible aujourd'hui) ou null.
+// Premium V7 = « sans pub » UNIQUEMENT (×4 est gratuit pour tous : décision
+// du studio, achats de confort seulement). Deux versions :
+//  - build commercial : aucun libellé « simulation » ni achat gratuit ; tant
+//    qu'aucun produit Play n'existe, l'achat est annoncé comme « bientôt »
+//    (rien de payant n'est activé en V7).
+//  - bêta/dev : boutons de test explicitement étiquetés.
 function renderPremiumSection(options) {
   const isPremium = Boolean(options.isPremium);
+  const env = options.env ?? RUNTIME_CONFIG.env;
+  if (env === 'commercial') {
+    return `
+    <h3 class="settings-subhead">Sans pub</h3>
+    ${isPremium
+      ? '<p class="hint">Merci ! Aucune publicité entre les parties.</p>'
+      : `<p class="hint">Achat unique pour retirer la publicité entre les parties. Aucun avantage de jeu : tout le reste est gratuit, vitesse ×4 comprise.</p>
+      ${options.purchaseAvailable
+        ? '<button class="primary-btn" data-action="premium-purchase">Retirer la pub</button><button class="link-btn" data-action="premium-restore">Restaurer un achat</button>'
+        : '<p class="hint soon">Bientôt disponible.</p>'}`}`;
+  }
   return `
-    <h3 class="settings-subhead">Premium <span class="test-badge">${isPremium ? 'simulation' : 'aperçu'}</span></h3>
+    <h3 class="settings-subhead">Sans pub <span class="test-badge">test</span></h3>
     ${isPremium ? `
-      <p class="hint">Premium actif : vitesse ×4 débloquée, aucune publicité entre les parties.
-        Statut réel : <strong>${options.premiumSource === 'store-verified' ? 'achat vérifié par un store' : 'simulation de test (aucun paiement réel)'}</strong>.</p>
-      <button class="secondary-btn" data-action="premium-reset-test">Désactiver Premium (test uniquement)</button>
+      <p class="hint">« Sans pub » actif (test, aucun paiement réel) : aucune publicité entre les parties.</p>
+      <button class="secondary-btn" data-action="premium-reset-test">Désactiver (test)</button>
     ` : `
-      <p class="hint">2,99€, achat unique : retire la publicité et débloque la vitesse ×4. Aucun avantage stratégique, aucune méta-monnaie.</p>
-      <button class="primary-btn" data-action="premium-purchase-test">Simuler l'achat (test — aucun paiement réel)</button>
-      <button class="link-btn" data-action="premium-restore-test">Restaurer un achat (simulation)</button>
+      <p class="hint">Achat unique prévu : retire la publicité. Aucun avantage de jeu (×4 gratuit pour tous).</p>
+      <button class="secondary-btn" data-action="premium-purchase-test">Activer « sans pub » (test — aucun paiement)</button>
     `}`;
 }
 
 // Publicité interstitielle : cf. src/services/ads.js. N'apparaît jamais
-// pendant une partie, uniquement entre deux parties, et jamais un vrai
-// contenu publicitaire (aucun SDK connecté) - clairement étiqueté.
-export function renderInterstitialAd() {
+// pendant une partie, uniquement entre deux parties. En bêta, un écran
+// étiqueté « test » en tient la place ; en build commercial, jamais de
+// libellé « simulation » (le vrai SDK s'affiche lui-même par-dessus).
+export function renderInterstitialAd(env = RUNTIME_CONFIG.env) {
+  if (env === 'commercial') {
+    return `
+    <div class="screen menu-overlay-screen interstitial-screen">
+      <h2>Publicité</h2>
+      <button class="primary-btn" data-action="interstitial-continue">Continuer</button>
+    </div>`;
+  }
   return `
     <div class="screen menu-overlay-screen interstitial-screen">
-      <span class="test-badge">simulation</span>
-      <h2>Publicité (simulation)</h2>
-      <p class="hint">Aucun réseau publicitaire réel n'est encore connecté à RUPTURE. Cet écran occupe la même place, au même moment, qu'une vraie publicité interstitielle une fois AdMob branché.</p>
+      <span class="test-badge">test</span>
+      <h2>Emplacement publicitaire</h2>
+      <p class="hint">Bêta : aucune vraie publicité. Cet écran occupe la place et le moment d'une publicité entre deux parties.</p>
       <button class="primary-btn" data-action="interstitial-continue">Continuer</button>
     </div>`;
 }
@@ -310,7 +356,7 @@ export function renderGameMenu(view, state, options) {
               ${cfg.label}
             </button>`).join('')}
         </div>
-        ${state ? `<p class="hint">Partie en cours : difficulté ${DIFFICULTIES[state.difficulty]?.label ?? 'Normal'} (fixée au démarrage, aussi consultable depuis la vue Monde).</p>` : ''}
+        ${state && state.status === 'playing' ? `<p class="hint">Partie en cours : difficulté ${DIFFICULTIES[state.difficulty]?.label ?? 'Normal'} (fixée au démarrage).</p>` : ''}
         ${renderPremiumSection(options)}
         <h3 class="settings-subhead">Audio</h3>
         <div class="settings-row">
@@ -348,6 +394,7 @@ export function renderGameMenu(view, state, options) {
         <button class="secondary-btn" data-action="request-restart">Nouvelle partie</button>
         <button class="secondary-btn" data-action="show-help">Comment jouer ?</button>
         <button class="secondary-btn" data-action="open-settings">Paramètres</button>
+        <button class="link-btn" data-action="go-menu">Menu principal (partie sauvegardée)</button>
       </div>
     </div>`;
 }
