@@ -388,7 +388,8 @@ test('V7 adaptation : à chaque nouvelle phase, la branche la plus développée 
   assert.ok(state.adaptation, 'une adaptation doit avoir lieu au changement de phase');
   assert.equal(state.adaptation.branch, 'dangerosity');
   assert.equal(state.adaptation.factor, 0.75);
-  assert.equal(state.adaptation.untilDay - state.day, BALANCE.adaptation.durationDays);
+  // Déclenchée pendant le tick, avant le passage au jour suivant.
+  assert.equal(state.adaptation.untilDay - (state.day - 1), BALANCE.adaptation.durationDays);
   assert.equal(effectiveLevel(state, 'dangerosity'), 4.5);
   assert.equal(effectiveLevel(state, 'propagation'), 2);
   assert.ok(progressBlockers(state).some((b) => b.kind === 'adaptation'));
@@ -410,7 +411,8 @@ test('V7 gravité : la montée ralentit progressivement sous le plafond au lieu 
     const state = v7Game('fenwick', 'soft', 'normal', { features: { softCap, events: false, bubbles: false, adaptation: false } });
     state.day = 600;
     state.upgrades.dangerosity = 4;
-    state.territories.fenwick.crisis = 60;
+    // Plafond de Dangerosité 4 = 72,5 : on part à 4 points sous ce plafond.
+    state.territories.fenwick.crisis = 68.5;
     state.crisisCapHighWater = 0;
     simulateTick(state);
     return state.territories.fenwick.crisis;
@@ -507,12 +509,12 @@ test('V7 fin : une partie qui progresse encore n’est jamais déclarée figée'
   const state = v7Game('jotun', 'progresse');
   state.stall.sinceDay = 0;
   state.day = 400;
-  state.dominance = 10;
-  state.stall.bestDominance = 5;
+  // La Progression recalculée par le tick dépasse le meilleur score retenu.
+  state.stall.bestDominance = 0;
   state.globalContainment = 50;
   simulateTick(state);
   assert.equal(state.status, 'playing');
-  assert.equal(state.stall.sinceDay, state.day - 1);
+  assert.equal(state.stall.sinceDay, state.day);
 });
 
 // --- Souches ---

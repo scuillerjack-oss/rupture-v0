@@ -415,27 +415,37 @@ const SENSITIVITY_CONSTANTS = [
   'rules.globalContainmentGainFactor'
 ];
 
+// Mesurée pour la meilleure stratégie en Normal (critère du cahier : elle
+// doit bouger de <= 15 points) et, à titre d'information, pour coherent-70.
 const sensitivity = [];
 if (!QUICK) {
-  const reference = find('coherent-70', 'normal').tauxVictoire;
-  for (const path of SENSITIVITY_CONSTANTS) {
-    const row = { constante: path, reference };
-    for (const factor of [0.9, 1.1]) {
-      let rate;
-      if (path === 'rules.globalContainmentGainFactor') {
-        const rows = runBattery('coherent-70', 'normal', { rules: (r) => ({ globalContainmentGainFactor: r.globalContainmentGainFactor * factor }) });
-        rate = summarize(rows).tauxVictoire;
-      } else {
-        rate = withConstant(path, factor, () => summarize(runBattery('coherent-70', 'normal')).tauxVictoire);
+  const bots = [...new Set([best.bot, 'coherent-70'])];
+  for (const bot of bots) {
+    const reference = find(bot, 'normal').tauxVictoire;
+    for (const path of SENSITIVITY_CONSTANTS) {
+      const row = { robot: bot, constante: path, reference };
+      for (const factor of [0.9, 1.1]) {
+        let rate;
+        if (path === 'rules.globalContainmentGainFactor') {
+          const rows = runBattery(bot, 'normal', { rules: (r) => ({ globalContainmentGainFactor: r.globalContainmentGainFactor * factor }) });
+          rate = summarize(rows).tauxVictoire;
+        } else {
+          rate = withConstant(path, factor, () => summarize(runBattery(bot, 'normal')).tauxVictoire);
+        }
+        row[factor === 0.9 ? 'moins10' : 'plus10'] = rate;
       }
-      row[factor === 0.9 ? 'moins10' : 'plus10'] = rate;
+      row.ecartMax = round(Math.max(Math.abs(row.moins10 - reference), Math.abs(row.plus10 - reference)), 1);
+      row.ok = row.ecartMax <= 15;
+      sensitivity.push(row);
     }
-    row.ecartMax = round(Math.max(Math.abs(row.moins10 - reference), Math.abs(row.plus10 - reference)), 1);
-    row.ok = row.ecartMax <= 15;
-    sensitivity.push(row);
   }
-  console.log('=== SENSIBILITÉ ±10 % (coherent-70, Normal) ===');
+  console.log('=== SENSIBILITÉ ±10 % (Normal) ===');
   console.table(sensitivity);
+  targets.sensibiliteMeilleureStrategie = {
+    bot: best.bot,
+    ecartMax: Math.max(...sensitivity.filter((r) => r.robot === best.bot).map((r) => r.ecartMax)),
+    ok: sensitivity.filter((r) => r.robot === best.bot).every((r) => r.ok)
+  };
 }
 
 // --- 3. Rythme : tension liée à l'escalade ---

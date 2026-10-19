@@ -98,6 +98,11 @@
     "meilleurRobotNormal": {
       "bot": "furtive-puis-frappe",
       "tauxVictoire": 93.1
+    },
+    "sensibiliteMeilleureStrategie": {
+      "bot": "furtive-puis-frappe",
+      "ecartMax": 8.4,
+      "ok": true
     }
   },
   "summary": [
@@ -856,6 +861,88 @@
   ],
   "sensibilite": [
     {
+      "robot": "furtive-puis-frappe",
+      "constante": "influenceGainFactor",
+      "reference": 93.1,
+      "moins10": 84.7,
+      "plus10": 93.1,
+      "ecartMax": 8.4,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "earlyInfluenceTrickle",
+      "reference": 93.1,
+      "moins10": 91.7,
+      "plus10": 93.1,
+      "ecartMax": 1.4,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "baseGrowthPerTick",
+      "reference": 93.1,
+      "moins10": 91.7,
+      "plus10": 87.5,
+      "ecartMax": 5.6,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "baseSpreadPerTick",
+      "reference": 93.1,
+      "moins10": 91.7,
+      "plus10": 90.3,
+      "ecartMax": 2.8,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "awarenessCatchupRate",
+      "reference": 93.1,
+      "moins10": 91.7,
+      "plus10": 93.1,
+      "ecartMax": 1.4,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "dangerosityAwarenessBleed",
+      "reference": 93.1,
+      "moins10": 90.3,
+      "plus10": 87.5,
+      "ecartMax": 5.6,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "humanity.maxSuppressionPerTick",
+      "reference": 93.1,
+      "moins10": 93.1,
+      "plus10": 93.1,
+      "ecartMax": 0,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "bubbles.incomeShare",
+      "reference": 93.1,
+      "moins10": 97.2,
+      "plus10": 90.3,
+      "ecartMax": 4.1,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "rules.globalContainmentGainFactor",
+      "reference": 93.1,
+      "moins10": 88.9,
+      "plus10": 94.4,
+      "ecartMax": 4.2,
+      "ok": true
+    },
+    {
+      "robot": "coherent-70",
       "constante": "influenceGainFactor",
       "reference": 76.4,
       "moins10": 70.8,
@@ -864,6 +951,7 @@
       "ok": true
     },
     {
+      "robot": "coherent-70",
       "constante": "earlyInfluenceTrickle",
       "reference": 76.4,
       "moins10": 52.8,
@@ -872,6 +960,7 @@
       "ok": false
     },
     {
+      "robot": "coherent-70",
       "constante": "baseGrowthPerTick",
       "reference": 76.4,
       "moins10": 72.2,
@@ -880,6 +969,7 @@
       "ok": true
     },
     {
+      "robot": "coherent-70",
       "constante": "baseSpreadPerTick",
       "reference": 76.4,
       "moins10": 87.5,
@@ -888,6 +978,7 @@
       "ok": true
     },
     {
+      "robot": "coherent-70",
       "constante": "awarenessCatchupRate",
       "reference": 76.4,
       "moins10": 81.9,
@@ -896,6 +987,7 @@
       "ok": true
     },
     {
+      "robot": "coherent-70",
       "constante": "dangerosityAwarenessBleed",
       "reference": 76.4,
       "moins10": 81.9,
@@ -904,6 +996,7 @@
       "ok": true
     },
     {
+      "robot": "coherent-70",
       "constante": "humanity.maxSuppressionPerTick",
       "reference": 76.4,
       "moins10": 77.8,
@@ -912,6 +1005,7 @@
       "ok": true
     },
     {
+      "robot": "coherent-70",
       "constante": "bubbles.incomeShare",
       "reference": 76.4,
       "moins10": 86.1,
@@ -920,6 +1014,7 @@
       "ok": true
     },
     {
+      "robot": "coherent-70",
       "constante": "rules.globalContainmentGainFactor",
       "reference": 76.4,
       "moins10": 87.5,
@@ -957,5 +1052,5 @@
       "premierJourReponse5": 320
     }
   ],
-  "dureeCalculSecondes": 55
+  "dureeCalculSecondes": 89
 }
