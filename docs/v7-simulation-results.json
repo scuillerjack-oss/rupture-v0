@@ -1,0 +1,1056 @@
+{
+  "version": 7,
+  "note": "Simulations à graine (src/engine/rng.js) : rejouer ce script redonne exactement ces chiffres. Durée réelle : 1 jour de jeu = 1 tick = 1 s en ×1 (src/main.js, TICK_MS = 1000).",
+  "seedsPerOrigin": 4,
+  "runsPerCell": 72,
+  "tickSecondsAtX1": 1,
+  "constantes": {
+    "bubbles": {
+      "incomeShare": 0.35,
+      "referenceCollectRate": 0.7,
+      "lifetimeDays": 8,
+      "influenceIntervalMin": 3,
+      "influenceIntervalMax": 6,
+      "maxInfluenceBubbles": 3,
+      "researchIntervalMin": 12,
+      "researchIntervalMax": 18,
+      "researchAwarenessThreshold": 50,
+      "researchValue": 1,
+      "researchMaxResponse": 50,
+      "researchDebtDecay": 0.35,
+      "maxResearchBubbles": 1
+    },
+    "abilities": {
+      "surge": {
+        "cost": 25,
+        "cooldownDays": 35,
+        "crisisGain": 15
+      },
+      "jam": {
+        "cost": 30,
+        "cooldownDays": 45,
+        "durationDays": 25
+      },
+      "breach": {
+        "cost": 30,
+        "cooldownDays": 40,
+        "shieldDays": 40
+      }
+    },
+    "events": {
+      "firstMin": 30,
+      "firstMax": 40,
+      "intervalMin": 30,
+      "intervalMax": 45
+    },
+    "adaptation": {
+      "factor": 0.75,
+      "durationDays": 60
+    },
+    "stall": {
+      "days": 150,
+      "epsilon": 0.25
+    },
+    "tension": {
+      "min": 0.005,
+      "max": 1.2,
+      "rampDays": 1500,
+      "power": 1.3,
+      "escalationWeight": 0
+    },
+    "severity": {
+      "activeCeiling": 45,
+      "fullSeverityLevel": 8,
+      "softZone": 10,
+      "softFloor": 0.35
+    },
+    "difficultes": {
+      "easy": 0.1,
+      "normal": 0.135,
+      "hard": 0.155
+    }
+  },
+  "cibles": {
+    "naifSansBullesNormalMax40": {
+      "valeur": 0,
+      "ok": true
+    },
+    "coherent70Normal60a85": {
+      "valeur": 76.4,
+      "ok": true
+    },
+    "facileNettementPlusFacile": {
+      "naif": [
+        22.2,
+        0
+      ],
+      "coherent": [
+        100,
+        76.4
+      ],
+      "ok": true
+    },
+    "dureeVictoireCoherentNormalMinutesX1": {
+      "valeur": 7.7,
+      "cible": "6 à 8",
+      "ok": true
+    },
+    "meilleurRobotNormal": {
+      "bot": "furtive-puis-frappe",
+      "tauxVictoire": 93.1
+    },
+    "sensibiliteMeilleureStrategie": {
+      "bot": "furtive-puis-frappe",
+      "ecartMax": 8.4,
+      "ok": true
+    }
+  },
+  "summary": [
+    {
+      "bot": "passif",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 0,
+      "tauxVictoire": 0,
+      "raisons": {
+        "stalled": 72
+      },
+      "joursMoyens": 624,
+      "joursMoyensVictoire": null,
+      "minutesX1Moyennes": 10.4,
+      "minutesX1MoyennesVictoire": null,
+      "premierJourReponse5": 362,
+      "evenementsParPartie": 16.2,
+      "bullesTouchees": 0,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": null,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "achete-disponible",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 16,
+      "tauxVictoire": 22.2,
+      "raisons": {
+        "control": 56,
+        "tie": 3,
+        "rupture": 13
+      },
+      "joursMoyens": 476,
+      "joursMoyensVictoire": 474,
+      "minutesX1Moyennes": 7.9,
+      "minutesX1MoyennesVictoire": 7.9,
+      "premierJourReponse5": 330,
+      "evenementsParPartie": 12.3,
+      "bullesTouchees": 0,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": 1.38,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "achats-aleatoires",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 6,
+      "tauxVictoire": 8.3,
+      "raisons": {
+        "control": 63,
+        "rupture": 6,
+        "stalled": 3
+      },
+      "joursMoyens": 535,
+      "joursMoyensVictoire": 518,
+      "minutesX1Moyennes": 8.9,
+      "minutesX1MoyennesVictoire": 8.6,
+      "premierJourReponse5": 354,
+      "evenementsParPartie": 13.9,
+      "bullesTouchees": 30.5,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": 1.17,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "reactif-sans-bulles",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 48,
+      "tauxVictoire": 66.7,
+      "raisons": {
+        "rupture": 44,
+        "tie": 4,
+        "control": 24
+      },
+      "joursMoyens": 474,
+      "joursMoyensVictoire": 470,
+      "minutesX1Moyennes": 7.9,
+      "minutesX1MoyennesVictoire": 7.8,
+      "premierJourReponse5": 334,
+      "evenementsParPartie": 12.2,
+      "bullesTouchees": 0,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": 1.56,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-70",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 72,
+      "tauxVictoire": 100,
+      "raisons": {
+        "rupture": 72
+      },
+      "joursMoyens": 447,
+      "joursMoyensVictoire": 447,
+      "minutesX1Moyennes": 7.5,
+      "minutesX1MoyennesVictoire": 7.5,
+      "premierJourReponse5": 334,
+      "evenementsParPartie": 11.5,
+      "bullesTouchees": 69.3,
+      "capacitesParPartie": 0.2,
+      "etoilesMoyennesVictoire": 1.99,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-70-sans-decisions",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 72,
+      "tauxVictoire": 100,
+      "raisons": {
+        "rupture": 72
+      },
+      "joursMoyens": 453,
+      "joursMoyensVictoire": 453,
+      "minutesX1Moyennes": 7.6,
+      "minutesX1MoyennesVictoire": 7.6,
+      "premierJourReponse5": 337,
+      "evenementsParPartie": 11.5,
+      "bullesTouchees": 69.9,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": 1.85,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-40",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 72,
+      "tauxVictoire": 100,
+      "raisons": {
+        "rupture": 72
+      },
+      "joursMoyens": 452,
+      "joursMoyensVictoire": 452,
+      "minutesX1Moyennes": 7.5,
+      "minutesX1MoyennesVictoire": 7.5,
+      "premierJourReponse5": 335,
+      "evenementsParPartie": 11.7,
+      "bullesTouchees": 40.4,
+      "capacitesParPartie": 0.2,
+      "etoilesMoyennesVictoire": 1.9,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-95",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 72,
+      "tauxVictoire": 100,
+      "raisons": {
+        "rupture": 72
+      },
+      "joursMoyens": 442,
+      "joursMoyensVictoire": 442,
+      "minutesX1Moyennes": 7.4,
+      "minutesX1MoyennesVictoire": 7.4,
+      "premierJourReponse5": 334,
+      "evenementsParPartie": 11.4,
+      "bullesTouchees": 94.6,
+      "capacitesParPartie": 0.3,
+      "etoilesMoyennesVictoire": 2,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-diversifie",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 72,
+      "tauxVictoire": 100,
+      "raisons": {
+        "rupture": 72
+      },
+      "joursMoyens": 444,
+      "joursMoyensVictoire": 444,
+      "minutesX1Moyennes": 7.4,
+      "minutesX1MoyennesVictoire": 7.4,
+      "premierJourReponse5": 335,
+      "evenementsParPartie": 11.5,
+      "bullesTouchees": 69.8,
+      "capacitesParPartie": 0.2,
+      "etoilesMoyennesVictoire": 1.96,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "furtive-puis-frappe",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 72,
+      "tauxVictoire": 100,
+      "raisons": {
+        "rupture": 72
+      },
+      "joursMoyens": 441,
+      "joursMoyensVictoire": 441,
+      "minutesX1Moyennes": 7.4,
+      "minutesX1MoyennesVictoire": 7.4,
+      "premierJourReponse5": 339,
+      "evenementsParPartie": 11.3,
+      "bullesTouchees": 70.5,
+      "capacitesParPartie": 0.4,
+      "etoilesMoyennesVictoire": 1.97,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "dangerosite-precoce",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 70,
+      "tauxVictoire": 97.2,
+      "raisons": {
+        "rupture": 70,
+        "control": 2
+      },
+      "joursMoyens": 453,
+      "joursMoyensVictoire": 452,
+      "minutesX1Moyennes": 7.5,
+      "minutesX1MoyennesVictoire": 7.5,
+      "premierJourReponse5": 327,
+      "evenementsParPartie": 11.7,
+      "bullesTouchees": 69.4,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": 1.84,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "accumulation-tardive",
+      "difficulty": "easy",
+      "runs": 72,
+      "victoires": 5,
+      "tauxVictoire": 6.9,
+      "raisons": {
+        "control": 67,
+        "rupture": 5
+      },
+      "joursMoyens": 498,
+      "joursMoyensVictoire": 530,
+      "minutesX1Moyennes": 8.3,
+      "minutesX1MoyennesVictoire": 8.8,
+      "premierJourReponse5": 346,
+      "evenementsParPartie": 12.9,
+      "bullesTouchees": 70,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": 1,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "passif",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 0,
+      "tauxVictoire": 0,
+      "raisons": {
+        "stalled": 72
+      },
+      "joursMoyens": 624,
+      "joursMoyensVictoire": null,
+      "minutesX1Moyennes": 10.4,
+      "minutesX1MoyennesVictoire": null,
+      "premierJourReponse5": 350,
+      "evenementsParPartie": 16.3,
+      "bullesTouchees": 0,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": null,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "achete-disponible",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 0,
+      "tauxVictoire": 0,
+      "raisons": {
+        "control": 72
+      },
+      "joursMoyens": 504,
+      "joursMoyensVictoire": null,
+      "minutesX1Moyennes": 8.4,
+      "minutesX1MoyennesVictoire": null,
+      "premierJourReponse5": 316,
+      "evenementsParPartie": 13,
+      "bullesTouchees": 0,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": null,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "achats-aleatoires",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 0,
+      "tauxVictoire": 0,
+      "raisons": {
+        "control": 68,
+        "stalled": 4
+      },
+      "joursMoyens": 537,
+      "joursMoyensVictoire": null,
+      "minutesX1Moyennes": 8.9,
+      "minutesX1MoyennesVictoire": null,
+      "premierJourReponse5": 342,
+      "evenementsParPartie": 13.8,
+      "bullesTouchees": 30.6,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": null,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "reactif-sans-bulles",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 0,
+      "tauxVictoire": 0,
+      "raisons": {
+        "control": 72
+      },
+      "joursMoyens": 507,
+      "joursMoyensVictoire": null,
+      "minutesX1Moyennes": 8.4,
+      "minutesX1MoyennesVictoire": null,
+      "premierJourReponse5": 318,
+      "evenementsParPartie": 13.1,
+      "bullesTouchees": 0,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": null,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-70",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 55,
+      "tauxVictoire": 76.4,
+      "raisons": {
+        "rupture": 54,
+        "control": 17,
+        "tie": 1
+      },
+      "joursMoyens": 467,
+      "joursMoyensVictoire": 463,
+      "minutesX1Moyennes": 7.8,
+      "minutesX1MoyennesVictoire": 7.7,
+      "premierJourReponse5": 320,
+      "evenementsParPartie": 12,
+      "bullesTouchees": 69.5,
+      "capacitesParPartie": 0.6,
+      "etoilesMoyennesVictoire": 2.65,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-70-sans-decisions",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 44,
+      "tauxVictoire": 61.1,
+      "raisons": {
+        "control": 28,
+        "rupture": 44
+      },
+      "joursMoyens": 472,
+      "joursMoyensVictoire": 467,
+      "minutesX1Moyennes": 7.9,
+      "minutesX1MoyennesVictoire": 7.8,
+      "premierJourReponse5": 322,
+      "evenementsParPartie": 12.2,
+      "bullesTouchees": 69.9,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": 2.55,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-40",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 7,
+      "tauxVictoire": 9.7,
+      "raisons": {
+        "control": 65,
+        "rupture": 7
+      },
+      "joursMoyens": 486,
+      "joursMoyensVictoire": 487,
+      "minutesX1Moyennes": 8.1,
+      "minutesX1MoyennesVictoire": 8.1,
+      "premierJourReponse5": 318,
+      "evenementsParPartie": 12.5,
+      "bullesTouchees": 40.4,
+      "capacitesParPartie": 0.2,
+      "etoilesMoyennesVictoire": 2.29,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-95",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 57,
+      "tauxVictoire": 79.2,
+      "raisons": {
+        "rupture": 57,
+        "control": 15
+      },
+      "joursMoyens": 451,
+      "joursMoyensVictoire": 443,
+      "minutesX1Moyennes": 7.5,
+      "minutesX1MoyennesVictoire": 7.4,
+      "premierJourReponse5": 323,
+      "evenementsParPartie": 11.7,
+      "bullesTouchees": 94.6,
+      "capacitesParPartie": 0.7,
+      "etoilesMoyennesVictoire": 2.96,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-diversifie",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 48,
+      "tauxVictoire": 66.7,
+      "raisons": {
+        "rupture": 47,
+        "control": 24,
+        "tie": 1
+      },
+      "joursMoyens": 467,
+      "joursMoyensVictoire": 459,
+      "minutesX1Moyennes": 7.8,
+      "minutesX1MoyennesVictoire": 7.7,
+      "premierJourReponse5": 320,
+      "evenementsParPartie": 11.9,
+      "bullesTouchees": 69.7,
+      "capacitesParPartie": 0.5,
+      "etoilesMoyennesVictoire": 2.77,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "furtive-puis-frappe",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 67,
+      "tauxVictoire": 93.1,
+      "raisons": {
+        "rupture": 67,
+        "control": 5
+      },
+      "joursMoyens": 456,
+      "joursMoyensVictoire": 456,
+      "minutesX1Moyennes": 7.6,
+      "minutesX1MoyennesVictoire": 7.6,
+      "premierJourReponse5": 333,
+      "evenementsParPartie": 11.8,
+      "bullesTouchees": 70.4,
+      "capacitesParPartie": 0.5,
+      "etoilesMoyennesVictoire": 2.84,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "dangerosite-precoce",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 54,
+      "tauxVictoire": 75,
+      "raisons": {
+        "rupture": 52,
+        "control": 18,
+        "tie": 2
+      },
+      "joursMoyens": 451,
+      "joursMoyensVictoire": 452,
+      "minutesX1Moyennes": 7.5,
+      "minutesX1MoyennesVictoire": 7.5,
+      "premierJourReponse5": 313,
+      "evenementsParPartie": 11.6,
+      "bullesTouchees": 69.3,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": 2.87,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "accumulation-tardive",
+      "difficulty": "normal",
+      "runs": 72,
+      "victoires": 0,
+      "tauxVictoire": 0,
+      "raisons": {
+        "control": 72
+      },
+      "joursMoyens": 483,
+      "joursMoyensVictoire": null,
+      "minutesX1Moyennes": 8,
+      "minutesX1MoyennesVictoire": null,
+      "premierJourReponse5": 337,
+      "evenementsParPartie": 12.4,
+      "bullesTouchees": 69.9,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": null,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "passif",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 0,
+      "tauxVictoire": 0,
+      "raisons": {
+        "stalled": 72
+      },
+      "joursMoyens": 624,
+      "joursMoyensVictoire": null,
+      "minutesX1Moyennes": 10.4,
+      "minutesX1MoyennesVictoire": null,
+      "premierJourReponse5": 344,
+      "evenementsParPartie": 16.2,
+      "bullesTouchees": 0,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": null,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "achete-disponible",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 0,
+      "tauxVictoire": 0,
+      "raisons": {
+        "control": 72
+      },
+      "joursMoyens": 505,
+      "joursMoyensVictoire": null,
+      "minutesX1Moyennes": 8.4,
+      "minutesX1MoyennesVictoire": null,
+      "premierJourReponse5": 312,
+      "evenementsParPartie": 13.1,
+      "bullesTouchees": 0,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": null,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "achats-aleatoires",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 1,
+      "tauxVictoire": 1.4,
+      "raisons": {
+        "control": 69,
+        "rupture": 1,
+        "stalled": 2
+      },
+      "joursMoyens": 549,
+      "joursMoyensVictoire": 577,
+      "minutesX1Moyennes": 9.2,
+      "minutesX1MoyennesVictoire": 9.6,
+      "premierJourReponse5": 337,
+      "evenementsParPartie": 14.2,
+      "bullesTouchees": 30.9,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": 2,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "reactif-sans-bulles",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 0,
+      "tauxVictoire": 0,
+      "raisons": {
+        "control": 72
+      },
+      "joursMoyens": 508,
+      "joursMoyensVictoire": null,
+      "minutesX1Moyennes": 8.5,
+      "minutesX1MoyennesVictoire": null,
+      "premierJourReponse5": 314,
+      "evenementsParPartie": 13.2,
+      "bullesTouchees": 0,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": null,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-70",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 46,
+      "tauxVictoire": 63.9,
+      "raisons": {
+        "rupture": 42,
+        "control": 26,
+        "tie": 4
+      },
+      "joursMoyens": 468,
+      "joursMoyensVictoire": 464,
+      "minutesX1Moyennes": 7.8,
+      "minutesX1MoyennesVictoire": 7.7,
+      "premierJourReponse5": 316,
+      "evenementsParPartie": 12,
+      "bullesTouchees": 69.4,
+      "capacitesParPartie": 0.3,
+      "etoilesMoyennesVictoire": 3,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-70-sans-decisions",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 23,
+      "tauxVictoire": 31.9,
+      "raisons": {
+        "rupture": 21,
+        "control": 49,
+        "tie": 2
+      },
+      "joursMoyens": 475,
+      "joursMoyensVictoire": 471,
+      "minutesX1Moyennes": 7.9,
+      "minutesX1MoyennesVictoire": 7.8,
+      "premierJourReponse5": 317,
+      "evenementsParPartie": 12.3,
+      "bullesTouchees": 69.9,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": 3,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-40",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 6,
+      "tauxVictoire": 8.3,
+      "raisons": {
+        "control": 66,
+        "rupture": 6
+      },
+      "joursMoyens": 487,
+      "joursMoyensVictoire": 537,
+      "minutesX1Moyennes": 8.1,
+      "minutesX1MoyennesVictoire": 9,
+      "premierJourReponse5": 312,
+      "evenementsParPartie": 12.5,
+      "bullesTouchees": 40.3,
+      "capacitesParPartie": 0.1,
+      "etoilesMoyennesVictoire": 2.5,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-95",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 59,
+      "tauxVictoire": 81.9,
+      "raisons": {
+        "control": 13,
+        "rupture": 58,
+        "tie": 1
+      },
+      "joursMoyens": 450,
+      "joursMoyensVictoire": 444,
+      "minutesX1Moyennes": 7.5,
+      "minutesX1MoyennesVictoire": 7.4,
+      "premierJourReponse5": 318,
+      "evenementsParPartie": 11.6,
+      "bullesTouchees": 94.6,
+      "capacitesParPartie": 0.5,
+      "etoilesMoyennesVictoire": 3,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "coherent-diversifie",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 43,
+      "tauxVictoire": 59.7,
+      "raisons": {
+        "control": 29,
+        "rupture": 43
+      },
+      "joursMoyens": 471,
+      "joursMoyensVictoire": 465,
+      "minutesX1Moyennes": 7.8,
+      "minutesX1MoyennesVictoire": 7.7,
+      "premierJourReponse5": 315,
+      "evenementsParPartie": 12.2,
+      "bullesTouchees": 69.6,
+      "capacitesParPartie": 0.3,
+      "etoilesMoyennesVictoire": 3,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "furtive-puis-frappe",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 57,
+      "tauxVictoire": 79.2,
+      "raisons": {
+        "rupture": 57,
+        "control": 15
+      },
+      "joursMoyens": 463,
+      "joursMoyensVictoire": 463,
+      "minutesX1Moyennes": 7.7,
+      "minutesX1MoyennesVictoire": 7.7,
+      "premierJourReponse5": 330,
+      "evenementsParPartie": 11.9,
+      "bullesTouchees": 70.4,
+      "capacitesParPartie": 0.6,
+      "etoilesMoyennesVictoire": 3,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "dangerosite-precoce",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 55,
+      "tauxVictoire": 76.4,
+      "raisons": {
+        "rupture": 54,
+        "control": 17,
+        "tie": 1
+      },
+      "joursMoyens": 453,
+      "joursMoyensVictoire": 453,
+      "minutesX1Moyennes": 7.5,
+      "minutesX1MoyennesVictoire": 7.6,
+      "premierJourReponse5": 308,
+      "evenementsParPartie": 11.6,
+      "bullesTouchees": 69.3,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": 3,
+      "partiesBloquees": 0
+    },
+    {
+      "bot": "accumulation-tardive",
+      "difficulty": "hard",
+      "runs": 72,
+      "victoires": 0,
+      "tauxVictoire": 0,
+      "raisons": {
+        "control": 72
+      },
+      "joursMoyens": 479,
+      "joursMoyensVictoire": null,
+      "minutesX1Moyennes": 8,
+      "minutesX1MoyennesVictoire": null,
+      "premierJourReponse5": 333,
+      "evenementsParPartie": 12.3,
+      "bullesTouchees": 70,
+      "capacitesParPartie": 0,
+      "etoilesMoyennesVictoire": null,
+      "partiesBloquees": 0
+    }
+  ],
+  "sensibilite": [
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "influenceGainFactor",
+      "reference": 93.1,
+      "moins10": 84.7,
+      "plus10": 93.1,
+      "ecartMax": 8.4,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "earlyInfluenceTrickle",
+      "reference": 93.1,
+      "moins10": 91.7,
+      "plus10": 93.1,
+      "ecartMax": 1.4,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "baseGrowthPerTick",
+      "reference": 93.1,
+      "moins10": 91.7,
+      "plus10": 87.5,
+      "ecartMax": 5.6,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "baseSpreadPerTick",
+      "reference": 93.1,
+      "moins10": 91.7,
+      "plus10": 90.3,
+      "ecartMax": 2.8,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "awarenessCatchupRate",
+      "reference": 93.1,
+      "moins10": 91.7,
+      "plus10": 93.1,
+      "ecartMax": 1.4,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "dangerosityAwarenessBleed",
+      "reference": 93.1,
+      "moins10": 90.3,
+      "plus10": 87.5,
+      "ecartMax": 5.6,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "humanity.maxSuppressionPerTick",
+      "reference": 93.1,
+      "moins10": 93.1,
+      "plus10": 93.1,
+      "ecartMax": 0,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "bubbles.incomeShare",
+      "reference": 93.1,
+      "moins10": 97.2,
+      "plus10": 90.3,
+      "ecartMax": 4.1,
+      "ok": true
+    },
+    {
+      "robot": "furtive-puis-frappe",
+      "constante": "rules.globalContainmentGainFactor",
+      "reference": 93.1,
+      "moins10": 88.9,
+      "plus10": 94.4,
+      "ecartMax": 4.2,
+      "ok": true
+    },
+    {
+      "robot": "coherent-70",
+      "constante": "influenceGainFactor",
+      "reference": 76.4,
+      "moins10": 70.8,
+      "plus10": 77.8,
+      "ecartMax": 5.6,
+      "ok": true
+    },
+    {
+      "robot": "coherent-70",
+      "constante": "earlyInfluenceTrickle",
+      "reference": 76.4,
+      "moins10": 52.8,
+      "plus10": 80.6,
+      "ecartMax": 23.6,
+      "ok": false
+    },
+    {
+      "robot": "coherent-70",
+      "constante": "baseGrowthPerTick",
+      "reference": 76.4,
+      "moins10": 72.2,
+      "plus10": 76.4,
+      "ecartMax": 4.2,
+      "ok": true
+    },
+    {
+      "robot": "coherent-70",
+      "constante": "baseSpreadPerTick",
+      "reference": 76.4,
+      "moins10": 87.5,
+      "plus10": 72.2,
+      "ecartMax": 11.1,
+      "ok": true
+    },
+    {
+      "robot": "coherent-70",
+      "constante": "awarenessCatchupRate",
+      "reference": 76.4,
+      "moins10": 81.9,
+      "plus10": 70.8,
+      "ecartMax": 5.6,
+      "ok": true
+    },
+    {
+      "robot": "coherent-70",
+      "constante": "dangerosityAwarenessBleed",
+      "reference": 76.4,
+      "moins10": 81.9,
+      "plus10": 80.6,
+      "ecartMax": 5.5,
+      "ok": true
+    },
+    {
+      "robot": "coherent-70",
+      "constante": "humanity.maxSuppressionPerTick",
+      "reference": 76.4,
+      "moins10": 77.8,
+      "plus10": 76.4,
+      "ecartMax": 1.4,
+      "ok": true
+    },
+    {
+      "robot": "coherent-70",
+      "constante": "bubbles.incomeShare",
+      "reference": 76.4,
+      "moins10": 86.1,
+      "plus10": 73.6,
+      "ecartMax": 9.7,
+      "ok": true
+    },
+    {
+      "robot": "coherent-70",
+      "constante": "rules.globalContainmentGainFactor",
+      "reference": 76.4,
+      "moins10": 87.5,
+      "plus10": 80.6,
+      "ecartMax": 11.1,
+      "ok": true
+    }
+  ],
+  "rythme": [
+    {
+      "escalationWeight": 0,
+      "achete-disponible:easy": 22.2,
+      "achete-disponible:normal": 0,
+      "coherent-70:easy": 100,
+      "coherent-70:normal": 76.4,
+      "joursMoyensVictoire": 463,
+      "premierJourReponse5": 320
+    },
+    {
+      "escalationWeight": 0.25,
+      "achete-disponible:easy": 5.6,
+      "achete-disponible:normal": 0,
+      "coherent-70:easy": 88.9,
+      "coherent-70:normal": 54.2,
+      "joursMoyensVictoire": 456,
+      "premierJourReponse5": 320
+    },
+    {
+      "escalationWeight": 0.5,
+      "achete-disponible:easy": 2.8,
+      "achete-disponible:normal": 0,
+      "coherent-70:easy": 90.3,
+      "coherent-70:normal": 40.3,
+      "joursMoyensVictoire": 456,
+      "premierJourReponse5": 320
+    }
+  ],
+  "dureeCalculSecondes": 89
+}
