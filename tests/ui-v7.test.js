@@ -179,7 +179,9 @@ test('menu : défi du jour et étoiles ; choix de partie : souches verrouillées
     { id: 'rumeur', label: 'Rumeur', description: 'vite', unlockStars: 3 },
     { id: 'echo', label: 'Écho', description: 'discrète', unlockStars: 10 }
   ] });
-  const meta = { totalStars: 4, games: 2, records: {} };
+  // Format réel de src/engine/meta.js : étoiles = somme de bestStars.
+  const meta = { ...engine.createMeta(), bestStars: { 'normal:standard': 3, 'hard:standard': 1 } };
+  assert.equal(engine.metaStars(meta), 4);
   const menu = screens.renderMenu({ hasSave: true, meta, daily: { seed: '2026-10-19', record: { played: 1, won: true, bestStars: 2, bestDay: 380 } } });
   assert.match(menu, /Défi du jour/);
   assert.match(menu, /jour 380/);
@@ -218,9 +220,10 @@ test('méta locale : étoiles et records stockés ; défi du jour avec record pe
   s.status = 'victory';
   s.outcome = { result: 'victory', reason: 'rupture', day: 400, stars: 3 };
   const r = engine.recordGame(engine.createMeta(), s);
-  assert.equal(r.starsGained, 3);
+  assert.equal(r.starsGained, engine.starsFor(s));
+  assert.ok(r.starsGained >= 1);
   save.saveMeta(r.meta);
-  assert.equal(save.loadMeta().totalStars, 3);
+  assert.equal(engine.metaStars(save.loadMeta()), r.starsGained, 'la méta stockée par save.js se relit à l\'identique');
   const again = engine.recordGame(save.loadMeta(), s);
   assert.equal(again.starsGained, 0, 'rejouer le même résultat ne redonne pas d\'étoiles');
   const d1 = save.recordDailyResult('2026-10-19', { won: true, stars: 2, day: 420 });
@@ -232,7 +235,9 @@ test('méta locale : étoiles et records stockés ; défi du jour avec record pe
 });
 
 test('replis sûrs : sans moteur V7, aucune fonction ne lève et l\'interface reste neutre', () => {
-  engine.resetEngineOverrides();
+  // Simule un moteur où les noms V7 sont ABSENTS (surcharges à null).
+  engine.registerEngine(Object.fromEntries(['ABILITIES', 'abilityTargets', 'abilityStatus', 'useAbility', 'collectBubble',
+    'forecastRace', 'progressBlockers', 'chooseEventOption', 'STRAINS', 'createMeta', 'recordGame', 'starsFor', 'totalStars'].map((n) => [n, null])));
   const s = fakeState();
   assert.deepEqual(engine.getAbilities(), []);
   assert.deepEqual(engine.abilityTargets(s, 'surge'), []);
@@ -242,6 +247,9 @@ test('replis sûrs : sans moteur V7, aucune fonction ne lève et l\'interface re
   s.pendingEvent = { id: 'x', options: [] };
   assert.equal(engine.chooseEventOption(s, 'a').ok, true);
   assert.equal(s.pendingEvent, null, 'le repli ne laisse jamais la partie bloquée sur un événement');
+  assert.equal(engine.getStrains().length, 1);
+  assert.equal(engine.recordGame(engine.createMeta(), { ...s, status: 'victory', difficulty: 'normal' }).starsGained >= 1, true);
+  engine.resetEngineOverrides();
 });
 
 test('beginNewGame reçoit TOUJOURS un objet d\'options (sinon le moteur reste en règles V6)', () => {

@@ -49,7 +49,8 @@ export function resetEngineOverrides() {
 }
 
 function lookup(name) {
-  if (overrides[name] !== undefined) return overrides[name];
+  // Une surcharge à null simule un nom ABSENT du moteur (tests des replis).
+  if (name in overrides) return overrides[name] ?? undefined;
   // simulation.js d'abord : il réexporte bubbles.js et reste la référence.
   for (const mod of [...staticModules, ...dynamicModules]) {
     if (mod && mod[name] !== undefined) return mod[name];
@@ -190,8 +191,17 @@ export function isUnlocked(meta, strainId) {
     return Boolean(strain) && metaStars(m) >= (strain.unlockStars ?? Infinity);
   }, [meta, strainId]));
 }
+// Total des étoiles : meta.js calcule totalStars(meta) (somme des meilleures
+// étoiles par difficulté/souche) ; repli : champ totalStars de la méta locale.
 export function metaStars(meta) {
   if (!meta) return 0;
+  const fn = lookup('totalStars');
+  if (typeof fn === 'function') {
+    try {
+      const v = fn(meta);
+      if (Number.isFinite(v)) return v;
+    } catch (e) { /* repli ci-dessous */ }
+  }
   const v = meta.totalStars ?? meta.stars;
   return Number.isFinite(v) ? v : 0;
 }
