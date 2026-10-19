@@ -20,6 +20,26 @@ apply plugin: 'com.android.application'
 // réelle). Voir le rapport technique pour la procédure exacte à suivre
 // (génération du keystore d'upload, Play App Signing) une fois prêt à
 // publier.
+// V7 : version lue dans package.json (même formule que scripts/android-version.js).
+def ruptureVersionName() {
+    def fromEnv = System.getenv("RUPTURE_VERSION_NAME")
+    if (fromEnv) return fromEnv
+    def pkg = new groovy.json.JsonSlurper().parse(rootProject.file("../package.json"))
+    return pkg.version
+}
+def ruptureVersionCode() {
+    def fromEnv = System.getenv("RUPTURE_VERSION_CODE")
+    if (fromEnv) return fromEnv.toInteger()
+    def parts = ruptureVersionName().tokenize('.-')
+    return ((parts[0].toInteger() * 10000) + (parts[1].toInteger() * 100) + parts[2].toInteger()) * 1000
+}
+
+// V7 : clé de signature des APK de BÊTA (clé de DÉBOGAGE publique, voir
+// android-debug/README.md). Utilisée seulement si RUPTURE_BETA_SIGNING=1
+// (workflow android-apk.yml) : toujours la même signature => chaque bêta
+// s'installe par-dessus la précédente sans perdre les parties.
+def useBetaSigning = System.getenv("RUPTURE_BETA_SIGNING") == "1"
+
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
 def hasRealKeystore = keystorePropertiesFile.exists()
@@ -34,11 +54,12 @@ android {
         applicationId "com.scuillerjackoss.rupture"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // RUPTURE V5.2 : premier envoi Android préparé. Incrémenter
-        // versionCode à CHAQUE soumission future (Play Console l'exige),
-        // versionName à chaque version notable du jeu.
-        versionCode 1
-        versionName "5.2.0"
+        // RUPTURE V7 : versionCode/versionName AUTOMATIQUES depuis
+        // package.json (scripts/android-version.js), fournis par les
+        // workflows via RUPTURE_VERSION_CODE / RUPTURE_VERSION_NAME.
+        // Repli (build local sans variables) : calculés ici depuis package.json.
+        versionCode ruptureVersionCode()
+        versionName ruptureVersionName()
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // AdMob exige un ID d'application au chargement du SDK (AndroidManifest,
         // voir la meta-data com.google.android.gms.ads.APPLICATION_ID). Retombe
@@ -57,6 +78,13 @@ android {
         }
     }
     signingConfigs {
+        ruptureBeta {
+            storeFile rootProject.file('../android-debug/rupture-debug.keystore')
+            storeType 'pkcs12'
+            storePassword 'android'
+            keyAlias 'rupturedebug'
+            keyPassword 'android'
+        }
         release {
             if (hasRealKeystore) {
                 storeFile rootProject.file(keystoreProperties['storeFile'])
@@ -73,7 +101,8 @@ android {
             // Pas de vrai keystore disponible ici (voir en-tête) : on retombe
             // sur la signature de debug pour que le build reste vérifiable en
             // CI, jamais sur un build non signé silencieusement.
-            signingConfig = hasRealKeystore ? signingConfigs.release : signingConfigs.debug
+            signingConfig = useBetaSigning ? signingConfigs.ruptureBeta
+                : (hasRealKeystore ? signingConfigs.release : signingConfigs.debug)
         }
     }
 }

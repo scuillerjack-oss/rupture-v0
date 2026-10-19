@@ -1,9 +1,9 @@
 {
   "name": "RUPTURE",
   "short_name": "Rupture",
-  "description": "Prototype de stratégie / simulation de crise mondiale — bêta V0.",
-  "start_url": "/rupture-v0/",
-  "scope": "/rupture-v0/",
+  "description": "Stratégie mobile : une anomalie contre l’Humanité.",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0b0f14",

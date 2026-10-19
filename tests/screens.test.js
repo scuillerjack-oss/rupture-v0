@@ -35,8 +35,8 @@ test('renderEnd does not throw for a passive-play defeat (upgrades never bought)
     html = renderEnd(state);
   });
   assert.match(html, /DÉFAITE/);
-  assert.match(html, /Conscience mondiale/);
-  assert.match(html, new RegExp(`Jours écoulés : ${state.day}`));
+  assert.match(html, /Réponse/);
+  assert.match(html, new RegExp(`Jour ${state.day} ·`));
   // Niveau 0 partout : le récap doit rester honnête plutôt que planter sur des upgrades vides.
   assert.match(html, /Niv\. 0/);
 });

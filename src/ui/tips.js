@@ -28,7 +28,24 @@ export const TIPS = {
   worldResponse: {
     title: 'Réponse mondiale',
     body: "L'Humanité commence à réagir. Conscience mesure ce qu'elle comprend ; Réponse mesure ce qu'elle fait concrètement contre vous — à 100%, c'est la défaite."
+  },
+  // V7 : nouvelles mécaniques (cahier des charges §3.B/§3.C).
+  bubbles: {
+    title: 'Bulles',
+    body: "Touche les bulles sur la carte avant qu'elles ne disparaissent : rouge = Influence gagnée, bleue = recherche humaine sabotée (Réponse −1). Une bonne partie de ton Influence passe par elles."
+  },
+  abilities: {
+    title: 'Capacités',
+    body: "Sursaut, Brouillage et Percée se paient en Influence puis se rechargent. Touche une capacité, puis sa cible sur la carte (« Annuler » si tu changes d'avis). Le temps est en pause pendant que tu vises."
+  },
+  gravityWall: {
+    title: 'Mur de gravité',
+    body: "Ta progression plafonne : tes régions sont au maximum de gravité permis par ta Dangerosité. Monte Dangerosité (niveau 8 pour la gravité complète) pour repartir."
+  },
+  events: {
+    title: 'Événements',
+    body: "Le monde t'impose parfois un choix entre deux options. Le temps s'arrête jusqu'à ta décision : lis l'effet de chaque option avant de toucher."
   }
 };
 
-export const TIP_ORDER = ['influence', 'propagation', 'dangerosity', 'resilience', 'discretion', 'worldResponse'];
+export const TIP_ORDER = ['influence', 'propagation', 'dangerosity', 'resilience', 'discretion', 'worldResponse', 'bubbles', 'abilities', 'gravityWall', 'events'];
