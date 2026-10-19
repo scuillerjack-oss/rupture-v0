@@ -1,15 +1,14 @@
 // Premium — modèle RÉEL, achat SIMULÉ.
 //
 // Source de vérité : docs/RUPTURE_Audit_Economique_Precommercialisation.pdf
-// (§3, §8). Premium = achat unique 2,99€ = retire la publicité + débloque
-// la vitesse ×4. Aucun avantage stratégique, aucune méta-monnaie, aucune
-// dégradation du contenu gratuit — le gameplay complet (×1, ×2, toutes les
-// orientations) reste jouable sans Premium.
+// (§3, §8). V7 (décision du studio) : Premium = achat unique « sans pub »
+// SEULEMENT. La vitesse ×4 est gratuite pour tous (config/runtime.js).
+// Aucun avantage stratégique, aucune méta-monnaie, aucune dégradation du
+// contenu gratuit.
 //
 // Distinction explicite (§4 de la demande) :
 //  - RÉEL : isPremium()/getEntitlementSource() lisent un état réel (pas un
-//    exemple de code) ; getAvailableSpeeds() (config/runtime.js) applique
-//    réellement la restriction ×4 en environnement 'commercial'.
+//    exemple de code).
 //  - SIMULÉ : purchasePremium()/restorePurchases() ne parlent à AUCUNE
 //    plateforme de paiement réelle (aucun compte Google Play Billing/App
 //    Store n'existe). En dev/bêta, elles accordent un entitlement marqué
@@ -64,6 +63,16 @@ export function createPremiumService(config = RUNTIME_CONFIG) {
   return {
     isPremium,
     getEntitlementSource: source,
+
+    // V7 : l'interface commerciale n'affiche un bouton d'achat QUE si un
+    // vrai achat est possible (appli Android + produit Play configuré).
+    // Sinon « Bientôt disponible » : jamais d'achat gratuit ni de libellé
+    // « simulation » dans un build commercial. Aucun produit n'existe en V7.
+    isPurchaseAvailable() {
+      if (config.env !== 'commercial') return false;
+      const productId = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_PLAY_PRODUCT_ID : undefined;
+      return Boolean(productId) && Capacitor.isNativePlatform();
+    },
 
     // Réservé aux tests/scripts internes (ex. batteries de simulation qui
     // veulent forcer un état) - jamais appelé depuis un flux d'achat réel.

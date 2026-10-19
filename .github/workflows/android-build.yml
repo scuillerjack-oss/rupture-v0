@@ -52,7 +52,16 @@ jobs:
 
       - run: npm ci
       - run: npm test
-      - run: npm run build
+      # V7 : l'AAB (Google Play) embarque le build COMMERCIAL (aucun libellé
+      # « simulation », aucun achat gratuit). Jamais de server.url ici : le jeu
+      # reste embarqué (seul android-apk.yml charge le site, pour la bêta).
+      - run: npm run build:commercial
+
+      - name: Version automatique depuis package.json
+        run: |
+          read CODE NAME < <(node scripts/android-version.js "${{ github.run_number }}")
+          echo "RUPTURE_VERSION_CODE=$CODE" >> "$GITHUB_ENV"
+          echo "RUPTURE_VERSION_NAME=$NAME" >> "$GITHUB_ENV"
 
       # Resynchronise les assets web + la config Capacitor dans le projet
       # natif committé (jamais l'inverse - android/ ne contient aucune

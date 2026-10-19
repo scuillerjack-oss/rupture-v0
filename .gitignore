@@ -26,6 +26,8 @@ dist
 # reste vrai même à l'intérieur de android/) :
 ios/
 *.keystore
+# Seule exception : la clé de DÉBOGAGE publique des APK de bêta (voir android-debug/README.md).
+!android-debug/rupture-debug.keystore
 *.jks
 key.properties
 keystore.properties
