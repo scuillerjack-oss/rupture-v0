@@ -20,14 +20,11 @@ const ALL_SPEEDS = [0, 1, 2, 4];
 
 export const RUNTIME_CONFIG = {
   env: BUILD_ENV,
-  // Vitesse réservée à Premium dans un futur build commercial (modèle
-  // audité : ×1/×2 gratuites, ×4 Premium - voir
-  // docs/RUPTURE_Audit_Economique_Precommercialisation.pdf §3/§8). Cette
-  // valeur ne s'applique QUE si env==='commercial' (voir
-  // getAvailableSpeeds ci-dessous) : pendant dev/bêta, x1/x2/x4 restent
-  // intégralement accessibles quel que soit ce contenu, conformément à la
-  // demande explicite de ne jamais restreindre la bêta gameplay en cours.
-  premiumOnlySpeeds: [4],
+  // V7 (décision du studio, cahier des charges §3.D) : ×4 GRATUIT pour tous,
+  // dans tous les builds. Premium = « sans pub » uniquement (achat de
+  // confort, jamais un avantage de jeu). L'ancienne restriction ×4 Premium
+  // de l'audit économique V5 est abandonnée.
+  premiumOnlySpeeds: [],
   // Active la LOGIQUE de fréquence publicitaire réelle (services/ads.js) -
   // n'affiche jamais une vraie publicité (aucun SDK connecté, voir ce
   // fichier) : en dev/bêta l'affichage reste simulé et clairement labellisé
@@ -42,13 +39,9 @@ export const RUNTIME_CONFIG = {
   analyticsEnabled: false
 };
 
-// Calcule les vitesses réellement proposées au joueur. En dev/bêta,
-// renvoie toujours la liste complète — même si premiumOnlySpeeds contenait
-// une valeur par erreur, l'environnement 'beta' l'ignore volontairement.
-// Seul un futur environnement 'commercial' appliquerait une restriction,
-// et seulement pour un joueur non-Premium.
-export function getAvailableSpeeds(services, config = RUNTIME_CONFIG) {
-  if (config.env !== 'commercial') return ALL_SPEEDS;
-  const isPremium = services?.premium?.isPremium?.() ?? false;
-  return ALL_SPEEDS.filter((speed) => isPremium || !config.premiumOnlySpeeds.includes(speed));
+// Vitesses proposées au joueur : V7, toujours la liste complète (pause, ×1,
+// ×2, ×4), Premium ou non, quel que soit le build. Les paramètres sont
+// gardés pour la compatibilité des appels existants.
+export function getAvailableSpeeds(_services, _config = RUNTIME_CONFIG) {
+  return ALL_SPEEDS;
 }
