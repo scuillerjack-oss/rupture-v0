@@ -95,4 +95,45 @@ game design ; mise en production). Aucune reconstruction : `src/engine/` est pro
   (tests, Chrome mobile simulé, relecture indépendante), Pull Request et fusion par le chef de projet.
 
 ## 5. Réalisé
-(à compléter à la fin de la version)
+V7.0.0 — 19/10/2026, trois équipes (Moteur, Carte, Interface & production) puis intégration par le chef de projet.
+
+**Carte** (`src/ui/worldGeometry.js` généré par `tools/carte/generate-geometry.mjs`, `src/ui/worldMap.js`, `worldMap.css`) :
+3 continents (Hauteterre, Levant, Australe) + archipel (Vantis, Ashra, Corvel, Tenlow), lacs, relief, noms de mers.
+Les 28 routes du moteur, inchangées : 15 terrestres, 9 maritimes ⚓, 4 aériennes ✈ ; route fermée en rouge avec ✕.
+Le générateur refuse une route terrestre entre régions non contiguës et une route maritime qui passe sur une terre.
+SVG créé une fois, `update` incrémental (~0,35 ms) ; pincer/glisser/molette de 0,85× à 6×, un glisser ne fait jamais de tap ;
+bulles de 40 px (zone tactile 56 px) ; modes origine et ciblage. Démo : `node tools/carte/build-demo.mjs`.
+
+**Moteur** : hasard à graine (`rng.js`, plus aucun `Math.random`) ; bulles (35 % du revenu passif, revenu V6 retrouvé
+à 70 % de bulles touchées ; bulles « recherche » seulement tant que la Réponse est sous 50) ; capacités Sursaut / Brouillage /
+Percée (route rouverte protégée 40 jours) ; 30 événements à 2 options (premier entre J30 et J40, puis tous les 30-45 jours,
+partie en pause) ; adaptation de l'Humanité (−25 % pendant 60 jours) ; mur des 93 % remplacé par un ralentissement progressif
+expliqué (`progressBlockers`) ; projection `forecastRace` ; fin anticipée « stalled » (150 jours sans progrès, Réponse dominante)
+et égalité tranchée en faveur de la Rupture ; souches Rumeur / Fracture / Écho (3 / 8 / 15 étoiles) ; méta et défi du jour ;
+`SAVE_VERSION` 7 avec migration 6 → 7 (chaîne 3 → 7 testée). Sans objet d'options, `beginNewGame` garde les règles V6.
+**Rythme** : tension liée à l'escalade testée puis rejetée par les simulations (robot cohérent 76 % → 54 % → 40 %) ;
+la tension V6 au calendrier est conservée (`escalationWeight = 0`, option gardée et testée).
+
+**Équilibrage** (`docs/v7-simulation-results.json`, 18 origines × 4 graines par case) : « achète ce qui est disponible »
+sans bulles 0 % en Normal ; robot cohérent (~70 % de bulles) 76 % en Normal, 100 % en Facile, 64 % en Difficile ;
+victoire ≈ 463 jours ≈ 7,7 min en ×1 ; ±10 % sur 9 constantes : la meilleure stratégie bouge de 8,4 points au plus.
+Point d'attention : le filet de début de partie −10 % fait perdre 24 points au robot cohérent.
+
+**Interface** : écran sans défilement en 390×844 (HUD une ligne, carte ≈ 60 %, capacités, 4 améliorations sur une ligne +
+tiroir, bandeau du journal, projection et obstacle, adaptation) ; rendu incrémental, aucun tap perdu en ×4 ; fenêtre
+d'événement, chiffres qui s'envolent, écran de fin (étoiles, record, chronologie) ; choix d'origine plein écran avec fiche ;
+menu avec défi du jour et souches ; conseils bulles / capacités / mur de gravité / événements ; méta locale
+(`rupture-v7-meta`, `rupture-v7-daily`, `rupture-v7-strain`, clés V6 inchangées). Bugs corrigés : noms au lieu des
+identifiants, consigne de départ périmée, menu « V5 » → vraie version.
+
+**Production** : `vite.config.js` en base `'./'`, version injectée ; ×4 gratuit pour tous, Premium = sans pub ; build
+commercial sans libellé « simulation » ni achat gratuit (« Bientôt disponible ») ; `android-apk.yml` publie
+`releases/download/beta/rupture-beta.apk`, signé par la clé de DÉBOGAGE publique `android-debug/rupture-debug.keystore`,
+qui charge le jeu depuis GitHub Pages (`scripts/apk-beta-config.js`, page `offline.html`) ; versionCode/versionName depuis
+`package.json` ; l'AAB garde le jeu embarqué. Rien de payant activé.
+
+**Vérifications** : `npm test` 178/178 ; partie complète en Chrome mobile simulé 390×844 (défi du jour, Fenwick, ×2 :
+114 bulles, 11 capacités, 2 Percées, 12 événements, fin expliquée), aucune erreur console ni défilement.
+
+**Reste pour la V7.1** : projection « Course indécise » jusque vers le jour 150 ; le message court masque un instant la projection ;
+scripts `audit-*.mjs` V6 non adaptés au hasard à graine ; test réel sur le téléphone de Jack.
