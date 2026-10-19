@@ -107,9 +107,14 @@ function roundDay(d) {
 
 // « Rupture prévue jour ~X / Maîtrise ~Y » ; null si le moteur ne sait pas
 // encore projeter (aucune projection inventée côté interface).
+// La projection rejoue jusqu'à 700 jours : on ne la recalcule qu'une fois par
+// jour de jeu (ou après un achat), jamais à chaque image (fluidité sur téléphone).
+let forecastCache = { key: null, value: null };
 export function forecastText(state) {
   if (!hasEngine('forecastRace')) return null;
-  const f = forecastRace(state);
+  const key = `${state.seed}|${state.day}|${JSON.stringify(state.upgrades ?? null)}`;
+  if (forecastCache.key !== key) forecastCache = { key, value: forecastRace(state) };
+  const f = forecastCache.value;
   const parts = [];
   if (Number.isFinite(f.ruptureDay)) parts.push(`Rupture prévue jour ~${roundDay(f.ruptureDay)}`);
   if (Number.isFinite(f.controlDay)) parts.push(`Maîtrise ~${roundDay(f.controlDay)}`);
@@ -261,7 +266,7 @@ export const END_TEXTS = {
   rupture: "Ta progression a atteint 100 % avant que l'Humanité n'achève sa maîtrise.",
   control: "La Réponse mondiale a atteint la maîtrise complète avant ta progression.",
   stalled: "La course était jouée : ta progression ne bougeait plus depuis longtemps et la Réponse mondiale dominait. Plutôt que de te laisser attendre, la partie s'arrête.",
-  tie: "Égalité parfaite : ta progression et la Réponse mondiale ont atteint 100 % au même instant. Dans RUPTURE, une égalité revient à l'Humanité — il te fallait un jour d'avance."
+  tie: "Égalité parfaite : ta progression et la Réponse mondiale ont atteint 100 % au même instant. À égalité, l'Anomalie l'emporte : victoire de justesse."
 };
 
 export function endModel(state) {

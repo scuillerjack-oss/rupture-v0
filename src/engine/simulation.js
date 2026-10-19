@@ -393,8 +393,10 @@ export function simulateTick(state) {
     endGame(state, 'defeat', 'stalled', 'timeout', `Aucun camp n'a percé en ${BALANCE.maxDays} jours. Le monde reprend le contrôle par défaut.`);
   } else if (features.stall && checkStalled(state)) {
     const days = state.day - state.stall.sinceDay;
-    endGame(state, 'defeat', 'stalled', 'stalled',
-      `La course est jouée : aucune progression depuis ${days} jours et la Réponse mondiale domine (${Math.round(state.globalContainment)} % contre ${Math.round(state.dominance)} % de Progression). Défaite anticipée.`);
+    const responseAhead = state.globalContainment >= state.dominance;
+    endGame(state, 'defeat', 'stalled', 'stalled', responseAhead
+      ? `La course est jouée : aucune progression depuis ${days} jours et la Réponse mondiale domine (${Math.round(state.globalContainment)} % contre ${Math.round(state.dominance)} % de Progression). Défaite anticipée.`
+      : `La course est figée : aucune progression depuis ${days} jours (${Math.round(state.dominance)} % de Progression). L'Anomalie s'est essoufflée. Défaite anticipée.`);
   }
 
   // V7 : un imprévu tous les 30-45 jours (events.js), seulement si la partie continue.

@@ -38,7 +38,7 @@ import { createOriginScreen } from './ui/originScreen.js';
 import { isGameOver, outcomeOf, starsOf, blockerModel } from './ui/playModel.js';
 import { playSpeeds, nextSpeed } from './ui/hud.js';
 import { createServices } from './services/index.js';
-import { RUNTIME_CONFIG } from './config/runtime.js';
+import { RUNTIME_CONFIG, BUILD_ENV } from './config/runtime.js';
 import { createAudio } from './audio/audio.js';
 
 const app = document.getElementById('app');
@@ -633,7 +633,7 @@ engineReady.then(() => {
 // Aide aux tests de bout en bout (Playwright) : lecture de l'état, et
 // injection d'un faux moteur V7 (registerEngine) pour vérifier l'interface
 // avant l'intégration du vrai moteur. Sans effet en jeu normal.
-window.__rupture = {
+if (BUILD_ENV !== 'commercial') window.__rupture = {
   get state() { return state; },
   get view() { return view; },
   registerEngine,

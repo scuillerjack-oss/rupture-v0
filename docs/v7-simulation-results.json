@@ -1,6 +1,6 @@
 {
   "version": 7,
-  "note": "Simulations à graine (src/engine/rng.js) : rejouer ce script redonne exactement ces chiffres. Durée réelle : 1 jour de jeu = 1 tick = 1 s en ×1 (src/main.js, TICK_MS = 1000).",
+  "note": "Simulations à graine (src/engine/rng.js) : rejouer ce script redonne exactement ces chiffres. Durée réelle : 1 jour de jeu = 1 tick = 1 s en ×1 (src/main.js : boucle à 250 ms, 1 jour par seconde en ×1).",
   "seedsPerOrigin": 4,
   "runsPerCell": 72,
   "tickSecondsAtX1": 1,

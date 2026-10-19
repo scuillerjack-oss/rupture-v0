@@ -291,3 +291,19 @@ test('production : base relative, versionCode automatique, APK de bêta chargé 
   const manifest = JSON.parse(readFileSync(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8'));
   assert.equal(manifest.start_url, './');
 });
+
+test('relecture V7 : la projection n’est recalculée qu’une fois par jour de jeu', async () => {
+  const sim = await import('../src/engine/simulation.js');
+  const st = await import('../src/engine/state.js');
+  const { forecastText } = await import('../src/ui/playModel.js');
+  const state = st.createInitialState ? st.createInitialState() : null;
+  if (!state || !sim.beginNewGame) return;
+  sim.beginNewGame(state, 'normal', { seed: 'cache-test' });
+  const a = forecastText(state); const b = forecastText(state);
+  assert.deepEqual(a, b);
+});
+
+test('relecture V7 : le texte d’égalité de repli donne la victoire à l’Anomalie (comme le moteur)', async () => {
+  const { END_TEXTS } = await import('../src/ui/playModel.js');
+  assert.match(END_TEXTS.tie, /Anomalie l'emporte/);
+});

@@ -30,7 +30,7 @@ jobs:
       - run: npm run build
       - name: Vérifier que le build n'utilise que des chemins relatifs
         run: |
-          ! grep -E '(src|href)="/(assets|rupture-v0)/' dist/index.html
+          if grep -E '(src|href)="/(assets|rupture-v0)/' dist/index.html; then echo "Chemin absolu trouvé dans le build"; exit 1; fi
           test -f dist/offline.html
       - uses: actions/upload-pages-artifact@v3
         with:
