@@ -103,7 +103,7 @@ function startNewGame() {
   state = createInitialState();
   const seed = pendingSeed ?? randomSeed();
   const strain = isUnlocked(meta, pendingStrain) ? pendingStrain : 'standard';
-  beginNewGame(state, getDifficultySetting(), { seed, strain });
+  beginNewGame(state, getDifficultySetting(), { seed, strain, daily: isDailySeed(seed) });
   pendingSeed = null;
   targeting = null;
   endInfo = null;
@@ -274,7 +274,7 @@ function applyAbility(target) {
     targeting = null;
     playScreen?.pulseAbility(abilityId);
     audio.playPurchase();
-    toast(result.resultText || `${label} : ${target.includes('|') ? target.split('|').map(territoryName).join('–') : territoryName(target)}`);
+    toast(result.message || result.resultText || `${label} : ${target.includes('|') ? target.split('|').map(territoryName).join('–') : territoryName(target)}`);
     saveState(state);
   } else {
     toast(result?.error || `${label} impossible.`);
@@ -288,7 +288,11 @@ const originActions = {
     refresh(true);
   },
   confirm(id) {
-    confirmOrigin(state, id);
+    const result = confirmOrigin(state, id);
+    if (result && result.ok === false) {
+      console.warn('Origine refusée', result.error);
+      return;
+    }
     gameStartedAt = Date.now();
     saveState(state);
     refresh(true);

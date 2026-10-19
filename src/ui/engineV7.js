@@ -19,7 +19,7 @@ import * as simulationNs from '../engine/simulation.js';
 import * as stateNs from '../engine/state.js';
 import { TERRITORIES, EDGES, getTerritory } from '../engine/territories.js';
 
-const V7_ENGINE_FILES = ['bubbles', 'abilities', 'events', 'forecast', 'meta', 'strains', 'rng'];
+const V7_ENGINE_FILES = ['bubbles', 'abilities', 'events', 'forecast', 'meta', 'strains', 'routes', 'rng'];
 const dynamicModules = [];
 
 // Selon l'outil, un module absent donne une promesse rejetée (Vite, Node) ou
@@ -80,7 +80,9 @@ export function territoryName(id) {
 
 // --- Inchangé (V6) ---
 export const createInitialState = (...a) => call('createInitialState', () => ({ status: 'menu' }), a);
-export const beginNewGame = (state, difficulty, opts = {}) => call('beginNewGame', undefined, [state, difficulty, opts]);
+// Toujours avec un objet d'options (même {}) : sans lui, le moteur garde les
+// règles V6 (ni bulles ni événements).
+export const beginNewGame = (state, difficulty, opts) => call('beginNewGame', undefined, [state, difficulty, opts ?? {}]);
 export const confirmOrigin = (...a) => call('confirmOrigin', undefined, a);
 export const simulateTick = (...a) => call('simulateTick', undefined, a);
 export const buyUpgrade = (...a) => Boolean(call('buyUpgrade', false, a));

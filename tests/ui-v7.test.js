@@ -209,6 +209,8 @@ test('écran de fin : étoiles, record, chronologie, Rejouer / Menu ; égalité 
   html = screens.renderEnd(s);
   assert.match(html, /DÉFAITE ANTICIPÉE/);
   assert.match(html, /ne bougeait plus/);
+  s.outcome = { result: 'defeat', reason: 'stalled', day: 520, stars: 0, text: 'Texte du moteur.' };
+  assert.match(screens.renderEnd(s), /Texte du moteur\./, 'outcome.text du moteur est prioritaire');
 });
 
 test('méta locale : étoiles et records stockés ; défi du jour avec record personnel', () => {
@@ -240,6 +242,16 @@ test('replis sûrs : sans moteur V7, aucune fonction ne lève et l\'interface re
   s.pendingEvent = { id: 'x', options: [] };
   assert.equal(engine.chooseEventOption(s, 'a').ok, true);
   assert.equal(s.pendingEvent, null, 'le repli ne laisse jamais la partie bloquée sur un événement');
+});
+
+test('beginNewGame reçoit TOUJOURS un objet d\'options (sinon le moteur reste en règles V6)', () => {
+  const calls = [];
+  engine.registerEngine({ beginNewGame: (...a) => calls.push(a) });
+  engine.beginNewGame({}, 'normal');
+  engine.beginNewGame({}, 'hard', { seed: '2026-10-19', strain: 'standard', daily: true });
+  assert.deepEqual(calls[0][2], {});
+  assert.equal(calls[1][2].daily, true);
+  engine.resetEngineOverrides();
 });
 
 test('vitesse : ×1 → ×2 → ×4 → ×1', () => {
