@@ -1,3 +1,6 @@
+/* Carte du monde V7 (équipe Carte) : intégrée au build par Vite. */
+@import './ui/worldMap.css';
+
 * { box-sizing: border-box; }
 
 html, body {
@@ -636,7 +639,9 @@ html, body { overflow-x: hidden; }
 .legacy-map { display: flex; align-items: center; justify-content: center; padding: 44px 6px 54px; }
 .legacy-map .world-map { width: 100%; height: 100%; }
 .legacy-map .node { cursor: pointer; }
-.legacy-bubble { stroke: #fff; stroke-width: 0.5; cursor: pointer; animation: bubble-bob 1.2s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+/* Bouton « recentrer » de la carte V7 : en haut à droite, loin du bandeau du journal. */
+.play-map .wm-recenter { top: 6px; right: 6px; bottom: auto; }
+.legacy-bubble {stroke: #fff; stroke-width: 0.5; cursor: pointer; animation: bubble-bob 1.2s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
 .legacy-bubble-influence { fill: #e0412d; }
 .legacy-bubble-research { fill: #4f7cff; }
 @keyframes bubble-bob { to { transform: scale(1.18); } }
@@ -981,7 +986,8 @@ html, body { overflow-x: hidden; }
   overflow: hidden;
   background: #0d1a26;
 }
-.origin-map { position: absolute; inset: 0; }
+/* Carte entre l'en-tête et la fiche (hauteur explicite, exigée par la carte V7). */
+.origin-map { position: absolute; left: 0; right: 0; top: calc(56px + env(safe-area-inset-top)); bottom: calc(196px + env(safe-area-inset-bottom)); }
 .origin-map > * { width: 100%; height: 100%; }
 .origin-map .legacy-map { padding: 70px 6px 190px; }
 .origin-head {

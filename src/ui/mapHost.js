@@ -23,9 +23,7 @@ export function loadWorldMapModule() {
   if (!worldMapModulePromise) {
     worldMapModulePromise = safeImport(() => import(`./world${MAP_NAME}.js`))
       .then((mod) => (typeof mod?.createWorldMap === 'function' ? mod : null));
-    // Feuille de style de la carte : chargée seulement si elle existe
-    // (sous Node, l'import d'un .css échoue proprement : ignoré).
-    if (typeof document !== 'undefined') safeImport(() => import(`./world${MAP_NAME}.css`));
+    // La feuille ./worldMap.css est importée statiquement par src/style.css.
   }
   return worldMapModulePromise;
 }

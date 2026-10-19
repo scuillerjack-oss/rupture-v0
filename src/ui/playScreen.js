@@ -171,8 +171,9 @@ export function createPlayScreen(actions) {
   function update(state, ui) {
     hud.update(state, { lastSpeed: ui.lastSpeed });
 
-    // Carte
+    // Carte (la carte V7 a son propre bouton « recentrer »)
     mapHost.update(state, { mode: 'play', targeting: ui.targeting });
+    setHidden(recenterBtn, mapHost.kind === 'world');
 
     // Surimpressions du haut
     const f = forecastText(state);
