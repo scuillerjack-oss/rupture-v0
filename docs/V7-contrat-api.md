@@ -42,3 +42,14 @@ Les champs d'état sont en lecture seule pour l'interface. Sauvegarde : `SAVE_VE
 
 ## Inchangé
 - `buyUpgrade(state, kind)`, `selectTerritory`, `setSpeed`, `TERRITORIES`, `EDGES` (mêmes identifiants et mêmes routes).
+
+## Carte — `src/ui/worldMap.js` (équipe Carte) ↔ écran de jeu (équipe Interface)
+Géométrie dans `src/ui/worldGeometry.js` (données pures, sans DOM : `CONTINENTS`, `TERRITORY_SHAPES[id] = { path, labelX, labelY, port?, airport? }`,
+`ROUTE_KINDS['a|b'] = 'land'|'sea'|'air'`, clé de route triée alphabétiquement ; `viewBox` 0 0 1000 1000).
+- `createWorldMap(container, { onTerritoryTap(id), onBubbleTap(bubbleId), onRouteTap(routeKey) })` → objet carte.
+  La carte crée son SVG une seule fois, puis :
+- `map.update(state, { mode: 'origin'|'play', targeting: null | { abilityId, kind: 'territory'|'route', validTargets: [...] } })`
+  → mise à jour **incrémentale** (attributs/classes), jamais de `innerHTML` complet ; appelée à chaque tick (≈ 4 fois/s max).
+- `map.recenter()`, `map.destroy()`. Pan/zoom au doigt gérés par la carte (un glisser ne déclenche pas de tap).
+- `routeKey(a, b)` exporté (ordre alphabétique) ; `abilityTargets` du moteur renvoie les routes sous cette forme.
+L'écran de jeu donne à la carte ≈ 60 % de la hauteur ; la carte remplit son conteneur (pas de taille fixe).
